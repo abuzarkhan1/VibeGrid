@@ -12,6 +12,10 @@ Cargo.lock
 # Tauri
 src-tauri/target/
 
+# Next.js
+.next/
+website/.next/
+
 # IDE & OS
 .DS_Store
 .vscode/
