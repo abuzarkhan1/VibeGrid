@@ -1,13 +1,14 @@
 import { create } from 'zustand';
+import { setBatchInterval } from '@/lib/tauri';
 import { TerminalTheme } from '@/types/terminal';
 
 export const THEMES: Record<string, TerminalTheme> = {
   vibeDark: {
     name: 'VibeDark',
-    background: '#0a0b0d',
+    background: '#0b0d12',
     foreground: '#e2e8f0',
     cursor: '#54a967',
-    cursorAccent: '#0a0b0d',
+    cursorAccent: '#0b0d12',
     selectionBackground: 'rgba(84, 169, 103, 0.3)',
     black: '#0d0f12',
     red: '#f43f5e',
@@ -169,24 +170,55 @@ export const THEMES: Record<string, TerminalTheme> = {
 
 export type CursorStyle = 'block' | 'underline' | 'bar';
 
-interface SettingsState {
+const STORAGE_KEY = 'vibegrid_settings_v1';
+
+export interface AppSettings {
   fontSize: number;
   fontFamily: string;
   themeName: string;
   scrollback: number;
   cursorBlink: boolean;
   cursorStyle: CursorStyle;
+  ipcBatchIntervalMs: number;
+  fontLigatures: boolean;
+  lineHeight: number;
+  terminalOpacity: number;
+  voiceToTerminal: boolean;
+}
 
-  // Actions
-  setFontSize: (size: number) => void;
-  setFontFamily: (family: string) => void;
-  increaseFontSize: () => void;
-  decreaseFontSize: () => void;
-  resetFontSize: () => void;
-  setThemeName: (name: string) => void;
-  setScrollback: (lines: number) => void;
-  setCursorBlink: (blink: boolean) => void;
-  setCursorStyle: (style: CursorStyle) => void;
+const defaultSettings: AppSettings = {
+  fontSize: 14,
+  fontFamily: 'JetBrains Mono, monospace',
+  themeName: 'vibeDark',
+  scrollback: 5000,
+  cursorBlink: true,
+  cursorStyle: 'block',
+  ipcBatchIntervalMs: 16,
+  fontLigatures: true,
+  lineHeight: 1.2,
+  terminalOpacity: 1,
+  voiceToTerminal: false,
+};
+
+function loadSettings(): AppSettings {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...defaultSettings, ...parsed };
+    }
+  } catch (e) {
+    // ignore corrupt storage
+  }
+  return defaultSettings;
+}
+
+function persist(settings: AppSettings) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  } catch (e) {
+    // ignore storage errors
+  }
 }
 
 function applyThemeVariables(themeKey: string) {
@@ -200,24 +232,129 @@ function applyThemeVariables(themeKey: string) {
   }
 }
 
-export const useSettingsStore = create<SettingsState>((set) => ({
-  fontSize: 14,
-  fontFamily: 'JetBrains Mono, monospace',
-  themeName: 'vibeDark',
-  scrollback: 5000,
-  cursorBlink: true,
-  cursorStyle: 'block',
+interface SettingsState extends AppSettings {
+  // Actions
+  setFontSize: (size: number) => void;
+  setFontFamily: (family: string) => void;
+  increaseFontSize: () => void;
+  decreaseFontSize: () => void;
+  resetFontSize: () => void;
+  setThemeName: (name: string) => void;
+  setScrollback: (lines: number) => void;
+  setCursorBlink: (blink: boolean) => void;
+  setCursorStyle: (style: CursorStyle) => void;
+  setIpcBatchIntervalMs: (ms: number) => void;
+  setFontLigatures: (enabled: boolean) => void;
+  setLineHeight: (height: number) => void;
+  setTerminalOpacity: (opacity: number) => void;
+  setVoiceToTerminal: (enabled: boolean) => void;
+  resetSettings: () => void;
+  exportSettings: () => string;
+  importSettings: (json: string) => boolean;
+}
 
-  setFontSize: (size: number) => set({ fontSize: Math.max(8, Math.min(32, size)) }),
-  setFontFamily: (family: string) => set({ fontFamily: family }),
-  increaseFontSize: () => set((state) => ({ fontSize: Math.min(32, state.fontSize + 1) })),
-  decreaseFontSize: () => set((state) => ({ fontSize: Math.max(8, state.fontSize - 1) })),
-  resetFontSize: () => set({ fontSize: 14 }),
+export const useSettingsStore = create<SettingsState>((set, get) => ({
+  ...loadSettings(),
+
+  setFontSize: (size: number) => {
+    const fontSize = Math.max(8, Math.min(32, Math.round(size)));
+    set({ fontSize });
+    persist(get());
+  },
+  setFontFamily: (family: string) => {
+    set({ fontFamily: family });
+    persist(get());
+  },
+  increaseFontSize: () => {
+    const fontSize = Math.min(32, get().fontSize + 1);
+    set({ fontSize });
+    persist(get());
+  },
+  decreaseFontSize: () => {
+    const fontSize = Math.max(8, get().fontSize - 1);
+    set({ fontSize });
+    persist(get());
+  },
+  resetFontSize: () => {
+    set({ fontSize: defaultSettings.fontSize });
+    persist(get());
+  },
   setThemeName: (name: string) => {
     applyThemeVariables(name);
     set({ themeName: name });
+    persist(get());
   },
-  setScrollback: (lines: number) => set({ scrollback: Math.max(100, Math.min(100000, lines)) }),
-  setCursorBlink: (blink: boolean) => set({ cursorBlink: blink }),
-  setCursorStyle: (style: CursorStyle) => set({ cursorStyle: style }),
+  setScrollback: (lines: number) => {
+    const scrollback = Math.max(100, Math.min(100000, lines));
+    set({ scrollback });
+    persist(get());
+  },
+  setCursorBlink: (blink: boolean) => {
+    set({ cursorBlink: blink });
+    persist(get());
+  },
+  setCursorStyle: (style: CursorStyle) => {
+    set({ cursorStyle: style });
+    persist(get());
+  },
+  setIpcBatchIntervalMs: (ms: number) => {
+    const ipcBatchIntervalMs = Math.min(2000, Math.max(4, Math.round(ms)));
+    set({ ipcBatchIntervalMs });
+    persist(get());
+    setBatchInterval(ipcBatchIntervalMs).catch(console.error);
+  },
+  setFontLigatures: (fontLigatures: boolean) => {
+    set({ fontLigatures });
+    persist(get());
+  },
+  setLineHeight: (lineHeight: number) => {
+    const clamped = Math.max(1, Math.min(2, Math.round(lineHeight * 100) / 100));
+    set({ lineHeight: clamped });
+    persist(get());
+  },
+  setTerminalOpacity: (terminalOpacity: number) => {
+    const clamped = Math.max(0.6, Math.min(1, Math.round(terminalOpacity * 100) / 100));
+    set({ terminalOpacity: clamped });
+    persist(get());
+  },
+  setVoiceToTerminal: (voiceToTerminal: boolean) => {
+    set({ voiceToTerminal });
+    persist(get());
+  },
+
+  resetSettings: () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      // ignore
+    }
+    applyThemeVariables(defaultSettings.themeName);
+    set({ ...defaultSettings });
+    setBatchInterval(defaultSettings.ipcBatchIntervalMs).catch(console.error);
+  },
+
+  exportSettings: () => {
+    const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal } = get();
+    return JSON.stringify({ fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal }, null, 2);
+  },
+
+  importSettings: (json: string) => {
+    try {
+      const parsed = JSON.parse(json);
+      const next: AppSettings = {
+        ...defaultSettings,
+        ...Object.fromEntries(Object.entries(parsed).filter(([key]) => key in defaultSettings)),
+      };
+      applyThemeVariables(next.themeName);
+      set(next);
+      persist(next);
+      setBatchInterval(next.ipcBatchIntervalMs).catch(console.error);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
 }));
+
+// Apply persisted theme variables immediately on module load (before first paint)
+applyThemeVariables(useSettingsStore.getState().themeName);

@@ -32,11 +32,19 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: () => void }> = ({ toa
   };
 
   return (
-    <div className="pointer-events-auto flex items-start gap-3 p-3.5 rounded-lg bg-surfaceCard border border-forest/25 backdrop-blur-md shadow-[0_0_30px_rgba(44,122,64,0.15)] text-white/80 animate-fade-in">
+    <div className="pointer-events-auto flex items-start gap-3 p-3.5 rounded-lg bg-surfaceCard border border-white/10 backdrop-blur-md shadow-xl shadow-black/40 text-white/80 animate-fade-in">
       {getIcon()}
       <div className="flex-1 min-w-0">
         <h4 className="text-xs font-semibold text-white/90 leading-tight">{toast.title}</h4>
         {toast.description && <p className="text-xs text-white/45 mt-1 leading-normal">{toast.description}</p>}
+        {toast.progress !== undefined && (
+          <div className="mt-2 h-1 w-full rounded-full bg-white/10 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-forest-bright transition-[width] duration-300 ease-out"
+              style={{ width: `${Math.min(100, Math.max(0, toast.progress))}%` }}
+            />
+          </div>
+        )}
       </div>
       <button
         onClick={onClose}

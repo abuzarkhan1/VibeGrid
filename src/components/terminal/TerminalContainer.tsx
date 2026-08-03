@@ -11,6 +11,7 @@ interface TerminalContainerProps {
 export const TerminalContainer: React.FC<TerminalContainerProps> = ({ id, title }) => {
   const { focusedPaneId, maximizedPaneId, setFocusedPane } = usePaneStore();
   const [isHovered, setIsHovered] = useState(false);
+  const [hasActivity, setHasActivity] = useState(false);
 
   const isFocused = focusedPaneId === id;
   const isMaximized = maximizedPaneId === id;
@@ -18,15 +19,20 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = ({ id, title 
   // Toolbar is visible if pane is focused or hovered (FR-011)
   const isToolbarVisible = isFocused || isHovered;
 
+  const handleFocus = () => {
+    setFocusedPane(id);
+    setHasActivity(false);
+  };
+
   return (
     <div
-      onClick={() => setFocusedPane(id)}
+      onClick={handleFocus}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`h-full w-full flex flex-col overflow-hidden transition-all duration-150 relative bg-[#0a0b0d] border-2 ${
+      className={`h-full w-full flex flex-col overflow-hidden transition-all duration-150 relative rounded-lg bg-[#0b0d12] border ${
         isFocused
-          ? 'border-forest-bright shadow-[0_0_18px_rgba(84,169,103,0.35)] z-10'
-          : 'border-white/[0.06] hover:border-forest/40'
+          ? 'border-forest-bright/60 shadow-[0_0_14px_rgba(84,169,103,0.14)] z-10'
+          : 'border-white/[0.07] hover:border-forest/35'
       }`}
     >
       <div
@@ -34,14 +40,11 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = ({ id, title 
           isToolbarVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <TerminalToolbar nodeId={id} title={title} isFocused={isFocused} isMaximized={isMaximized} />
+        <TerminalToolbar nodeId={id} title={title} isFocused={isFocused} isMaximized={isMaximized} hasActivity={hasActivity} />
       </div>
       <div className="flex-1 w-full overflow-hidden relative">
-        {isFocused && (
-          <div className="animate-scan-line pointer-events-none absolute inset-x-0 top-0 z-10 h-px bg-gradient-to-r from-transparent via-forest-bright/25 to-transparent" />
-        )}
         <div className="relative z-0 h-full w-full">
-          <TerminalPane id={id} isFocused={isFocused} />
+          <TerminalPane id={id} isFocused={isFocused} onActivity={() => setHasActivity(true)} />
         </div>
       </div>
     </div>

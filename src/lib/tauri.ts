@@ -35,6 +35,11 @@ export async function killPty(paneId: string): Promise<void> {
   await invoke('kill_pty', { paneId });
 }
 
+export async function setBatchInterval(intervalMs: number): Promise<number> {
+  if (!isTauri()) return intervalMs;
+  return await invoke<number>('set_batch_interval', { intervalMs });
+}
+
 export async function listenTerminalBatch(
   handler: EventCallback<Record<string, string>>
 ): Promise<UnlistenFn> {
@@ -43,4 +48,111 @@ export async function listenTerminalBatch(
     return () => {};
   }
   return await listen<Record<string, string>>('terminal-batch', handler);
+}
+
+// Listen for non-fatal startup warnings emitted by the Rust side
+// (e.g. global summon shortcut could not be registered).
+export async function listenStartupWarning(
+  handler: EventCallback<string>
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => {};
+  return await listen<string>('vibegrid://shortcut-warning', handler);
+}
+
+// ── Whisper Voice-to-Terminal (native, replaces Web Speech API) ────────────
+
+export interface VoiceModelStatus {
+  ready: boolean;
+  path: string | null;
+  sizeBytes: number | null;
+}
+
+export interface ModelProgress {
+  downloaded: number;
+  total: number;
+  percent: number;
+}
+
+export async function voiceModelStatus(): Promise<VoiceModelStatus | null> {
+  if (!isTauri()) return null;
+  try {
+    return await invoke<VoiceModelStatus>('voice_model_status');
+  } catch (e) {
+    console.error('[VibeGrid] voice_model_status failed:', e);
+    return null;
+  }
+}
+
+/** Download (or confirm) the Whisper model; resolves to the model path. */
+export async function voiceEnsureModel(): Promise<string | null> {
+  if (!isTauri()) return null;
+  try {
+    return await invoke<string>('voice_ensure_model');
+  } catch (e) {
+    console.error('[VibeGrid] voice_ensure_model failed:', e);
+    throw e;
+  }
+}
+
+export async function voiceStartRecording(): Promise<void> {
+  if (!isTauri()) return;
+  await invoke('voice_start_recording');
+}
+
+export async function voiceStopRecording(): Promise<string> {
+  if (!isTauri()) return '';
+  return await invoke<string>('voice_stop_recording');
+}
+
+export async function voiceCancelRecording(): Promise<void> {
+  if (!isTauri()) return;
+  await invoke('voice_cancel_recording');
+}
+
+export async function voiceIsRecording(): Promise<boolean> {
+  if (!isTauri()) return false;
+  return await invoke<boolean>('voice_is_recording');
+}
+
+/** Live mic level (0..1) for the real-time waveform while dictating. */
+export interface AudioLevelPayload {
+  level: number;
+}
+
+/** Emitted by the Rust auto-stop watcher when dictation ends by silence. */
+export interface DictationResultPayload {
+  text: string;
+  auto: boolean;
+}
+
+/** Subscribe to live audio levels (~10/sec) for the waveform UI. */
+export async function listenAudioLevel(
+  handler: EventCallback<AudioLevelPayload>
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => {};
+  return await listen<AudioLevelPayload>('vibegrid://audio-level', handler);
+}
+
+/** Subscribe to auto-stopped dictation results (silence-detected). */
+export async function listenDictationResult(
+  handler: EventCallback<DictationResultPayload>
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => {};
+  return await listen<DictationResultPayload>('vibegrid://dictation-result', handler);
+}
+
+/** Subscribe to dictation errors (e.g. no audio captured). */
+export async function listenDictationError(
+  handler: EventCallback<{ error: string }>
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => {};
+  return await listen<{ error: string }>('vibegrid://dictation-error', handler);
+}
+
+/** Subscribe to Whisper model download progress. */
+export async function listenModelProgress(
+  handler: EventCallback<ModelProgress>
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => {};
+  return await listen<ModelProgress>('vibegrid://model-progress', handler);
 }

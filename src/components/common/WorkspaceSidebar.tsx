@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Layout, Plus, Search, Trash2, Edit2, ChevronLeft, ChevronRight, Layers, Terminal } from 'lucide-react';
+import { Layout, Plus, Search, Trash2, Edit2, ChevronLeft, ChevronRight, Layers, Terminal, FolderSearch } from 'lucide-react';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { usePaneStore } from '@/store/usePaneStore';
+import { useUIStore } from '@/store/useUIStore';
 import { InputModal } from '@/components/ui/InputModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
@@ -11,8 +12,9 @@ interface WorkspaceSidebarProps {
 }
 
 export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onToggle }) => {
-  const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace, switchWorkspace } = useWorkspaceStore();
+  const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
   const { paneCount } = usePaneStore();
+  const { requestSwitchWorkspace } = useUIStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -28,10 +30,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
 
   if (!isOpen) {
     return (
-      <div className="w-10 bg-black/70 backdrop-blur-md border-r border-white/[0.06] flex flex-col items-center py-3 gap-4 select-none z-20">
+      <div className="w-10 bg-[#0a0c10]/85 backdrop-blur-md border-r border-white/[0.06] flex flex-col items-center py-3 gap-4 select-none z-20">
         <button
           onClick={onToggle}
           title="Expand Workspaces Sidebar (Cmd/Ctrl+B)"
+          aria-label="Expand workspaces sidebar"
           className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-forest-bright hover:text-forest-light transition-colors"
         >
           <ChevronRight className="w-4 h-4" />
@@ -45,7 +48,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
 
   return (
     <>
-      <aside className="w-64 bg-black/40 backdrop-blur-md border-r border-white/[0.06] flex flex-col h-full select-none z-20 animate-fade-in shrink-0">
+      <aside className="w-64 bg-[#0a0c10]/60 backdrop-blur-md border-r border-white/[0.06] flex flex-col h-full select-none z-20 animate-fade-in shrink-0">
         {/* Sidebar Header */}
         <div className="h-9 px-3 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-2">
@@ -57,6 +60,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
             <button
               onClick={() => setShowCreateModal(true)}
               title="Create New Workspace"
+              aria-label="Create new workspace"
               className="p-1 rounded hover:bg-white/5 text-forest-bright hover:text-forest-light transition-colors"
             >
               <Plus className="w-4 h-4" />
@@ -64,6 +68,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
             <button
               onClick={onToggle}
               title="Collapse Sidebar"
+              aria-label="Collapse sidebar"
               className="p-1 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
@@ -87,15 +92,30 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
 
         {/* Workspace List */}
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {filteredWorkspaces.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-10 px-3 text-center">
+              <FolderSearch className="w-6 h-6 text-white/20 mb-2" />
+              <p className="text-xs text-white/40">No workspaces match your search.</p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setShowCreateModal(true);
+                }}
+                className="mt-3 px-2.5 py-1 rounded-lg bg-forest/15 border border-forest/30 text-xs text-forest-light hover:bg-forest/25 transition-colors"
+              >
+                Create one
+              </button>
+            </div>
+          )}
           {filteredWorkspaces.map((ws) => {
             const isActive = ws.id === activeWorkspaceId;
             return (
               <div
                 key={ws.id}
-                onClick={() => switchWorkspace(ws.id)}
+                onClick={() => requestSwitchWorkspace(ws.id)}
                 className={`group p-2.5 rounded-lg border cursor-pointer transition-all ${
                   isActive
-                    ? 'bg-forest/[0.12] border-forest/50 text-white/90 shadow-[0_0_14px_rgba(44,122,64,0.25)]'
+                    ? 'bg-forest/[0.08] border-forest/30 text-white/90'
                     : 'bg-white/[0.02] border-white/[0.06] text-white/70 hover:border-forest/40 hover:bg-forest/[0.06]'
                 }`}
               >
@@ -104,10 +124,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                     <Terminal className={`w-3.5 h-3.5 ${isActive ? 'text-forest-bright' : 'text-white/40'}`} />
                     <span className="text-xs font-semibold truncate">{ws.name}</span>
                     {isActive && (
-                      <span className="relative flex h-2 w-2 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-60" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-forest-bright" />
-                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-forest-bright" />
                     )}
                   </div>
 
@@ -118,6 +135,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                         setRenameWsId(ws.id);
                       }}
                       title="Rename Workspace"
+                      aria-label={`Rename workspace ${ws.name}`}
                       className="p-1 rounded hover:bg-white/10 text-white/45 hover:text-white/80"
                     >
                       <Edit2 className="w-3 h-3" />
@@ -130,6 +148,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                           setDeleteWsId(ws.id);
                         }}
                         title="Delete Workspace"
+                        aria-label={`Delete workspace ${ws.name}`}
                         className="p-1 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400"
                       >
                         <Trash2 className="w-3 h-3" />

@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid } from 'lucide-react';
+import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid, FolderOpen, BookOpen, Mic, Download, Upload } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { usePaneStore } from '@/store/usePaneStore';
 import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import { useKeybindingsStore } from '@/store/useKeybindingsStore';
+import { fuzzyScore } from '@/lib/commandUtils';
 import { InputModal } from './InputModal';
 
 interface CommandItem {
@@ -19,16 +21,44 @@ interface CommandPaletteProps {
   onOpenAbout?: () => void;
 }
 
+const RECENTS_KEY = 'vibegrid_palette_recents_v1';
+const MAX_RECENTS = 8;
+
+function loadRecents(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'string').slice(0, MAX_RECENTS);
+    }
+  } catch (e) {
+    // ignore
+  }
+  return [];
+}
+
+function saveRecents(recents: string[]) {
+  try {
+    localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, MAX_RECENTS)));
+  } catch (e) {
+    // ignore
+  }
+}
+
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) => {
-  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast } = useUIStore();
-  const { splitPane, closePane, toggleMaximize, resetLayout, setPaneTitle, focusedPaneId, paneCount, maxPanes, setLayoutPreset } = usePaneStore();
-  const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName } = useSettingsStore();
-  const { createWorkspace, switchWorkspace, workspaces } = useWorkspaceStore();
+  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace } = useUIStore();
+  const { splitPane, toggleMaximize, resetLayout, setPaneTitle, setPaneCwd, focusedPaneId, paneCount, maxPanes, setLayoutPreset } = usePaneStore();
+  const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings } = useSettingsStore();
+  const { createWorkspace, workspaces } = useWorkspaceStore();
+  const { keybindings } = useKeybindingsStore();
 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [showWsModal, setShowWsModal] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [recents, setRecents] = useState<string[]>(loadRecents);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,9 +69,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
     }
   }, [isCommandPaletteOpen]);
 
-  if (!isCommandPaletteOpen && !showWsModal && !showTitleModal) return null;
+  if (!isCommandPaletteOpen && !showWsModal && !showTitleModal && !showFolderModal) return null;
 
   const presets: (1 | 2 | 4 | 6 | 8 | 16)[] = [1, 2, 4, 6, 8, 16];
+
+  const runCommand = (cmd: CommandItem) => {
+    const next = [cmd.id, ...recents.filter((r) => r !== cmd.id)].slice(0, MAX_RECENTS);
+    setRecents(next);
+    saveRecents(next);
+    cmd.action();
+    setCommandPaletteOpen(false);
+  };
 
   const commands: CommandItem[] = [
     {
@@ -59,20 +97,23 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       action: () => setLayoutPreset(p),
     })),
     {
+      id: 'split-folder',
+      label: 'Split Pane in a New Folder…',
+      category: 'Pane Operations',
+      icon: <FolderOpen className="w-4 h-4 text-forest-bright" />,
+      action: () => setShowFolderModal(true),
+    },
+    {
       id: 'split-horizontal',
       label: 'Split Pane Horizontally (Side by Side)',
       category: 'Pane Operations',
-      shortcut: 'Cmd/Ctrl + D',
+      shortcut: keybindings['split-horizontal']?.currentKey || 'Mod+D',
       icon: <Columns className="w-4 h-4 text-forest-bright" />,
       action: () => {
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'horizontal');
           if (!success && paneCount >= maxPanes) {
-            addToast({
-              type: 'warning',
-              title: 'Maximum Pane Limit Reached',
-              description: `VibeGrid limits total active panes to ${maxPanes}.`,
-            });
+            addToast({ type: 'warning', title: 'Maximum Pane Limit Reached', description: `VibeGrid limits total active panes to ${maxPanes}.` });
           }
         }
       },
@@ -81,17 +122,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'split-vertical',
       label: 'Split Pane Vertically (Stacked)',
       category: 'Pane Operations',
-      shortcut: 'Cmd/Ctrl + Shift + D',
+      shortcut: keybindings['split-vertical']?.currentKey || 'Mod+Shift+D',
       icon: <Rows className="w-4 h-4 text-forest-bright" />,
       action: () => {
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'vertical');
           if (!success && paneCount >= maxPanes) {
-            addToast({
-              type: 'warning',
-              title: 'Maximum Pane Limit Reached',
-              description: `VibeGrid limits total active panes to ${maxPanes}.`,
-            });
+            addToast({ type: 'warning', title: 'Maximum Pane Limit Reached', description: `VibeGrid limits total active panes to ${maxPanes}.` });
           }
         }
       },
@@ -100,7 +137,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'maximize-pane',
       label: 'Toggle Maximize / Restore Focused Pane',
       category: 'Pane Operations',
-      shortcut: 'Cmd/Ctrl + Shift + Enter',
+      shortcut: keybindings['toggle-maximize']?.currentKey || 'Mod+Shift+Enter',
       icon: <Maximize2 className="w-4 h-4 text-forest-bright" />,
       action: () => toggleMaximize(),
     },
@@ -108,17 +145,17 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'close-pane',
       label: 'Close Focused Pane',
       category: 'Pane Operations',
-      shortcut: 'Cmd/Ctrl + W',
+      shortcut: keybindings['close-pane']?.currentKey || 'Mod+W',
       icon: <X className="w-4 h-4 text-rose-400" />,
       action: () => {
-        if (focusedPaneId) closePane(focusedPaneId);
+        if (focusedPaneId) requestClosePane(focusedPaneId);
       },
     },
     {
       id: 'new-workspace',
       label: 'Create New Workspace',
       category: 'Workspace',
-      shortcut: 'Cmd/Ctrl + Shift + N',
+      shortcut: keybindings['new-workspace']?.currentKey || 'Mod+Shift+N',
       icon: <Plus className="w-4 h-4 text-forest-bright" />,
       action: () => setShowWsModal(true),
     },
@@ -127,15 +164,22 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: `Switch to Workspace: ${ws.name}`,
       category: 'Workspace',
       icon: <Info className="w-4 h-4 text-forest-bright" />,
-      action: () => switchWorkspace(ws.id),
+      action: () => requestSwitchWorkspace(ws.id),
     })),
     {
       id: 'open-settings',
       label: 'Open Settings Panel',
       category: 'Preferences',
-      shortcut: 'Cmd/Ctrl + ,',
+      shortcut: keybindings['open-settings']?.currentKey || 'Mod+,',
       icon: <Settings className="w-4 h-4 text-white/60" />,
       action: () => toggleSettings(),
+    },
+    {
+      id: 'open-shortcuts',
+      label: 'Keyboard Shortcuts Reference',
+      category: 'Preferences',
+      icon: <BookOpen className="w-4 h-4 text-forest-light" />,
+      action: () => setCheatsheetOpen(true),
     },
     {
       id: 'open-about',
@@ -147,10 +191,43 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       },
     },
     {
+      id: 'export-settings',
+      label: 'Export Settings to JSON File',
+      category: 'Preferences',
+      icon: <Download className="w-4 h-4 text-forest-light" />,
+      action: () => {
+        const blob = new Blob([exportSettings()], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'vibegrid-settings.json';
+        a.click();
+        URL.revokeObjectURL(url);
+        addToast({ type: 'success', title: 'Settings exported' });
+      },
+    },
+    {
+      id: 'import-settings',
+      label: 'Import Settings from JSON File…',
+      category: 'Preferences',
+      icon: <Upload className="w-4 h-4 text-forest-light" />,
+      action: () => importInputRef.current?.click(),
+    },
+    {
+      id: 'toggle-voice',
+      label: voiceToTerminal ? 'Disable Voice-to-Terminal' : 'Enable Voice-to-Terminal',
+      category: 'Preferences',
+      icon: <Mic className={`w-4 h-4 ${voiceToTerminal ? 'text-forest-bright' : 'text-white/60'}`} />,
+      action: () => {
+        setVoiceToTerminal(!voiceToTerminal);
+        addToast({ type: 'success', title: voiceToTerminal ? 'Voice disabled' : 'Voice enabled', description: 'Press Cmd/Ctrl+Shift+V to dictate into the focused pane.' });
+      },
+    },
+    {
       id: 'font-increase',
       label: 'Increase Terminal Font Size',
       category: 'View & Font',
-      shortcut: 'Cmd/Ctrl + Plus',
+      shortcut: 'Mod+Plus',
       icon: <ZoomIn className="w-4 h-4 text-forest-light" />,
       action: () => increaseFontSize(),
     },
@@ -158,7 +235,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'font-decrease',
       label: 'Decrease Terminal Font Size',
       category: 'View & Font',
-      shortcut: 'Cmd/Ctrl + Minus',
+      shortcut: 'Mod+Minus',
       icon: <ZoomOut className="w-4 h-4 text-forest-light" />,
       action: () => decreaseFontSize(),
     },
@@ -166,7 +243,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'font-reset',
       label: 'Reset Terminal Font Size to Default',
       category: 'View & Font',
-      shortcut: 'Cmd/Ctrl + 0',
+      shortcut: 'Mod+0',
       icon: <RotateCcw className="w-4 h-4 text-forest-light" />,
       action: () => resetFontSize(),
     },
@@ -186,10 +263,20 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
     },
   ];
 
-  const filteredCommands = commands.filter((cmd) =>
-    cmd.label.toLowerCase().includes(query.toLowerCase()) ||
-    cmd.category.toLowerCase().includes(query.toLowerCase())
-  );
+  // Fuzzy filter + rank (recents first on empty query)
+  const ranked = commands
+    .map((cmd) => ({ cmd, score: fuzzyScore(query, cmd.label) + fuzzyScore(query, cmd.category) / 100 }))
+    .filter((entry) => entry.score >= 0)
+    .sort((a, b) => {
+      if (!query.trim()) {
+        const ra = recents.indexOf(a.cmd.id);
+        const rb = recents.indexOf(b.cmd.id);
+        if (ra !== -1 || rb !== -1) return (ra === -1 ? 999 : ra) - (rb === -1 ? 999 : rb);
+        return a.cmd.category.localeCompare(b.cmd.category) || a.cmd.label.localeCompare(b.cmd.label);
+      }
+      return b.score - a.score;
+    });
+  const filteredCommands = ranked.map((entry) => entry.cmd);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
@@ -203,8 +290,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
     } else if (e.key === 'Enter') {
       e.preventDefault();
       if (filteredCommands[selectedIndex]) {
-        filteredCommands[selectedIndex].action();
-        setCommandPaletteOpen(false);
+        runCommand(filteredCommands[selectedIndex]);
       }
     }
   };
@@ -214,11 +300,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       {isCommandPaletteOpen && (
         <div
           onClick={() => setCommandPaletteOpen(false)}
+          onKeyDown={handleKeyDown}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Command palette"
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 animate-fade-in"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-surfaceCard border border-forest/30 rounded-xl shadow-[0_0_40px_rgba(44,122,64,0.15)] overflow-hidden flex flex-col max-h-[70vh] backdrop-blur-md"
+            className="w-full max-w-xl bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col max-h-[70vh] backdrop-blur-md"
           >
             {/* Search Header */}
             <div className="flex items-center px-4 py-3 border-b border-white/[0.06] bg-white/[0.03]">
@@ -232,7 +322,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                   setSelectedIndex(0);
                 }}
                 onKeyDown={handleKeyDown}
-                placeholder="Type a command or search actions... (Esc to cancel)"
+                placeholder="Type a command or search actions…"
+                aria-label="Search commands"
                 className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none"
               />
             </div>
@@ -245,10 +336,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                 filteredCommands.map((cmd, idx) => (
                   <div
                     key={cmd.id}
-                    onClick={() => {
-                      cmd.action();
-                      setCommandPaletteOpen(false);
-                    }}
+                    onClick={() => runCommand(cmd)}
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`px-4 py-2.5 flex items-center justify-between cursor-pointer text-xs transition-colors ${
                       idx === selectedIndex ? 'bg-forest/[0.15] text-forest-light border-l-2 border-forest-bright' : 'text-white/65 hover:bg-white/5'
@@ -263,17 +351,39 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                     </div>
 
                     {cmd.shortcut && (
-                      <kbd className="px-2 py-0.5 text-[10px] font-mono bg-white/5 border border-white/10 rounded text-forest-light">
-                        {cmd.shortcut}
-                      </kbd>
+                      <kbd className="px-2 py-0.5 text-[10px] font-mono bg-white/5 border border-white/10 rounded text-forest-light">{cmd.shortcut}</kbd>
                     )}
                   </div>
                 ))
               )}
             </div>
+
+            {/* Footer hints */}
+            <div className="flex items-center gap-4 px-4 py-2 border-t border-white/[0.06] bg-white/[0.02] text-[10px] text-white/40">
+              <span><kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">↑</kbd> <kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">↓</kbd> navigate</span>
+              <span><kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">↵</kbd> run</span>
+              <span><kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">esc</kbd> close</span>
+              {query.trim() === '' && recents.length > 0 && <span className="ml-auto text-forest-light/70">Recently used first</span>}
+            </div>
           </div>
         </div>
       )}
+
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            const text = await file.text();
+            const ok = importSettings(text);
+            addToast(ok ? { type: 'success', title: 'Settings imported' } : { type: 'error', title: 'Invalid settings file' });
+          }
+          e.target.value = '';
+        }}
+      />
 
       {showWsModal && (
         <InputModal
@@ -292,6 +402,28 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           initialValue=""
           onSave={(title) => setPaneTitle(focusedPaneId, title.slice(0, 40))}
           onClose={() => setShowTitleModal(false)}
+        />
+      )}
+
+      {showFolderModal && (
+        <InputModal
+          title="Open New Pane in Folder"
+          placeholder="/path/to/project"
+          initialValue=""
+          onSave={(path) => {
+            const trimmed = path.trim();
+            if (trimmed && focusedPaneId) {
+              const ok = splitPane(focusedPaneId, 'horizontal');
+              if (ok) {
+                const newId = usePaneStore.getState().focusedPaneId;
+                if (newId) setPaneCwd(newId, trimmed);
+                addToast({ type: 'success', title: 'Pane opened', description: `New pane cwd: ${trimmed}` });
+              } else {
+                addToast({ type: 'warning', title: 'Maximum Pane Limit Reached', description: `VibeGrid limits total active panes to ${maxPanes}.` });
+              }
+            }
+          }}
+          onClose={() => setShowFolderModal(false)}
         />
       )}
     </>

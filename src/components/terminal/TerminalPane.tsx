@@ -5,6 +5,7 @@ import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { SearchAddon } from '@xterm/addon-search';
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import '@xterm/xterm/css/xterm.css';
 
 import { spawnPty, writeToPty, resizePty, killPty, listenTerminalBatch, isTauri } from '@/lib/tauri';
@@ -12,13 +13,23 @@ import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
 import { usePaneStore } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { SearchBar } from '../ui/SearchBar';
+import { TerminalContextMenu, ContextMenuItem } from './TerminalContextMenu';
+import { Copy, ClipboardPaste, Search, Eraser, Columns, Rows, X } from 'lucide-react';
+import { PaneNode, TerminalNode } from '@/types/layout';
+import { escapeShellPath } from '@/lib/commandUtils';
 
 interface TerminalPaneProps {
   id: string; // Layout node ID
   isFocused: boolean;
+  onActivity?: () => void;
 }
 
-export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => {
+interface MenuState {
+  x: number;
+  y: number;
+}
+
+export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onActivity }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -26,15 +37,16 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
   const ptyPaneIdRef = useRef<string | null>(null);
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [menu, setMenu] = useState<MenuState | null>(null);
 
-  const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle } = useSettingsStore();
-  const { root, setPanePtyId, setFocusedPane } = usePaneStore();
-  const { acquireWebglSlot, releaseWebglSlot } = useUIStore();
+  const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, fontLigatures, lineHeight, terminalOpacity } = useSettingsStore();
+  const { root, setPanePtyId, setFocusedPane, splitPane } = usePaneStore();
+  const { acquireWebglSlot, releaseWebglSlot, requestClosePane } = useUIStore();
 
   // Retrieve existing PTY ID & CWD if already spawned
-  const findTerminalNode = (node: any, targetId: string): any => {
+  const findTerminalNode = (node: PaneNode | null, targetId: string): TerminalNode | null => {
     if (!node) return null;
-    if (node.id === targetId) return node;
+    if (node.id === targetId && node.type === 'terminal') return node;
     if (node.type === 'split') {
       return findTerminalNode(node.children[0], targetId) || findTerminalNode(node.children[1], targetId);
     }
@@ -44,6 +56,50 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
   const currentNode = findTerminalNode(root, id);
   const existingPtyId = currentNode?.paneId;
   const parentCwd = currentNode?.cwd;
+
+  // Close the context menu on outside interaction
+  useEffect(() => {
+    if (!menu) return;
+    const close = () => setMenu(null);
+    window.addEventListener('click', close);
+    window.addEventListener('blur', close);
+    window.addEventListener('resize', close);
+    return () => {
+      window.removeEventListener('click', close);
+      window.removeEventListener('blur', close);
+      window.removeEventListener('resize', close);
+    };
+  }, [menu]);
+
+  // Drag-and-drop of files/folders: insert shell-escaped paths into the focused pane
+  useEffect(() => {
+    if (!isTauri()) return;
+    let unlisten: (() => void) | null = null;
+
+    import('@tauri-apps/api/window')
+      .then(({ getCurrentWindow }) => {
+        getCurrentWindow()
+          .onDragDropEvent((event) => {
+            if (event.payload.type !== 'drop') return;
+            if (!isFocused) return;
+            const paths = (event.payload as { paths: string[] }).paths || [];
+            if (paths.length === 0 || !ptyPaneIdRef.current) return;
+            const text = paths.map(escapeShellPath).join(' ');
+            const bracketed = `\x1b[200~${text} \x1b[201~`;
+            writeToPty(ptyPaneIdRef.current, bracketed);
+          })
+          .then((fn) => {
+            unlisten = fn;
+          });
+      })
+      .catch(() => {
+        // drag-drop API unavailable; ignore
+      });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [isFocused]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -58,6 +114,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
       scrollback,
       cursorBlink,
       cursorStyle,
+      lineHeight,
       convertEol: true,
       allowProposedApi: true,
     });
@@ -65,12 +122,10 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
 
-    // Clickable URLs using Tauri shell open or fallback (FR-021)
+    // Clickable URLs via the shell plugin (with web fallback)
     const webLinksAddon = new WebLinksAddon((_event, uri) => {
       if (isTauri()) {
-        import('@tauri-apps/api/core').then(({ invoke }) => {
-          invoke('plugin:shell|open', { path: uri }).catch(() => window.open(uri, '_blank'));
-        });
+        shellOpen(uri).catch(() => window.open(uri, '_blank'));
       } else {
         window.open(uri, '_blank');
       }
@@ -154,8 +209,9 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
           }
         }
 
-        // Bracketed Paste Mode (FR-017)
-        if (isMod && ev.code === 'KeyV') {
+        // Bracketed Paste Mode (FR-017). Plain Cmd/Ctrl+V only — Cmd/Ctrl+Shift+V
+        // is reserved for Voice-to-Terminal and must NOT paste into the shell.
+        if (isMod && !ev.shiftKey && ev.code === 'KeyV') {
           navigator.clipboard.readText().then((text) => {
             if (text && ptyPaneIdRef.current) {
               const bracketed = `\x1b[200~${text}\x1b[201~`;
@@ -221,6 +277,10 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
           const currentPtyId = ptyPaneIdRef.current;
           if (currentPtyId && event.payload[currentPtyId]) {
             term.write(event.payload[currentPtyId]);
+            // Surface activity in unfocused panes so users can monitor agents at a glance
+            if (!isFocused) {
+              onActivity?.();
+            }
           }
         });
       } catch (error) {
@@ -260,6 +320,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
 
       term.dispose();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Update theme & font settings dynamically
@@ -274,6 +335,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
     term.options.scrollback = scrollback;
     term.options.cursorBlink = cursorBlink;
     term.options.cursorStyle = cursorStyle;
+    term.options.lineHeight = lineHeight;
 
     if (fitAddonRef.current) {
       try {
@@ -282,7 +344,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
         // ignore fit error
       }
     }
-  }, [fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle]);
+  }, [fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, lineHeight]);
 
   // Focus terminal when isFocused changes
   useEffect(() => {
@@ -291,12 +353,79 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused }) => 
     }
   }, [isFocused]);
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      id: 'copy',
+      label: 'Copy',
+      icon: <Copy className="w-3.5 h-3.5" />,
+      disabled: !terminalRef.current?.hasSelection(),
+      action: () => {
+        const sel = terminalRef.current?.getSelection();
+        if (sel) navigator.clipboard.writeText(sel);
+      },
+    },
+    {
+      id: 'paste',
+      label: 'Paste',
+      icon: <ClipboardPaste className="w-3.5 h-3.5" />,
+      action: () => {
+        navigator.clipboard.readText().then((text) => {
+          if (text && ptyPaneIdRef.current) {
+            writeToPty(ptyPaneIdRef.current, `\x1b[200~${text}\x1b[201~`);
+          }
+        });
+      },
+    },
+    {
+      id: 'find',
+      label: 'Find in Terminal',
+      icon: <Search className="w-3.5 h-3.5" />,
+      action: () => setIsSearchOpen(true),
+    },
+    {
+      id: 'clear',
+      label: 'Clear Scrollback',
+      icon: <Eraser className="w-3.5 h-3.5" />,
+      action: () => terminalRef.current?.clear(),
+    },
+    { divider: true },
+    {
+      id: 'split-h',
+      label: 'Split Right',
+      icon: <Columns className="w-3.5 h-3.5" />,
+      action: () => splitPane(id, 'horizontal'),
+    },
+    {
+      id: 'split-v',
+      label: 'Split Down',
+      icon: <Rows className="w-3.5 h-3.5" />,
+      action: () => splitPane(id, 'vertical'),
+    },
+    { divider: true },
+    {
+      id: 'close',
+      label: 'Close Pane',
+      icon: <X className="w-3.5 h-3.5 text-rose-400" />,
+      action: () => requestClosePane(id),
+    },
+  ];
+
   return (
-    <div className="relative h-full w-full bg-[#0a0b0d] p-1.5 overflow-hidden">
+    <div
+      className={`relative h-full w-full bg-[#0b0d12] p-1.5 overflow-hidden ${fontLigatures ? 'font-ligatures' : ''}`}
+      style={{ opacity: terminalOpacity }}
+      onContextMenu={handleContextMenu}
+    >
       {isSearchOpen && (
         <SearchBar searchAddon={searchAddonRef.current} onClose={() => setIsSearchOpen(false)} />
       )}
       <div ref={containerRef} className="h-full w-full overflow-hidden" />
+      {menu && <TerminalContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
     </div>
   );
 };

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { X, Type, Palette, Terminal as TerminalIcon, Layout, Keyboard as KeyboardIcon, Plus, Trash2, Edit2, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Type, Palette, Terminal as TerminalIcon, Layout, Keyboard as KeyboardIcon, Plus, Trash2, Edit2, RotateCcw, Download, Upload, Mic } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
-import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
+import { useSettingsStore, THEMES, CursorStyle } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
+import { eventToAccelerator } from '@/lib/commandUtils';
 import { InputModal } from './InputModal';
 import { ConfirmModal } from './ConfirmModal';
 
@@ -16,22 +17,93 @@ export const SettingsModal: React.FC = () => {
     scrollback,
     cursorBlink,
     cursorStyle,
+    ipcBatchIntervalMs,
+    fontLigatures,
+    lineHeight,
+    terminalOpacity,
+    voiceToTerminal,
     setFontSize,
     setFontFamily,
     setThemeName,
     setScrollback,
     setCursorBlink,
     setCursorStyle,
+    setIpcBatchIntervalMs,
+    setFontLigatures,
+    setLineHeight,
+    setTerminalOpacity,
+    setVoiceToTerminal,
+    resetSettings,
+    exportSettings,
+    importSettings,
   } = useSettingsStore();
 
   const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace, switchWorkspace } = useWorkspaceStore();
-  const { keybindings, resetKeybindings } = useKeybindingsStore();
+  const { keybindings, updateKeybinding, resetKeybindings } = useKeybindingsStore();
+  const { addToast } = useUIStore();
 
   const [activeTab, setActiveTab] = useState<'font' | 'theme' | 'terminal' | 'workspaces' | 'keyboard'>('font');
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [renameWsId, setRenameWsId] = useState<string | null>(null);
   const [deleteWsId, setDeleteWsId] = useState<string | null>(null);
+  const [recordingId, setRecordingId] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+
+  // Capture the new shortcut while a binding is in "recording" mode
+  useEffect(() => {
+    if (!recordingId) return;
+    const handler = (e: KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'Escape') {
+        setRecordingId(null);
+        return;
+      }
+      const accel = eventToAccelerator(e);
+      if (!accel) return;
+      const ok = updateKeybinding(recordingId, accel);
+      if (ok) {
+        addToast({ type: 'success', title: 'Shortcut updated', description: `${keybindings[recordingId]?.label} → ${accel}` });
+      } else {
+        addToast({ type: 'warning', title: 'Shortcut conflict', description: `${accel} is already assigned to another action.` });
+      }
+      setRecordingId(null);
+    };
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [recordingId, updateKeybinding, keybindings, addToast]);
+
+  const handleExport = () => {
+    const blob = new Blob([exportSettings()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'vibegrid-settings.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    addToast({ type: 'success', title: 'Settings exported', description: 'Saved to vibegrid-settings.json' });
+  };
+
+  const handleImport = async (file: File) => {
+    const text = await file.text();
+    const ok = importSettings(text);
+    addToast(
+      ok
+        ? { type: 'success', title: 'Settings imported', description: 'Your preferences were restored.' }
+        : { type: 'error', title: 'Invalid settings file', description: 'Could not parse the JSON you selected.' }
+    );
+  };
+
+  // Esc closes the modal (unless a keybinding is being recorded)
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !recordingId) toggleSettings();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isSettingsOpen, toggleSettings, recordingId]);
 
   if (!isSettingsOpen) return null;
 
@@ -41,11 +113,14 @@ export const SettingsModal: React.FC = () => {
   return (
     <div
       onClick={toggleSettings}
+      role="dialog"
+      aria-modal="true"
+      aria-label="VibeGrid settings"
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-surfaceCard border border-forest/25 rounded-xl shadow-[0_0_50px_rgba(44,122,64,0.18)] overflow-hidden flex flex-col max-h-[85vh] backdrop-blur-md"
+        className="w-full max-w-2xl bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col max-h-[85vh] backdrop-blur-md"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.03]">
@@ -153,6 +228,49 @@ export const SettingsModal: React.FC = () => {
                   className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
                 />
               </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-xs font-semibold text-white/70">Font Ligatures</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Fira Code / JetBrains Mono ligatures (&gt;=, =&gt;, -&gt;)</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={fontLigatures}
+                  onChange={(e) => setFontLigatures(e.target.checked)}
+                  className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-semibold text-white/70">Line Height ({lineHeight.toFixed(2)})</label>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={1.8}
+                  step={0.05}
+                  value={lineHeight}
+                  onChange={(e) => setLineHeight(Number(e.target.value))}
+                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-semibold text-white/70">Terminal Opacity ({Math.round(terminalOpacity * 100)}%)</label>
+                </div>
+                <input
+                  type="range"
+                  min={0.6}
+                  max={1}
+                  step={0.05}
+                  value={terminalOpacity}
+                  onChange={(e) => setTerminalOpacity(Number(e.target.value))}
+                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
+                />
+              </div>
             </div>
           )}
 
@@ -164,13 +282,13 @@ export const SettingsModal: React.FC = () => {
                   onClick={() => setThemeName(key)}
                   className={`p-3 rounded-lg border cursor-pointer transition-all ${
                     themeName === key
-                      ? 'border-forest-bright bg-forest/10 shadow-[0_0_16px_rgba(44,122,64,0.3)]'
+                      ? 'border-forest-bright bg-forest/10'
                       : 'border-white/10 bg-black/40 hover:border-forest/40'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-white/85">{theme.name}</span>
-                    {themeName === key && <div className="w-2 h-2 rounded-full bg-forest-bright animate-pulse" />}
+                    {themeName === key && <div className="w-2 h-2 rounded-full bg-forest-bright" />}
                   </div>
                   <div className="flex gap-1.5 p-2 rounded bg-black/40">
                     <div className="w-4 h-4 rounded" style={{ backgroundColor: theme.background }} />
@@ -203,7 +321,7 @@ export const SettingsModal: React.FC = () => {
                 <label className="block text-xs font-semibold text-white/70 mb-2">Cursor Style</label>
                 <select
                   value={cursorStyle}
-                  onChange={(e) => setCursorStyle(e.target.value as any)}
+                  onChange={(e) => setCursorStyle(e.target.value as CursorStyle)}
                   className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
                 >
                   <option value="block">Block</option>
@@ -221,6 +339,44 @@ export const SettingsModal: React.FC = () => {
                   className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
                 />
               </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-semibold text-white/70 flex items-center gap-1.5">
+                    <Mic className="w-3.5 h-3.5 text-forest-bright" />
+                    Voice-to-Terminal
+                  </span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Dictate into the focused pane with Cmd/Ctrl+Shift+V. Audio is transcribed locally with the Whisper model — nothing leaves your machine.</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={voiceToTerminal}
+                  onChange={(e) => setVoiceToTerminal(e.target.checked)}
+                  className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
+                />
+              </div>
+              <p className="text-[10px] text-white/35 mt-1.5 leading-relaxed">
+                On first dictation, VibeGrid downloads the local Whisper model (~142 MB) into your app data folder.
+                Press Cmd/Ctrl+Shift+V to start listening — speak, then press Enter to insert it in the focused pane,
+                Esc to cancel, or just stop talking and it auto-inserts after a short pause. You run the command yourself.
+              </p>
+
+              <div>
+                <label className="block text-xs font-semibold text-white/70 mb-2">IPC Batch Interval ({ipcBatchIntervalMs} ms)</label>
+                <select
+                  value={ipcBatchIntervalMs}
+                  onChange={(e) => setIpcBatchIntervalMs(Number(e.target.value))}
+                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                >
+                  {![8, 16, 33, 66].includes(ipcBatchIntervalMs) && (
+                    <option value={ipcBatchIntervalMs}>{ipcBatchIntervalMs} ms (custom)</option>
+                  )}
+                  <option value={8}>8 ms — fastest echo, higher CPU</option>
+                  <option value={16}>16 ms — balanced (default)</option>
+                  <option value={33}>33 ms — smoother, lower CPU</option>
+                  <option value={66}>66 ms — max smoothing, lowest CPU</option>
+                </select>
+              </div>
             </div>
           )}
 
@@ -230,7 +386,7 @@ export const SettingsModal: React.FC = () => {
                 <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Active Workspaces ({workspaces.length})</span>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="install-box-glow px-3 py-1.5 rounded-lg bg-forest hover:bg-forest-bright text-xs font-medium text-white flex items-center gap-1.5 transition-colors shadow-[0_0_12px_rgba(44,122,64,0.35)]"
+                  className="px-3 py-1.5 rounded-lg bg-forest hover:bg-forest-bright text-xs font-medium text-white flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create Workspace</span>
@@ -243,7 +399,7 @@ export const SettingsModal: React.FC = () => {
                     key={ws.id}
                     className={`p-3 rounded-lg border flex items-center justify-between transition-colors ${
                       ws.id === activeWorkspaceId
-                        ? 'border-forest-bright bg-forest/10 shadow-[0_0_14px_rgba(44,122,64,0.25)]'
+                        ? 'border-forest-bright bg-forest/10'
                         : 'border-white/10 bg-black/40 hover:border-forest/40'
                     }`}
                   >
@@ -299,27 +455,83 @@ export const SettingsModal: React.FC = () => {
                 </button>
               </div>
 
+              <p className="text-[11px] text-white/40 leading-relaxed">Click a shortcut to reassign it, then press the new key combination. Press <kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-[10px]">Esc</kbd> to cancel. Conflicts are detected automatically.</p>
+
               <div className="space-y-2">
                 {Object.values(keybindings).map((kb) => (
                   <div
                     key={kb.id}
-                    className="p-3 rounded-lg border border-white/10 bg-black/40 flex items-center justify-between text-xs"
+                    className={`p-3 rounded-lg border flex items-center justify-between text-xs transition-colors ${
+                      recordingId === kb.id
+                        ? 'border-forest-bright bg-forest/10'
+                        : 'border-white/10 bg-black/40 hover:border-forest/40'
+                    }`}
                   >
                     <div>
                       <div className="font-medium text-white/85">{kb.label}</div>
                       <div className="text-[10px] text-white/35 font-mono">{kb.id}</div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <kbd className="px-2.5 py-1 font-mono bg-white/5 border border-white/10 rounded text-forest-light text-[11px]">
-                        {kb.currentKey}
-                      </kbd>
-                    </div>
+                    <button
+                      onClick={() => setRecordingId(recordingId === kb.id ? null : kb.id)}
+                      title={recordingId === kb.id ? 'Press a key combination to record it' : 'Click to reassign'}
+                      className={`flex items-center gap-2 px-2.5 py-1 font-mono border rounded text-[11px] transition-colors ${
+                        recordingId === kb.id
+                          ? 'border-forest-bright/70 bg-forest/20 text-forest-light animate-pulse'
+                          : 'border-white/10 bg-white/5 text-forest-light hover:border-forest/50'
+                      }`}
+                    >
+                      {recordingId === kb.id ? 'Press keys…' : kb.currentKey}
+                    </button>
                   </div>
                 ))}
               </div>
             </div>
           )}
+        </div>
+
+        {/* Footer: import / export / reset */}
+        <div className="flex items-center justify-between px-6 py-3 border-t border-white/[0.06] bg-white/[0.02]">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleExport}
+              className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs text-white/60 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+              title="Download settings as JSON"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export</span>
+            </button>
+            <button
+              onClick={() => importInputRef.current?.click()}
+              className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs text-white/60 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+              title="Import settings from JSON"
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Import</span>
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleImport(file);
+                e.target.value = '';
+              }}
+            />
+          </div>
+          <button
+            onClick={() => {
+              resetSettings();
+              addToast({ type: 'success', title: 'Settings reset', description: 'All preferences restored to defaults.' });
+            }}
+            className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs text-white/50 hover:text-amber-400 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+            title="Reset all settings to defaults"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Reset All</span>
+          </button>
         </div>
       </div>
 

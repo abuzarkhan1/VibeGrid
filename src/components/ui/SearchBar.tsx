@@ -47,7 +47,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, onClose }) =>
   };
 
   return (
-    <div className="absolute top-2 right-4 z-30 flex items-center gap-1.5 p-1.5 rounded-lg bg-surfaceCard border border-forest/25 shadow-[0_0_20px_rgba(44,122,64,0.15)] backdrop-blur-md text-xs animate-fade-in">
+    <div className="absolute top-2 right-4 z-30 flex items-center gap-1.5 p-1.5 rounded-lg bg-surfaceCard border border-white/10 shadow-lg shadow-black/40 backdrop-blur-md text-xs animate-fade-in">
       <Search className="w-3.5 h-3.5 text-forest-bright ml-1 shrink-0" />
       <input
         ref={inputRef}

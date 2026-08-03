@@ -8,6 +8,7 @@ interface TerminalToolbarProps {
   title?: string;
   isFocused: boolean;
   isMaximized: boolean;
+  hasActivity?: boolean;
 }
 
 export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
@@ -15,9 +16,10 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   title = 'Terminal',
   isFocused,
   isMaximized,
+  hasActivity = false,
 }) => {
-  const { splitPane, closePane, toggleMaximize, paneCount, maxPanes } = usePaneStore();
-  const { addToast } = useUIStore();
+  const { splitPane, toggleMaximize, paneCount, maxPanes } = usePaneStore();
+  const { addToast, requestClosePane } = useUIStore();
 
   const handleSplitHorizontal = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -52,7 +54,8 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
-    closePane(nodeId);
+    // Guard against killing a running terminal without confirmation (UX audit 7.1)
+    requestClosePane(nodeId);
   };
 
   return (
@@ -74,6 +77,16 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         </span>
         <TerminalIcon className={`w-3.5 h-3.5 ${isFocused ? 'text-forest-bright' : 'text-white/40'}`} />
         <span className="text-xs font-medium truncate tracking-wide">{title}</span>
+        {hasActivity && !isFocused && (
+          <span
+            className="relative flex h-2 w-2 shrink-0"
+            title="New output in this pane"
+            aria-label="New output in this pane"
+          >
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-forest-bright" />
+          </span>
+        )}
       </div>
 
       {/* Pane action buttons */}
@@ -81,6 +94,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         <button
           onClick={handleSplitHorizontal}
           title="Split Right (Cmd/Ctrl+D)"
+          aria-label="Split right"
           className="p-1 rounded hover:bg-white/10 text-white/45 hover:text-forest-light transition-colors"
         >
           <Columns className="w-3.5 h-3.5" />
@@ -89,6 +103,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         <button
           onClick={handleSplitVertical}
           title="Split Down (Cmd/Ctrl+Shift+D)"
+          aria-label="Split down"
           className="p-1 rounded hover:bg-white/10 text-white/45 hover:text-forest-light transition-colors"
         >
           <Rows className="w-3.5 h-3.5" />
@@ -97,6 +112,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         <button
           onClick={handleToggleMaximize}
           title={isMaximized ? 'Restore Layout (Cmd/Ctrl+Shift+Enter)' : 'Maximize Pane (Cmd/Ctrl+Shift+Enter)'}
+          aria-label={isMaximized ? 'Restore layout' : 'Maximize pane'}
           className="p-1 rounded hover:bg-white/10 text-white/45 hover:text-forest-light transition-colors"
         >
           {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
@@ -105,6 +121,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         <button
           onClick={handleClose}
           title="Close Pane (Cmd/Ctrl+W)"
+          aria-label="Close pane"
           className="p-1 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
         >
           <X className="w-3.5 h-3.5" />

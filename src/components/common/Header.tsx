@@ -14,8 +14,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = true, onToggleSidebar }) => {
   const { splitPane, focusedPaneId, resetLayout, paneCount, maxPanes, setLayoutPreset } = usePaneStore();
-  const { toggleCommandPalette, toggleSettings, addToast } = useUIStore();
-  const { workspaces, activeWorkspaceId, createWorkspace, switchWorkspace, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
+  const { toggleCommandPalette, toggleSettings, addToast, requestSwitchWorkspace } = useUIStore();
+  const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
 
   const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
   const presets: (1 | 2 | 4 | 6 | 8 | 16)[] = [1, 2, 4, 6, 8, 16];
 
   return (
-    <header className="h-9 w-full bg-black/85 backdrop-blur-md border-b border-white/[0.06] px-3 flex items-center justify-between select-none z-20">
+    <header className="h-9 w-full bg-[#0a0c10]/95 backdrop-blur-md border-b border-white/[0.06] px-3 flex items-center justify-between select-none z-20">
       {/* Left: Sidebar Toggle, Brand logo & Workspace selector */}
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
@@ -71,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         )}
 
         <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={onOpenAbout} title="About VibeGrid">
-          <div className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-forest text-white shadow-[0_0_16px_rgba(44,122,64,0.55)]">
+          <div className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-forest text-white shadow-[0_0_8px_rgba(44,122,64,0.35)]">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
               <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
               <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
@@ -102,11 +102,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                 <div
                   key={ws.id}
                   onClick={() => {
-                    switchWorkspace(ws.id);
+                    requestSwitchWorkspace(ws.id);
                     setIsWsDropdownOpen(false);
                   }}
                   className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
-                    ws.id === activeWorkspaceId ? 'bg-forest/20 text-forest-light font-semibold' : 'text-white/65 hover:bg-white/5'
+                    ws.id === activeWorkspaceId ? 'bg-forest/10 text-forest-light font-semibold' : 'text-white/65 hover:bg-white/5'
                   }`}
                 >
                   <span className="truncate">{ws.name}</span>
@@ -171,7 +171,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
               onClick={() => setLayoutPreset(p)}
               title={`Set Equal Grid to ${p} Pane${p > 1 ? 's' : ''}`}
               className={`px-2 py-0.5 text-xs font-mono font-bold rounded transition-all ${
-                isActive ? 'bg-forest text-white shadow-[0_0_12px_rgba(84,169,103,0.45)]' : 'text-white/45 hover:text-white/90 hover:bg-white/5'
+                isActive ? 'bg-forest text-white' : 'text-white/45 hover:text-white/90 hover:bg-white/5'
               }`}
             >
               {p}
@@ -186,6 +186,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           <button
             onClick={handleSplitH}
             title="Split Horizontally (Cmd/Ctrl+D)"
+            aria-label="Split horizontally"
             className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/65 transition-colors"
           >
             <Columns className="w-3.5 h-3.5 text-forest-bright" />
@@ -194,6 +195,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           <button
             onClick={handleSplitV}
             title="Split Vertically (Cmd/Ctrl+Shift+D)"
+            aria-label="Split vertically"
             className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/65 transition-colors"
           >
             <Rows className="w-3.5 h-3.5 text-forest-bright" />
@@ -202,6 +204,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           <button
             onClick={resetLayout}
             title="Reset to 1 Pane"
+            aria-label="Reset layout to one pane"
             className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/45 hover:text-amber-400 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -212,6 +215,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           <button
             onClick={onOpenAbout}
             title="About VibeGrid"
+            aria-label="About VibeGrid"
             className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/45 hover:text-white/80 transition-colors"
           >
             <Info className="w-3.5 h-3.5" />
@@ -221,15 +225,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         <button
           onClick={toggleSettings}
           title="Settings (Cmd/Ctrl+,)"
+          aria-label="Open settings"
           className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/45 hover:text-white/80 transition-colors"
         >
           <Settings className="w-3.5 h-3.5" />
-        </button>
-
-        <button
-          onClick={toggleCommandPalette}
-          className="install-box-glow flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-forest hover:bg-forest-bright border border-forest/40 text-xs font-medium text-white transition-all hover:shadow-[0_0_18px_rgba(84,169,103,0.5)]"
-        >
+        </button>          <button
+            onClick={toggleCommandPalette}
+            aria-label="Open command palette"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-forest hover:bg-forest-bright border border-forest/40 text-xs font-medium text-white transition-all hover:shadow-[0_0_14px_rgba(84,169,103,0.35)]"
+          >
           <Command className="w-3.5 h-3.5 text-white" />
           <span className="hidden sm:inline">Palette</span>
         </button>

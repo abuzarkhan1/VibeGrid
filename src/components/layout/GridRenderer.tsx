@@ -16,7 +16,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({ node }) => {
   // If a pane is maximized, render only that pane
   if (maximizedPaneId) {
     return (
-      <div className="h-full w-full p-1 bg-black/40">
+      <div className="h-full w-full p-1 bg-bgDark">
         <TerminalContainer id={maximizedPaneId} title="Maximized Pane" />
       </div>
     );
@@ -33,7 +33,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({ node }) => {
     if (presetCount === 16) gridClass = 'grid-cols-4 grid-rows-4';
 
     return (
-      <div className={`w-full h-full grid ${gridClass} gap-1.5 p-1 bg-black/40 overflow-hidden`}>
+      <div className={`w-full h-full grid ${gridClass} gap-1.5 p-1 bg-bgDark overflow-hidden`}>
         {terminals.map((termNode) => (
           <div key={termNode.id} className="w-full h-full min-h-0 min-w-0 overflow-hidden relative">
             <TerminalContainer id={termNode.id} title={termNode.title} />
@@ -66,7 +66,7 @@ export const GridRenderer: React.FC<GridRendererProps> = ({ node }) => {
   };
 
   return (
-    <div className="relative h-full w-full bg-black/40 overflow-hidden min-h-0 min-w-0">
+    <div className="relative h-full w-full bg-bgDark overflow-hidden min-h-0 min-w-0">
       <Allotment
         vertical={isVertical}
         onChange={handleRatioChange}

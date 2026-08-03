@@ -15,6 +15,7 @@ export interface Workspace {
 interface WorkspaceState {
   workspaces: Workspace[];
   activeWorkspaceId: string;
+  isLoading: boolean;
 
   // Actions
   createWorkspace: (name: string) => void;
@@ -41,6 +42,7 @@ const defaultWorkspace: Workspace = {
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   workspaces: [defaultWorkspace],
   activeWorkspaceId: defaultWorkspaceId,
+  isLoading: true,
 
   createWorkspace: (name: string) => {
     const id = `ws-${Date.now()}`;
@@ -122,7 +124,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   loadWorkspaces: async () => {
-    if (!isTauri()) return;
+    if (!isTauri()) {
+      set({ isLoading: false });
+      return;
+    }
     try {
       const list = await invoke<Array<{ id: string; name: string; layout_json: string; created_at: number; updated_at: number }>>('list_workspaces');
       if (list && list.length > 0) {
@@ -141,6 +146,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }
     } catch (e) {
       console.warn('[WorkspaceStore] Load workspaces notice:', e);
+    } finally {
+      set({ isLoading: false });
     }
   },
 
