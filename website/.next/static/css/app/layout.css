@@ -2034,9 +2034,6 @@ body {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
-.text-white\/25{
-  color: rgb(255 255 255 / 0.25);
-}
 .text-white\/30{
   color: rgb(255 255 255 / 0.3);
 }

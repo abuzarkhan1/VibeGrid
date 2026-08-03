@@ -4,7 +4,7 @@
 
   # VibeGrid ⚡
 
-  ### The 100% Free & Open-Source, GPU-Accelerated Multi-Pane Terminal Workspace
+  ### The lightning-fast, free, local-first grid for orchestrating YOUR choice of AI agents.
 
   [![License: MIT](https://img.shields.io/badge/License-MIT-10b981.svg?style=for-the-badge)](LICENSE)
   [![Rust](https://img.shields.io/badge/Rust-v1.75+-orange.svg?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
@@ -34,7 +34,9 @@
 
 ## 📖 Overview
 
-**VibeGrid** is a high-performance, open-source desktop application designed for developers orchestrating multiple terminal shells, background services, and AI coding agents simultaneously.
+**VibeGrid** is the definitive "Agnostic" Vibe Coder. It is a high-performance, open-source desktop application designed for developers orchestrating multiple terminal shells, background services, and AI coding agents simultaneously. 
+
+Unlike BridgeSpace's restrictive "walled garden", VibeGrid gives you the ultimate freedom to orchestrate **YOUR choice of AI agents** locally, without lock-in. Experience true "vibe coding" with a workspace built for speed, privacy, and unrestricted agent collaboration.
 
 Built with **Tauri 2**, **Rust**, **React 18**, **TypeScript**, and **xterm.js WebGL GPU acceleration**, VibeGrid delivers sub-10ms keystroke latency, 60 FPS output streaming, and dynamic binary-tree multi-pane multiplexing for **1 to 16 live panes**.
 

@@ -23,17 +23,17 @@ export const Hero: React.FC = () => {
 
       {/* Starry Sky Animation Overlay */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <span className="lp-star" style={{ left: '12%', top: '15%', width: '3px', height: '3px', '--dur': '4.5s', '--delay': '0.2s' } as any} />
-        <span className="lp-star" style={{ left: '85%', top: '22%', width: '2px', height: '2px', '--dur': '5.2s', '--delay': '1.1s' } as any} />
-        <span className="lp-star" style={{ left: '35%', top: '40%', width: '3px', height: '3px', '--dur': '3.8s', '--delay': '0.7s' } as any} />
-        <span className="lp-star" style={{ left: '72%', top: '65%', width: '2px', height: '2px', '--dur': '6.0s', '--delay': '2.3s' } as any} />
-        <span className="lp-star" style={{ left: '20%', top: '75%', width: '3px', height: '3px', '--dur': '4.1s', '--delay': '1.8s' } as any} />
-        <span className="lp-star" style={{ left: '92%', top: '45%', width: '2px', height: '2px', '--dur': '5.8s', '--delay': '0.4s' } as any} />
+        <span className="lp-star" style={{ left: '12%', top: '15%', width: '3px', height: '3px', '--dur': '4.5s', '--delay': '0.2s' } as React.CSSProperties} />
+        <span className="lp-star" style={{ left: '85%', top: '22%', width: '2px', height: '2px', '--dur': '5.2s', '--delay': '1.1s' } as React.CSSProperties} />
+        <span className="lp-star" style={{ left: '35%', top: '40%', width: '3px', height: '3px', '--dur': '3.8s', '--delay': '0.7s' } as React.CSSProperties} />
+        <span className="lp-star" style={{ left: '72%', top: '65%', width: '2px', height: '2px', '--dur': '6.0s', '--delay': '2.3s' } as React.CSSProperties} />
+        <span className="lp-star" style={{ left: '20%', top: '75%', width: '3px', height: '3px', '--dur': '4.1s', '--delay': '1.8s' } as React.CSSProperties} />
+        <span className="lp-star" style={{ left: '92%', top: '45%', width: '2px', height: '2px', '--dur': '5.8s', '--delay': '0.4s' } as React.CSSProperties} />
 
-        <span className="lp-shooting-star" style={{ top: '10%', left: '15%', '--dx': '380px', '--dy': '190px', '--dur': '6.5s', '--delay': '0.5s' } as any}>
+        <span className="lp-shooting-star" style={{ top: '10%', left: '15%', '--dx': '380px', '--dy': '190px', '--dur': '6.5s', '--delay': '0.5s' } as React.CSSProperties}>
           <span className="block h-px w-[120px] bg-gradient-to-r from-transparent via-white/80 to-white shadow-[0_0_8px_white]" />
         </span>
-        <span className="lp-shooting-star" style={{ top: '25%', left: '60%', '--dx': '420px', '--dy': '210px', '--dur': '7.5s', '--delay': '2.5s' } as any}>
+        <span className="lp-shooting-star" style={{ top: '25%', left: '60%', '--dx': '420px', '--dy': '210px', '--dur': '7.5s', '--delay': '2.5s' } as React.CSSProperties}>
           <span className="block h-px w-[120px] bg-gradient-to-r from-transparent via-white/80 to-white shadow-[0_0_8px_white]" />
         </span>
       </div>
@@ -50,17 +50,15 @@ export const Hero: React.FC = () => {
 
         {/* Hero Title */}
         <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl leading-[1.1] mb-6">
-          The GPU-Accelerated <br />
+          The "Agnostic" <br />
           <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 bg-clip-text text-transparent drop-shadow-[0_0_35px_rgba(16,185,129,0.4)]">
-            Multi-Pane Terminal
-          </span>{' '}
-          Workspace
+            Vibe Coder
+          </span>
         </h1>
 
         {/* Hero Subtitle */}
         <p className="mx-auto max-w-3xl text-lg text-white/70 sm:text-xl leading-relaxed mb-10 font-light">
-          Orchestrate AI coding agents, background tasks, and terminal workflows across dynamic equal grids (1 to 16 panes).
-          Powered by Tauri 2 + Rust, xterm.js WebGL, 60 FPS IPC output batching, and custom workspaces.
+          The lightning-fast, free, local-first grid for orchestrating <strong className="text-white">YOUR choice of AI agents.</strong> Escape BridgeSpace's walled garden and experience true vibe coding.
         </p>
 
         {/* CTA Buttons */}

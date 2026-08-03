@@ -10,7 +10,6 @@ import {
   KeyboardHoverIcon,
   AppleHoverIcon,
   WindowHoverIcon,
-  HeartHoverIcon,
 } from '../components/ItsHoverIcons';
 
 /* ─── Scroll-reveal hook (IntersectionObserver → fb-animate) ─── */
@@ -121,6 +120,7 @@ const COMPETITORS = [
 /* ─── FAQ data ─── */
 const FAQS = [
   { q: 'Is VibeGrid really free?', a: 'Yes. VibeGrid is completely free — no subscriptions, no API keys required. Download and run locally on macOS or Windows.' },
+  { q: 'Why choose VibeGrid over BridgeSpace for Vibe Coding?', a: 'VibeGrid is completely agnostic. While BridgeSpace locks you into their walled garden of supported agents, VibeGrid lets you orchestrate ANY AI agent locally. It\'s true vibe coding without restrictions.' },
   { q: 'What makes VibeGrid different from other terminals?', a: 'VibeGrid uses WebGL GPU-accelerated rendering for 60 FPS across up to 16 live panes simultaneously, with a Rust PTY backend for <10ms keystroke latency.' },
   { q: 'Which platforms are supported?', a: 'macOS (Apple Silicon & Intel) and Windows (x64). Linux support is coming soon.' },
   { q: 'How do workspaces work?', a: 'Create named workspaces with Cmd+Shift+N, switch between them instantly. Each workspace remembers your exact pane layout and sessions.' },
@@ -220,16 +220,14 @@ export default function Home() {
           {/* Main heading */}
           <h1 className="lp-hero-heading fb-hidden fb-in-text text-[44px] leading-[1.08] text-white sm:text-[58px] md:text-[72px] lg:text-[84px]"
               style={{ '--fb-delay': '0.05s' } as React.CSSProperties}>
-            The workspace<br />
-            <span className="lp-text-glow-green text-forest-bright">terminals</span>{' '}
-            <span className="text-white/40 lp-serif italic">dream of</span>
+            The "Agnostic"<br />
+            <span className="lp-text-glow-green text-forest-bright">Vibe Coder</span>{' '}
           </h1>
 
           {/* Sub text */}
-          <p className="fb-hidden fb-in-rise mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-white/55"
+          <p className="fb-hidden fb-in-rise mx-auto mt-6 max-w-2xl text-[17px] leading-relaxed text-white/55"
              style={{ '--fb-delay': '0.12s' } as React.CSSProperties}>
-            Dynamic 1–16 equal panes, Rust PTY backend, 60 FPS WebGL GPU rendering.{' '}
-            <span className="text-white/80">Zero cost. Forever free.</span>
+            The lightning-fast, free, local-first grid for orchestrating <strong className="text-white">YOUR choice of AI agents.</strong> Escape BridgeSpace's walled garden and experience true vibe coding.
           </p>
 
           {/* CTA buttons */}
@@ -398,8 +396,8 @@ export default function Home() {
                 Features
               </div>
               <h2 className="lp-feature-heading fb-hidden fb-in-text text-white">
-                Everything you need.<br/>
-                <span className="text-forest-bright lp-text-glow-green">Nothing you don't.</span>
+                Everything you need for Vibe Coding.<br/>
+                <span className="text-forest-bright lp-text-glow-green">No Walled Gardens.</span>
               </h2>
             </div>
 
@@ -407,8 +405,8 @@ export default function Home() {
               {[
                 { icon: <ZapHoverIcon size={26} />, title: '60 FPS WebGL Rendering', desc: 'GPU-accelerated terminal using xterm.js WebGL renderer. Buttery smooth scrollback at 5000 lines.' },
                 { icon: <CpuHoverIcon size={26} />, title: 'Rust PTY Backend', desc: '<10ms keystroke latency. Native OS pseudo-terminal with backpressure-aware IPC batching at 16ms.' },
-                { icon: <GridHoverIcon size={26} />, title: '1–16 Pane Grid', desc: 'Dynamically split into any layout. Binary tree grid with drag-to-resize and keyboard navigation.' },
-                { icon: <HardDriveHoverIcon size={26} />, title: 'Workspaces', desc: 'Named workspaces persisted to disk in atomic JSON. Switch instantly with Cmd+Shift+Left/Right.' },
+                { icon: <GridHoverIcon size={26} />, title: '1–16 Pane Grid', desc: 'Dynamically split into any layout. Perfect for orchestrating multiple AI agents side-by-side.' },
+                { icon: <HardDriveHoverIcon size={26} />, title: 'Agent Agnostic', desc: 'Break free from BridgeSpace. Run ANY AI coding agent locally without being locked into a walled garden ecosystem.' },
                 { icon: <PaletteHoverIcon size={26} />, title: '7 Built-in Themes', desc: 'VibeDark, Midnight Blue, Dracula, Nord, Solarized Dark/Light, VibeLight. Full customization.' },
                 { icon: <KeyboardHoverIcon size={26} />, title: 'Command Palette', desc: 'Cmd+Shift+P fuzzy search. Every command, shortcut, and setting discoverable in one place.' },
               ].map((f, i) => (

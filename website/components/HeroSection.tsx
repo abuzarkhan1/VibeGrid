@@ -49,15 +49,15 @@ export const HeroSection: React.FC = () => {
               height: '2px',
               '--dur': star.dur,
               '--delay': star.delay,
-            } as any}
+            } as React.CSSProperties}
           />
         ))}
 
         {/* Shooting Stars */}
-        <span className="lp-shooting-star" style={{ top: '8%', left: '6%', '--dx': '360px', '--dy': '190px', '--dur': '6s', '--delay': '0.5s' } as any}>
+        <span className="lp-shooting-star" style={{ top: '8%', left: '6%', '--dx': '360px', '--dy': '190px', '--dur': '6s', '--delay': '0.5s' } as React.CSSProperties}>
           <span className="block h-px w-[110px]" style={{ transform: 'rotate(28deg)', transformOrigin: 'left center', background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 90%, rgba(255,255,255,1) 100%)', boxShadow: '0 0 6px rgba(255,255,255,0.5)' }} />
         </span>
-        <span className="lp-shooting-star" style={{ top: '14%', left: '52%', '--dx': '420px', '--dy': '220px', '--dur': '7s', '--delay': '2.2s' } as any}>
+        <span className="lp-shooting-star" style={{ top: '14%', left: '52%', '--dx': '420px', '--dy': '220px', '--dur': '7s', '--delay': '2.2s' } as React.CSSProperties}>
           <span className="block h-px w-[110px]" style={{ transform: 'rotate(28deg)', transformOrigin: 'left center', background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.85) 90%, rgba(255,255,255,1) 100%)', boxShadow: '0 0 6px rgba(255,255,255,0.5)' }} />
         </span>
       </div>
@@ -77,13 +77,13 @@ export const HeroSection: React.FC = () => {
 
           {/* Hero Headline */}
           <h1 className="lp-hero-heading text-balance text-[36px] font-normal leading-[1.1] text-white sm:text-[54px] md:text-[62px]">
-            We make multi-pane terminals <br />
-            <span className="text-forest-bright lp-text-glow-green">100% free & GPU accelerated</span>
+            The "Agnostic" <br />
+            <span className="text-forest-bright lp-text-glow-green">Vibe Coder</span>
           </h1>
 
           {/* Subtitle */}
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/60 md:text-[18px] font-light">
-            Orchestrate terminal grids (1 to 16 equal panes) with Rust PTY management, WebGL 60 FPS rendering, and zero layout collapse distortion.
+            The lightning-fast, free, local-first grid for orchestrating <strong className="text-white">YOUR choice of AI agents.</strong> Escape BridgeSpace's walled garden and experience true vibe coding.
           </p>
 
           {/* Category Tabs */}
