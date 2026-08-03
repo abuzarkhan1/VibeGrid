@@ -2,5 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    vibegrid::run();
+    let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|arg| arg == "--mcp") {
+        vibegrid::mcp_server::run_mcp_stdio_server();
+    } else {
+        vibegrid::run();
+    }
 }
