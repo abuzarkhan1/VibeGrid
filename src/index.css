@@ -1,0 +1,238 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: #03060a;
+    --color-surface: #0a0a0b;
+    --color-surface-hover: #111315;
+    --color-border: #1c2320;
+    --color-accent: #2c7a40;
+    --color-accent-secondary: #54a967;
+    --color-fg: #e2e8f0;
+    --color-muted: #64748b;
+    color-scheme: dark;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: #000000;
+    color: var(--color-fg);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-weight: 300;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+  }
+
+  /* Green selection everywhere (matches the site's emerald selection) */
+  ::selection {
+    background: rgba(84, 169, 103, 0.3);
+    color: #ffffff;
+  }
+
+  /* Vertical label helper (collapsed sidebar) */
+  .writing-mode-vertical {
+    writing-mode: vertical-rl;
+  }
+}
+
+/* ================================================================
+   WEBSITE MOTION: exact FreeBuff-derived keyframes (globals.css)
+   ================================================================ */
+
+/* Download button green glow breathe */
+@keyframes install-glow-breathe {
+  0%, 100% { box-shadow: 0 0 20px rgba(124,255,63,0.25), 0 0 40px rgba(124,255,63,0.1); }
+  50%      { box-shadow: 0 0 25px rgba(124,255,63,0.35), 0 0 50px rgba(124,255,63,0.15); }
+}
+
+/* Forest glow breathing (softer accent used across the app) */
+@keyframes forest-glow-breathe {
+  0%, 100% { box-shadow: 0 0 12px rgba(44,122,64,0.3), 0 0 24px rgba(44,122,64,0.12); }
+  50%      { box-shadow: 0 0 16px rgba(84,169,103,0.5), 0 0 32px rgba(84,169,103,0.22); }
+}
+
+/* Keyword green glow enter */
+@keyframes keyword-glow-enter {
+  0%   { text-shadow: 0 0 40px rgba(124,255,63,0.3), 0 0 80px rgba(124,255,63,0.1); }
+  40%  { text-shadow: 0 0 60px rgba(124,255,63,0.6), 0 0 120px rgba(124,255,63,0.3); }
+  100% { text-shadow: 0 0 40px rgba(124,255,63,0.3), 0 0 80px rgba(124,255,63,0.1); }
+}
+
+/* Terminal scan line (exact site keyframe: sweeps the full viewport) */
+@keyframes scan-line {
+  0%   { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Fade-in-up */
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Terminal caret blink (matches website) */
+@keyframes lp-caret-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ================================================================
+   WEBSITE COMPONENT CLASSES (exact names ported from globals.css)
+   ================================================================ */
+
+/* Install button green glow */
+.install-box-glow {
+  animation: 3s ease-in-out infinite install-glow-breathe;
+}
+
+/* Accent glow breathe (forest, softer) */
+.animate-glow-pulse {
+  animation: 3s ease-in-out infinite keyword-glow-enter;
+}
+
+/* Forest header-glow (the website's softer forest glow) */
+.forest-box-glow {
+  animation: 3s ease-in-out infinite forest-glow-breathe;
+}
+
+/* Text glow: forest green (lp-text-glow-green) */
+.lp-text-glow-green {
+  text-shadow: 0 0 16px rgba(44,122,64,0.4);
+}
+
+/* Neon text glow (neon-text) */
+.neon-text {
+  text-shadow: 0 0 20px rgba(124,255,63,0.4), 0 0 40px rgba(124,255,63,0.2), 0 0 80px rgba(124,255,63,0.1);
+}
+
+/* Hover green glow flare (hover-glow-flare) */
+.hover-glow-flare { transition: text-shadow 0.5s, filter 0.5s; }
+.hover-glow-flare:hover {
+  text-shadow: 0 0 30px rgba(124,255,63,0.55), 0 0 60px rgba(124,255,63,0.3), 0 0 120px rgba(124,255,63,0.15);
+  filter: brightness(1.2);
+}
+
+/* Kernel keyword filled (keyword-filled) */
+.keyword-filled {
+  color: #7cff3f;
+  -webkit-text-stroke: 1px rgba(124,255,63,0.35);
+  text-shadow: 0 0 40px rgba(124,255,63,0.25), 0 0 80px rgba(124,255,63,0.08);
+  animation: 0.8s ease-out keyword-glow-enter;
+}
+
+/* Terminal scan line */
+.animate-scan-line {
+  animation: 8s linear infinite scan-line;
+}
+
+/* Useful generic entry animation */
+.animate-fade-in-up { animation: 0.6s ease-out both fade-in-up; }
+
+/* Caret blink */
+.lp-caret-blink {
+  animation: 1.1s step-end infinite lp-caret-blink;
+}
+
+/* GPU acceleration helper (same as website .lp-gpu) */
+.lp-gpu {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Serif heading helper (Newsreader, as used on the site) */
+.lp-serif {
+  font-optical-sizing: auto;
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 300;
+}
+
+.lp-feature-heading {
+  font-optical-sizing: auto;
+  letter-spacing: 0.012em;
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 400;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .install-box-glow,
+  .forest-box-glow,
+  .animate-glow-pulse,
+  .animate-scan-line,
+  .lp-caret-blink { animation: none !important; }
+}
+
+/* ================================================================
+   Custom styling for Allotment dividers & containers (forest)
+   ================================================================ */
+.vibegrid-allotment,
+.vibegrid-allotment > div,
+[class*="splitView"],
+[class*="splitViewItem"] {
+  height: 100% !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+
+.vibegrid-allotment .sash-module_sash__2-19e,
+.vibegrid-allotment [class*="sash"] {
+  background-color: rgba(84, 169, 103, 0.18) !important;
+  transition: background-color 0.15s ease;
+}
+
+.vibegrid-allotment .sash-module_sash__2-19e:hover,
+.vibegrid-allotment [class*="sash"]:hover,
+.vibegrid-allotment [class*="sash-active"] {
+  background-color: #54a967 !important;
+  box-shadow: 0 0 8px rgba(84, 169, 103, 0.6);
+}
+
+/* Custom thin dark scrollbars (forest green) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #03060a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e542c;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #54a967;
+}
+
+/* xterm.js custom styling overrides */
+.xterm {
+  padding: 4px;
+}
+
+.xterm-viewport::-webkit-scrollbar {
+  width: 6px;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb {
+  background: #1e542c;
+  border-radius: 3px;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: #54a967;
+}
+
+/* xterm selection glows forest green */
+.xterm .xterm-selection div {
+  background: rgba(84, 169, 103, 0.28) !important;
+}

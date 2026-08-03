@@ -1,0 +1,177 @@
+import { create } from 'zustand';
+
+export interface Keybinding {
+  id: string;
+  label: string;
+  category: string;
+  defaultKey: string;
+  currentKey: string;
+}
+
+interface KeybindingsState {
+  keybindings: Record<string, Keybinding>;
+
+  // Actions
+  updateKeybinding: (id: string, newKey: string) => boolean;
+  resetKeybindings: () => void;
+  getKeybinding: (id: string) => string;
+  matchesKeybinding: (e: KeyboardEvent, id: string) => boolean;
+}
+
+const defaultBindings: Record<string, Keybinding> = {
+  'split-horizontal': {
+    id: 'split-horizontal',
+    label: 'Split Pane Horizontally',
+    category: 'Pane Operations',
+    defaultKey: 'Mod+D',
+    currentKey: 'Mod+D',
+  },
+  'split-vertical': {
+    id: 'split-vertical',
+    label: 'Split Pane Vertically',
+    category: 'Pane Operations',
+    defaultKey: 'Mod+Shift+D',
+    currentKey: 'Mod+Shift+D',
+  },
+  'close-pane': {
+    id: 'close-pane',
+    label: 'Close Focused Pane',
+    category: 'Pane Operations',
+    defaultKey: 'Mod+W',
+    currentKey: 'Mod+W',
+  },
+  'toggle-maximize': {
+    id: 'toggle-maximize',
+    label: 'Maximize / Restore Pane',
+    category: 'Pane Operations',
+    defaultKey: 'Mod+Shift+Enter',
+    currentKey: 'Mod+Shift+Enter',
+  },
+  'command-palette': {
+    id: 'command-palette',
+    label: 'Open Command Palette',
+    category: 'Navigation',
+    defaultKey: 'Mod+Shift+P',
+    currentKey: 'Mod+Shift+P',
+  },
+  'open-settings': {
+    id: 'open-settings',
+    label: 'Open Settings Panel',
+    category: 'Navigation',
+    defaultKey: 'Mod+,',
+    currentKey: 'Mod+,',
+  },
+  'search-terminal': {
+    id: 'search-terminal',
+    label: 'Find in Terminal',
+    category: 'Terminal',
+    defaultKey: 'Mod+F',
+    currentKey: 'Mod+F',
+  },
+  'clear-terminal': {
+    id: 'clear-terminal',
+    label: 'Clear Terminal Scrollback',
+    category: 'Terminal',
+    defaultKey: 'Mod+K',
+    currentKey: 'Mod+K',
+  },
+  'new-workspace': {
+    id: 'new-workspace',
+    label: 'Create New Workspace',
+    category: 'Workspace',
+    defaultKey: 'Mod+Shift+N',
+    currentKey: 'Mod+Shift+N',
+  },
+};
+
+const STORAGE_KEY = 'vibegrid_keybindings_v1';
+
+function loadStoredBindings(): Record<string, Keybinding> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...defaultBindings, ...parsed };
+    }
+  } catch (e) {
+    // fallback to defaults
+  }
+  return defaultBindings;
+}
+
+export const useKeybindingsStore = create<KeybindingsState>((set, get) => ({
+  keybindings: loadStoredBindings(),
+
+  updateKeybinding: (id: string, newKey: string): boolean => {
+    const { keybindings } = get();
+
+    // Check for conflict
+    const conflict = Object.values(keybindings).find(
+      (b) => b.id !== id && b.currentKey.toLowerCase() === newKey.toLowerCase()
+    );
+
+    if (conflict) {
+      return false; // Conflict found
+    }
+
+    const updated = {
+      ...keybindings,
+      [id]: {
+        ...keybindings[id],
+        currentKey: newKey,
+      },
+    };
+
+    set({ keybindings: updated });
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (e) {
+      // ignore storage error
+    }
+
+    return true;
+  },
+
+  resetKeybindings: () => {
+    set({ keybindings: defaultBindings });
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {
+      // ignore
+    }
+  },
+
+  getKeybinding: (id: string) => {
+    return get().keybindings[id]?.currentKey || '';
+  },
+
+  matchesKeybinding: (e: KeyboardEvent, id: string) => {
+    const binding = get().keybindings[id];
+    if (!binding) return false;
+
+    const parts = binding.currentKey.split('+').map((s) => s.trim().toLowerCase());
+    const isModReq = parts.includes('mod') || parts.includes('cmd') || parts.includes('ctrl');
+    const isShiftReq = parts.includes('shift');
+    const isAltReq = parts.includes('alt');
+
+    const keyReq = parts.find((p) => !['mod', 'cmd', 'ctrl', 'shift', 'alt'].includes(p));
+
+    const isModPressed = e.metaKey || e.ctrlKey;
+    const isShiftPressed = e.shiftKey;
+    const isAltPressed = e.altKey;
+
+    if (isModReq !== isModPressed) return false;
+    if (isShiftReq !== isShiftPressed) return false;
+    if (isAltReq !== isAltPressed) return false;
+
+    if (!keyReq) return false;
+
+    if (keyReq === 'enter' && e.code === 'Enter') return true;
+    if (keyReq === 'comma' || keyReq === ',') return e.key === ',';
+    if (keyReq.length === 1) {
+      return e.key.toLowerCase() === keyReq || e.code.toLowerCase() === `key${keyReq}`;
+    }
+
+    return e.code.toLowerCase() === keyReq;
+  },
+}));
