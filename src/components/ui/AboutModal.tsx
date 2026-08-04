@@ -6,7 +6,7 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-const REPO_URL = 'https://github.com/vibegrid/vibegrid';
+const REPO_URL = 'https://github.com/abuzarkhan1/VibeGrid';
 
 export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
   const panelRef = useFocusTrap<HTMLDivElement>(true);
