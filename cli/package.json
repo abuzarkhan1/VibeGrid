@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "vibegrid": "./vibegrid.js"
+    "vibegrid": "vibegrid.js"
   },
   "files": [
     "vibegrid.js"
@@ -23,6 +23,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/abuzarkhan1/VibeGrid"
+    "url": "git+https://github.com/abuzarkhan1/VibeGrid.git"
   }
 }
