@@ -107,16 +107,10 @@ flowchart TD
 Skip the source build — install the prebuilt release in one command:
 
 ```bash
-# Option 1 — official CLI (installs, launches, and connects AI agents)
-npm i -g vibegrid
-vibegrid install          # download + install the native build for your OS/arch
-vibegrid open             # launch the desktop app
-
-# Option 2 — shell installer (auto-detects OS & architecture)
 curl -fsSL https://vibegrid.vercel.app/install.sh | sh
 ```
 
-> **macOS**: `vibegrid install` downloads the `.dmg`, mounts it, copies
+> **macOS**: It downloads the `.dmg`, mounts it, copies
 > `VibeGrid.app` into `~/Applications`, and unmounts — ready to launch.
 > **Windows**: it downloads the `.exe` setup and starts the installer.
 
@@ -124,11 +118,6 @@ curl -fsSL https://vibegrid.vercel.app/install.sh | sh
 
 VibeGrid exposes terminal state over the **Model Context Protocol** so your AI
 agent can see what is running in every pane:
-
-```bash
-vibegrid --mcp           # print connection info
-vibegrid --mcp-serve     # run the MCP stdio server (streams JSON-RPC over stdin/stdout)
-```
 
 - With the desktop app running, the MCP server exposes the
   `vibegrid_get_panes` tool, which returns the current output of all panes.
@@ -208,7 +197,6 @@ VibeGrid/
 │   ├── components/        # Terminal, Header, WorkspaceSidebar, Modals
 │   ├── store/             # Zustand state stores (panes, workspaces, UI)
 │   └── types/             # TypeScript definitions
-├── cli/                   # `vibegrid` npm CLI (install / open / MCP)
 ├── scripts/               # Release build helper + POSIX installer script
 ├── website/               # Next.js marketing web app
 │   ├── app/               # App Router pages & globals.css

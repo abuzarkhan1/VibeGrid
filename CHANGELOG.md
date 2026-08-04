@@ -8,12 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **`vibegrid` npm CLI** (`cli/`): install, open, `--mcp` connection info, and `--mcp-serve` (MCP stdio bridge to a running app). On macOS `vibegrid install` now auto-mounts the DMG, copies `VibeGrid.app` into `~/Applications`, and unmounts.
 - **POSIX installer script** (`scripts/install.sh`, served at `https://vibegrid.vercel.app/install.sh`) that detects OS/arch and downloads the matching release.
 - **MCP port sync**: the desktop app persists the actually-bound HTTP port to `~/.vibegrid/port`, and the MCP stdio server reads it, so the tool stays correct even when 8792 falls back to a free port.
 
 ### Changed
-- CLI `--mcp` output now matches the implementation (port 8792, `/panes` endpoint, `vibegrid_get_panes` tool). CLI requires Node >= 18.
+- MCP output now matches the implementation (port 8792, `/panes` endpoint, `vibegrid_get_panes` tool).
 
 ### Removed
 - Removed ~137 stale build artifacts from `website/public` (hashed chunks, analytics scripts, and a vendored third-party site directory that were served to production visitors).
