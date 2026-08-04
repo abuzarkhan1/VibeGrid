@@ -5,6 +5,20 @@ All notable changes to VibeGrid will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **`vibegrid` npm CLI** (`cli/`): install, open, `--mcp` connection info, and `--mcp-serve` (MCP stdio bridge to a running app). On macOS `vibegrid install` now auto-mounts the DMG, copies `VibeGrid.app` into `~/Applications`, and unmounts.
+- **POSIX installer script** (`scripts/install.sh`, served at `https://vibegrid.vercel.app/install.sh`) that detects OS/arch and downloads the matching release.
+- **MCP port sync**: the desktop app persists the actually-bound HTTP port to `~/.vibegrid/port`, and the MCP stdio server reads it, so the tool stays correct even when 8792 falls back to a free port.
+
+### Changed
+- CLI `--mcp` output now matches the implementation (port 8792, `/panes` endpoint, `vibegrid_get_panes` tool). CLI requires Node >= 18.
+
+### Removed
+- Removed ~137 stale build artifacts from `website/public` (hashed chunks, analytics scripts, and a vendored third-party site directory that were served to production visitors).
+- Removed one-off scratch files (`patch.js`, `remove_black.py`, `test_find.js`, `src-tauri/test_utf8`, `src-tauri/mcp_req.txt`).
+
 ## [0.1.0] - 2026-08-03
 
 ### Added

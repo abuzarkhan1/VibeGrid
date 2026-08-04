@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'VibeGrid — Free GPU-Accelerated Multi-Pane Terminal Workspace',
     description: 'Free, open-source, 60 FPS GPU-accelerated terminal workspace for macOS & Windows with dynamic 1 to 16 panes.',
-    url: 'https://vibegrid.com',
+    url: 'https://vibegrid.vercel.app/',
     siteName: 'VibeGrid',
     type: 'website',
   },
