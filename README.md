@@ -10,7 +10,7 @@
   [![Rust](https://img.shields.io/badge/Rust-v1.75+-orange.svg?style=for-the-badge&logo=rust)](https://www.rust-lang.org/)
   [![Tauri 2](https://img.shields.io/badge/Tauri-v2.0-24c8db.svg?style=for-the-badge&logo=tauri)](https://tauri.app/)
   [![WebGL](https://img.shields.io/badge/WebGL-60_FPS-54a967.svg?style=for-the-badge&logo=webgl)](https://xtermjs.org/)
-  [![Platform](https://img.shields.io/badge/Platform-macOS_%7C_Windows-ffffff.svg?style=for-the-badge&logo=apple)](https://github.com/vibegrid/vibegrid/releases)
+  [![Platform](https://img.shields.io/badge/Platform-macOS_%7C_Windows-ffffff.svg?style=for-the-badge&logo=apple)](https://github.com/abuzarkhan1/VibeGrid/releases)
   [![Status](https://img.shields.io/badge/Version-v0.1.0_Beta-10b981.svg?style=for-the-badge)](#)
 
   <p align="center">
@@ -102,7 +102,41 @@ flowchart TD
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Quick Install
+
+Skip the source build — install the prebuilt release in one command:
+
+```bash
+# Option 1 — official CLI (installs, launches, and connects AI agents)
+npm i -g vibegrid
+vibegrid install          # download + install the native build for your OS/arch
+vibegrid open             # launch the desktop app
+
+# Option 2 — shell installer (auto-detects OS & architecture)
+curl -fsSL https://vibegrid.vercel.app/install.sh | sh
+```
+
+> **macOS**: `vibegrid install` downloads the `.dmg`, mounts it, copies
+> `VibeGrid.app` into `~/Applications`, and unmounts — ready to launch.
+> **Windows**: it downloads the `.exe` setup and starts the installer.
+
+## 🤖 MCP for AI Agents
+
+VibeGrid exposes terminal state over the **Model Context Protocol** so your AI
+agent can see what is running in every pane:
+
+```bash
+vibegrid --mcp           # print connection info
+vibegrid --mcp-serve     # run the MCP stdio server (streams JSON-RPC over stdin/stdout)
+```
+
+- With the desktop app running, the MCP server exposes the
+  `vibegrid_get_panes` tool, which returns the current output of all panes.
+- Or read the raw HTTP API directly: `http://127.0.0.1:8792/panes`
+  (port overridable via `VIBEGRID_HTTP_PORT`; the app falls back to the next
+  free port if 8792 is busy and persists the actual port to `~/.vibegrid/port`).
+
+## 🚀 Quick Start (from source)
 
 ### System Requirements
 
@@ -116,7 +150,7 @@ flowchart TD
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/vibegrid/vibegrid.git
+   git clone https://github.com/abuzarkhan1/VibeGrid.git
    cd vibegrid
    ```
 
@@ -167,17 +201,19 @@ flowchart TD
 ```
 VibeGrid/
 ├── src-tauri/             # Rust backend engine
-│   ├── src/               # PTY manager, IPC commands, workspace storage
+│   ├── src/               # PTY manager, IPC commands, workspace storage, MCP server
 │   ├── icons/             # Platform icons (macOS .icns, Windows .ico, PNGs)
 │   └── tauri.conf.json    # Tauri v2 configuration manifest
 ├── src/                   # Desktop React frontend
 │   ├── components/        # Terminal, Header, WorkspaceSidebar, Modals
 │   ├── store/             # Zustand state stores (panes, workspaces, UI)
 │   └── types/             # TypeScript definitions
+├── cli/                   # `vibegrid` npm CLI (install / open / MCP)
+├── scripts/               # Release build helper + POSIX installer script
 ├── website/               # Next.js marketing web app
 │   ├── app/               # App Router pages & globals.css
 │   ├── components/        # ItsHover motion icons, Hero, Features, Parallax
-│   └── public/            # Static assets & favicons
+│   └── public/            # Static assets, favicons & install.sh
 ├── docs/                  # PRD, Architecture, and Deep Analysis documentation
 ├── LICENSE                # Official MIT Open Source License
 └── README.md              # Project documentation

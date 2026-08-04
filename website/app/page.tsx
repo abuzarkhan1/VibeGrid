@@ -12,6 +12,35 @@ import {
   WindowHoverIcon,
 } from '../components/ItsHoverIcons';
 
+/* ─── Install command chip with copy button (CLI section) ─── */
+function InstallCmd({ cmd }: { cmd: string }) {
+  const [copied, setCopied] = React.useState(false);
+  return (
+    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 font-mono text-[13px] text-white/60">
+      <span className="text-forest-bright">$</span>
+      <span className="truncate">{cmd}</span>
+      <button
+        className="shrink-0 transition-colors hover:text-white/80"
+        aria-label={`Copy ${cmd}`}
+        onClick={() => {
+          navigator.clipboard?.writeText(cmd).catch(() => {});
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+      >
+        {copied ? (
+          <span className="text-forest-bright">✓</span>
+        ) : (
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" />
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+          </svg>
+        )}
+      </button>
+    </div>
+  );
+}
+
 /* ─── Scroll-reveal hook (IntersectionObserver → fb-animate) ─── */
 function useScrollReveal() {
   useEffect(() => {
@@ -123,7 +152,7 @@ const FAQS = [
   { q: 'Why choose VibeGrid over BridgeSpace for Vibe Coding?', a: 'VibeGrid is completely agnostic. While BridgeSpace locks you into their walled garden of supported agents, VibeGrid lets you orchestrate ANY AI agent locally. It\'s true vibe coding without restrictions.' },
   { q: 'What makes VibeGrid different from other terminals?', a: 'VibeGrid uses WebGL GPU-accelerated rendering for 60 FPS across up to 16 live panes simultaneously, with a Rust PTY backend for <10ms keystroke latency.' },
   { q: 'Which platforms are supported?', a: 'macOS (Apple Silicon & Intel) and Windows (x64). Linux support is coming soon.' },
-  { q: 'How do workspaces work?', a: 'Create named workspaces with Cmd+Shift+N, switch between them instantly. Each workspace remembers your exact pane layout and sessions.' },
+  { q: 'How do workspaces work?', a: 'Create named workspaces with Cmd+Shift+N, switch between them instantly. Each workspace remembers your exact pane layout and restores it on launch — switching to another workspace starts fresh shells, so running processes in the current one are terminated after confirmation.' },
   { q: 'Can I customize themes and keybindings?', a: 'Yes. VibeGrid ships with 7 built-in themes (VibeDark, Midnight Blue, Dracula, Nord, Solarized Dark/Light, VibeLight) and a full keybinding editor.' },
 ];
 
@@ -163,16 +192,17 @@ export default function Home() {
 
           {/* Right side */}
           <div className="flex items-center gap-2.5">
-            <a href="https://github.com/vibegrid/vibegrid" target="_blank" rel="noreferrer"
+            <a href="https://github.com/abuzarkhan1/VibeGrid" target="_blank" rel="noreferrer"
               className="hidden items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition-colors hover:border-white/20 hover:text-white sm:flex">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.929.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
               </svg>
-              <span>8.2k</span>
+              <span>Star us</span>
             </a>
-            <button className="rounded-md bg-forest px-3.5 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_16px_rgba(84,169,103,0.4)] install-box-glow">
+            <a href="#download"
+               className="rounded-md bg-forest px-3.5 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_16px_rgba(84,169,103,0.4)] install-box-glow">
               Download
-            </button>
+            </a>
           </div>
         </div>
       </header>
@@ -260,7 +290,7 @@ export default function Home() {
           {/* Social proof */}
           <p className="fb-hidden fb-in-rise mt-6 text-[13px] text-white/30"
              style={{ '--fb-delay': '0.24s' } as React.CSSProperties}>
-            Join <span className="font-medium text-white/60">127,000+</span> developers already using VibeGrid
+            100% free & open source · no account, no telemetry, no walled garden
           </p>
         </div>
 
@@ -285,7 +315,7 @@ export default function Home() {
               <div className="animate-scan-line pointer-events-none absolute inset-x-0 z-50 h-px bg-gradient-to-r from-transparent via-forest-bright/20 to-transparent" />
 
               <p className="text-white/55 mb-6 text-center text-[15px] sm:mb-7 sm:text-base">
-                Join <span className="font-normal text-white/85">127,000</span> developers
+                One grid for every agent · zero lock-in
               </p>
 
               {/* Grid lines */}
@@ -388,6 +418,117 @@ export default function Home() {
           </div>
         </section>
 
+        {/* ── CLI Section ── */}
+        <section id="cli" className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
+          <div className="mx-auto max-w-4xl">
+            <div className="fb-hidden fb-in-rise mb-12 text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
+                CLI
+              </div>
+              <h2 className="lp-feature-heading text-white">
+                One command to <span className="text-forest-bright lp-text-glow-green">install</span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-[15px] text-white/50">
+                Install the desktop app with npm, or pipe the official installer script —
+                it detects your OS and architecture and grabs the right build.
+              </p>
+            </div>
+
+            <div className="fb-hidden fb-in-rise mx-auto flex max-w-xl flex-col gap-3">
+              <InstallCmd cmd="npm i -g vibegrid" />
+              <InstallCmd cmd="curl -fsSL https://vibegrid.vercel.app/install.sh | sh" />
+              <InstallCmd cmd="vibegrid --mcp   # expose terminal panes to your AI agent via MCP" />
+            </div>
+          </div>
+        </section>
+
+        {/* ── Workspaces Section ── */}
+        <section id="workspaces" className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
+          <div className="mx-auto max-w-6xl">
+            <div className="grid items-center gap-10 md:grid-cols-2 md:gap-16">
+              <div className="fb-hidden fb-in-rise">
+                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
+                  Workspaces
+                </div>
+                <h2 className="lp-feature-heading text-white">
+                  Named workspaces, <span className="text-forest-bright">instant switching</span>
+                </h2>
+                <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/50">
+                  Create workspaces with <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[12px] text-white/70">Cmd+Shift+N</kbd> and switch
+                  between them with <kbd className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[12px] text-white/70">Cmd+Shift+←/→</kbd>. Each workspace
+                  remembers your exact pane layout and restores it on launch — switching
+                  is confirmed first, since it starts a fresh shell in each pane.
+                </p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {['Rename anytime', 'Auto-saved to disk', 'Layout restored on launch'].map((t) => (
+                    <span key={t} className="rounded-full border border-forest/30 bg-forest/10 px-2.5 py-1 text-[11px] text-forest-light">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="fb-hidden fb-in-pop" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+                <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0b0d] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
+                  <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
+                    <span className="h-3 w-3 rounded-full bg-red-500/70" />
+                    <span className="h-3 w-3 rounded-full bg-yellow-500/70" />
+                    <span className="h-3 w-3 rounded-full bg-forest/70" />
+                    <span className="ml-3 text-[11px] text-white/30">workspaces</span>
+                  </div>
+                  <div className="space-y-2 p-4 font-mono text-[12px]">
+                    {['api-dev', 'db-admin', 'agent-lab', 'release-prep'].map((ws, i) => (
+                      <div key={ws} className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 ${i === 0 ? 'border-forest/40 bg-forest/10 text-white' : 'border-white/[0.06] bg-white/[0.02] text-white/40'}`}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-forest-bright" />
+                        <span>{ws}</span>
+                        <span className="ml-auto text-[10px] text-white/30">{i === 0 ? '4 panes · active' : `${[3, 2, 5][i - 1]} panes`}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Themes Section ── */}
+        <section id="themes" className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
+          <div className="mx-auto max-w-6xl">
+            <div className="fb-hidden fb-in-rise mb-12 text-center">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
+                Themes
+              </div>
+              <h2 className="lp-feature-heading text-white">
+                7 built-in themes, <span className="text-forest-bright">fully customizable</span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-[15px] text-white/50">
+                VibeDark, VibeLight, Midnight Blue, Solarized Dark/Light, Dracula and Nord —
+                switch instantly or tune every color to your taste.
+              </p>
+            </div>
+
+            <div className="fb-hidden fb-in-rise grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {[
+                { name: 'VibeDark', bg: '#0b0d12', fg: '#e2e8f0', acc: '#54a967' },
+                { name: 'VibeLight', bg: '#f8fafc', fg: '#0f172a', acc: '#4f46e5' },
+                { name: 'Midnight Blue', bg: '#0a1128', fg: '#d4e0ff', acc: '#3a86ff' },
+                { name: 'Dracula', bg: '#282a36', fg: '#f8f8f2', acc: '#50fa7b' },
+                { name: 'Solarized Dark', bg: '#002b36', fg: '#839496', acc: '#268bd2' },
+                { name: 'Solarized Light', bg: '#fdf6e3', fg: '#657b83', acc: '#586e75' },
+                { name: 'Nord', bg: '#2e3440', fg: '#d8dee9', acc: '#88c0d0' },
+              ].map((t) => (
+                <div key={t.name} className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 transition-colors hover:border-forest/30">
+                  <div className="mb-2 flex h-12 items-end gap-1.5 rounded-lg border border-white/[0.06] p-2" style={{ backgroundColor: t.bg }}>
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.acc }} />
+                    <span className="h-3 w-1.5 rounded-sm" style={{ backgroundColor: t.acc }} />
+                    <span className="h-2 w-1.5 rounded-sm" style={{ backgroundColor: t.fg }} />
+                  </div>
+                  <div className="text-[12px] font-medium text-white/80">{t.name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ── Features Grid ── */}
         <section className="relative bg-black px-6 pt-24 pb-16 md:pt-32 md:pb-20">
           <div className="mx-auto max-w-6xl">
@@ -455,10 +596,20 @@ export default function Home() {
                 <h3 className="mb-1 text-[18px] font-medium text-white">macOS</h3>
                 <p className="mb-6 text-[13px] text-white/40">Apple Silicon & Intel · macOS 12+</p>
                 <div className="flex flex-col gap-2">
-                  <a href="#" className="install-box-glow flex items-center justify-center gap-2 rounded-xl bg-forest px-4 py-3 text-sm font-medium text-white transition-all hover:bg-forest-bright">
+                  <a
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v0.1.0/VibeGrid_0.1.0_aarch64.dmg"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="install-box-glow flex items-center justify-center gap-2 rounded-xl bg-forest px-4 py-3 text-sm font-medium text-white transition-all hover:bg-forest-bright"
+                  >
                     Download for Apple Silicon
                   </a>
-                  <a href="#" className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60 transition-all hover:bg-white/10 hover:text-white">
+                  <a
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v0.1.0/VibeGrid_0.1.0_x64.dmg"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60 transition-all hover:bg-white/10 hover:text-white"
+                  >
                     Intel (x86)
                   </a>
                 </div>
@@ -471,12 +622,15 @@ export default function Home() {
                 <h3 className="mb-1 text-[18px] font-medium text-white">Windows</h3>
                 <p className="mb-6 text-[13px] text-white/40">Windows 10/11 · x64</p>
                 <div className="flex flex-col gap-2">
-                  <a href="#" className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60 transition-all hover:bg-white/10 hover:text-white">
+                  <a
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v0.1.0/VibeGrid_0.1.0_x64-setup.exe"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60 transition-all hover:bg-white/10 hover:text-white"
+                  >
                     Download for Windows
                   </a>
-                  <a href="#" className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.05] px-4 py-3 text-sm text-white/30 transition-all hover:text-white/50">
-                    Or: npm i -g vibegrid
-                  </a>
+                  <InstallCmd cmd="npm i -g vibegrid" />
                 </div>
               </div>
             </div>
