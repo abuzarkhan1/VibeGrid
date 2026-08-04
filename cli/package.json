@@ -1,11 +1,11 @@
 {
   "name": "vibegrid",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "VibeGrid CLI — install, launch, and connect AI agents to the VibeGrid desktop terminal grid (Tauri 2 + Rust).",
   "license": "MIT",
   "type": "module",
   "bin": {
-    "vibegrid": "vibegrid.js"
+    "vibegrid": "./vibegrid.js"
   },
   "files": [
     "vibegrid.js"

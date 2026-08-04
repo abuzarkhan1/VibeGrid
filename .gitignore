@@ -21,3 +21,4 @@ website/.next/
 .vscode/
 .idea/
 *.log
+release-artifacts/

@@ -64,12 +64,35 @@ pub fn run_mcp_stdio_server() {
                                 if tool_name == "vibegrid_get_panes" {
                                     // Make HTTP request to VibeGrid (audit find 8:
                                     // share the port override with the app so both
-                                    // sides stay in sync).
-                                    let port = crate::http_server::http_port();
-                                    let req_client = reqwest::blocking::Client::new();
-                                    let text = match req_client.get(format!("http://127.0.0.1:{port}/panes")).send() {
-                                        Ok(res) => res.text().unwrap_or_else(|_| "[]".to_string()),
-                                        Err(e) => format!("Error connecting to VibeGrid: {}", e),
+                                    // sides stay in sync). Prefer the port the app
+                                    // actually bound (persisted on launch); if that
+                                    // is stale (app restarted/crashed) retry once
+                                    // against VIBEGRID_HTTP_PORT / the default.
+                                    let mut port = crate::http_server::persisted_http_port()
+                                        .unwrap_or_else(crate::http_server::http_port);
+                                    let send = |port: u16| {
+                                        let client = reqwest::blocking::Client::new();
+                                        client
+                                            .get(format!("http://127.0.0.1:{port}/panes"))
+                                            .send()
+                                            .and_then(|res| res.text())
+                                    };
+                                    let text = match send(port) {
+                                        Ok(t) => t,
+                                        Err(e) => {
+                                            let fallback = crate::http_server::http_port();
+                                            if port != fallback {
+                                                match send(fallback) {
+                                                    Ok(t) => {
+                                                        port = fallback;
+                                                        t
+                                                    }
+                                                    Err(_) => format!("Error connecting to VibeGrid: {}", e),
+                                                }
+                                            } else {
+                                                format!("Error connecting to VibeGrid: {}", e)
+                                            }
+                                        }
                                     };
                                     
                                     let res = json!({
