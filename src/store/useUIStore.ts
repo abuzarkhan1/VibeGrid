@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { usePaneStore, getTerminalNodes } from './usePaneStore';
+import { useWorkspaceStore } from './useWorkspaceStore';
 
 export interface ToastMessage {
   id: string;
@@ -18,9 +20,14 @@ interface UIState {
   activeWebglPanes: string[];
   maxWebglSlots: number;
 
-  // Guarded destructive flows (confirmation before close / workspace switch)
+  // Guarded destructive flows (confirmation before close / workspace switch /
+  // creating a workspace that would terminate the current one's processes)
   pendingClosePaneId: string | null;
   pendingSwitchWsId: string | null;
+  pendingCreateWsId: string | null;
+  // Audit find 4: the 'new-workspace' keybinding needs a reachable create modal
+  // (Header/Sidebar/Settings/Palette own theirs locally).
+  isCreateWsModalOpen: boolean;
 
   // Actions
   toggleCommandPalette: () => void;
@@ -36,6 +43,10 @@ interface UIState {
   cancelPendingClose: () => void;
   requestSwitchWorkspace: (wsId: string) => void;
   cancelPendingSwitch: () => void;
+  requestCreateWorkspace: (name: string) => void;
+  cancelPendingCreate: () => void;
+  openCreateWsModal: () => void;
+  closeCreateWsModal: () => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -47,6 +58,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   maxWebglSlots: 12, // Max active WebGL GPU contexts allowed before canvas fallback
   pendingClosePaneId: null,
   pendingSwitchWsId: null,
+  pendingCreateWsId: null,
+  isCreateWsModalOpen: false,
 
   toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
@@ -58,6 +71,25 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   requestSwitchWorkspace: (wsId: string) => set({ pendingSwitchWsId: wsId }),
   cancelPendingSwitch: () => set({ pendingSwitchWsId: null }),
+
+  // Completes the switch-guard for the "new workspace" path: creating a
+  // workspace switches to it, which unmounts the current panes and kills their
+  // processes. When the current workspace has running terminals we create it
+  // deferred and ask for confirmation first; with nothing running, create
+  // immediately (current behavior).
+  requestCreateWorkspace: (name: string) => {
+    const running = getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length;
+    const wsStore = useWorkspaceStore.getState();
+    if (running === 0) {
+      wsStore.createWorkspace(name);
+      return;
+    }
+    const id = wsStore.createWorkspace(name, { activate: false });
+    set({ pendingCreateWsId: id });
+  },
+  cancelPendingCreate: () => set({ pendingCreateWsId: null }),
+  openCreateWsModal: () => set({ isCreateWsModalOpen: true }),
+  closeCreateWsModal: () => set({ isCreateWsModalOpen: false }),
 
   addToast: (toast) => {
     const id = `toast-${Date.now()}-${Math.random()}`;

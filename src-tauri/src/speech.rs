@@ -7,7 +7,7 @@
 //! auto-downloaded on first use into the app data dir.
 
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
@@ -33,9 +33,11 @@ const MAX_RECORD_SECS: u64 = 60;
 /// corresponds to a raw RMS of ~0.015 (≈ -37 dBFS).
 const LEVEL_VOICE_THRESHOLD: f32 = 0.12;
 
-/// Continuous silence (after at least one voiced segment) before dictation
-/// auto-stops and transcribes.
-const SILENCE_TIMEOUT: Duration = Duration::from_millis(1600);
+/// Default continuous silence (after at least one voiced segment) before
+/// dictation auto-stops and transcribes. Configurable at runtime via
+/// `voice_set_silence_timeout` (gap 10); the default matches the frontend
+/// settings value (1600 ms).
+const SILENCE_TIMEOUT_DEFAULT_MS: u64 = 1600;
 
 /// If the user never speaks within this window, stop quietly so the mic is
 /// not left open indefinitely.
@@ -93,6 +95,10 @@ struct ActiveRecording {
 pub struct SpeechManager {
     recorder: Mutex<Option<ActiveRecording>>,
     whisper: Mutex<Option<WhisperContext>>,
+    /// Auto-stop silence timeout in ms (gap 10) — read by the watcher thread.
+    silence_timeout_ms: AtomicU64,
+    /// Preferred input device name ('' = system default) (gap 14).
+    preferred_input: Mutex<Option<String>>,
 }
 
 impl Default for SpeechManager {
@@ -106,11 +112,69 @@ impl SpeechManager {
         Self {
             recorder: Mutex::new(None),
             whisper: Mutex::new(None),
+            silence_timeout_ms: AtomicU64::new(SILENCE_TIMEOUT_DEFAULT_MS),
+            preferred_input: Mutex::new(None),
         }
     }
 
     pub fn is_recording(&self) -> bool {
         self.recorder.lock().unwrap().is_some()
+    }
+
+    /// Set the auto-stop silence timeout (ms), clamped to [600, 5000] — the
+    /// same range the Settings slider offers (audit find 9: Rust used to allow
+    /// [400, 10000], values the UI could never produce).
+    pub fn set_silence_timeout_ms(&self, ms: u64) -> u64 {
+        let clamped = ms.clamp(600, 5_000);
+        self.silence_timeout_ms.store(clamped, Ordering::Relaxed);
+        clamped
+    }
+
+    pub fn silence_timeout_ms(&self) -> u64 {
+        self.silence_timeout_ms.load(Ordering::Relaxed)
+    }
+
+    /// Prefer a specific input device by name ('' = system default).
+    pub fn set_input_device(&self, name: String) {
+        *self.preferred_input.lock().unwrap() = if name.is_empty() {
+            None
+        } else {
+            Some(name)
+        };
+    }
+
+    /// Enumerate available input (microphone) device names for the Settings UI.
+    pub fn list_input_devices() -> Vec<String> {
+        let host = cpal::default_host();
+        match host.input_devices() {
+            // cpal 0.18 exposes the device name via Display (DeviceTrait::name was
+            // replaced by `description()` / `to_string()`).
+            Ok(devices) => devices
+                .map(|d| d.to_string())
+                .filter(|n| !n.is_empty())
+                .collect(),
+            Err(_) => Vec::new(),
+        }
+    }
+
+    /// Resolve the input device to use: the preferred one if still present,
+    /// otherwise the system default.
+    fn resolve_input_device(&self) -> Result<cpal::Device, String> {
+        let host = cpal::default_host();
+        let preferred = self.preferred_input.lock().unwrap().clone();
+        if let Some(name) = preferred {
+            if let Ok(devices) = host.input_devices() {
+                for device in devices {
+                    if device.to_string() == name {
+                        return Ok(device);
+                    }
+                }
+            }
+            // Preferred device vanished — fall back to default silently.
+            eprintln!("[VibeGrid] Preferred mic '{name}' not found; using default.");
+        }
+        host.default_input_device()
+            .ok_or_else(|| "No microphone input device found. Connect a microphone or grant microphone access in System Settings → Privacy & Security → Microphone.".to_string())
     }
 
     /// Resolve the model file path inside the app data dir.
@@ -134,13 +198,10 @@ impl SpeechManager {
             return Err("Already recording".into());
         }
 
-        let host = cpal::default_host();
-        let device = host
-            .default_input_device()
-            .ok_or_else(|| "No microphone input device found".to_string())?;
+        let device = self.resolve_input_device()?;
         let config = device
             .default_input_config()
-            .map_err(|e| format!("Failed to get default input config: {e}"))?;
+            .map_err(|e| format!("Failed to get the microphone input config: {e}"))?;
 
         let sample_rate = config.sample_rate();
         let channels = config.channels() as usize;
@@ -371,7 +432,8 @@ impl SpeechManager {
                     last_voice = Some(now);
                 } else if let Some(lv) = last_voice {
                     // Continuous silence long enough after real speech → auto-commit.
-                    if now.duration_since(lv) >= SILENCE_TIMEOUT {
+                    let timeout = Duration::from_millis(this.silence_timeout_ms());
+                    if now.duration_since(lv) >= timeout {
                         this.finish_dictation(&app, &model);
                         break;
                     }

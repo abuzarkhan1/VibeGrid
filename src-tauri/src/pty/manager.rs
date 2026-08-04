@@ -8,6 +8,9 @@ use parking_lot::Mutex;
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize, Child};
 use uuid::Uuid;
 
+#[cfg(unix)]
+use libc;
+
 use crate::ipc::IpcBatcher;
 use crate::pty::reader::spawn_pty_reader;
 
@@ -148,12 +151,56 @@ impl PtyManager {
         }
     }
 
-    /// Terminate and remove a PTY pane session gracefully (FR-004)
+    /// Terminate and remove a PTY pane session gracefully (FR-004).
+    ///
+    /// Audit find 10: portable-pty's `Child::kill()` sends SIGHUP to the shell
+    /// process only — jobs it spawned can survive (and keep the PTY master
+    /// open). Where the shell is its own process-group leader we signal the
+    /// whole group; we then wait briefly for the shell to exit and force-kill
+    /// it (SIGKILL) if it lingers, so closing a pane actually stops the process
+    /// tree in the common case.
     pub fn kill_pane(&self, pane_id: &str) -> Result<(), String> {
         let mut sessions = self.sessions.lock();
         if let Some(mut session) = sessions.remove(pane_id) {
-            let _ = session.child.kill();
-            thread::sleep(Duration::from_millis(50));
+            #[cfg(unix)]
+            {
+                if let Some(pid) = session.child.process_id() {
+                    let pid_i = pid as i32;
+                    // Only signal the group if the shell really is its leader —
+                    // killpg on a foreign group would be catastrophic. (Accepted
+                    // risk: a theoretical pid-reuse window between getpgid and
+                    // kill — microseconds, negligible for a local terminal app.)
+                    if unsafe { libc::getpgid(pid_i) } == pid_i {
+                        let _ = unsafe { libc::kill(-pid_i, libc::SIGHUP) };
+                    }
+                }
+            }
+            let _ = session.child.kill(); // SIGHUP on unix, TerminateProcess on windows
+
+            #[cfg(unix)]
+            {
+                let deadline = std::time::Instant::now() + Duration::from_millis(500);
+                loop {
+                    match session.child.try_wait() {
+                        Ok(Some(_)) => break,
+                        Ok(None) if std::time::Instant::now() < deadline => {
+                            thread::sleep(Duration::from_millis(20));
+                        }
+                        Ok(None) => {
+                            // SIGHUP was ignored — force kill.
+                            if let Some(pid) = session.child.process_id() {
+                                let _ = unsafe { libc::kill(pid as i32, libc::SIGKILL) };
+                            }
+                            break;
+                        }
+                        Err(_) => break,
+                    }
+                }
+            }
+            #[cfg(not(unix))]
+            {
+                thread::sleep(Duration::from_millis(50));
+            }
             Ok(())
         } else {
             Err(format!("Pane ID {} not found", pane_id))

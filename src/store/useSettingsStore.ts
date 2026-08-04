@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { setBatchInterval } from '@/lib/tauri';
+import { setBatchInterval, voiceSetSilenceTimeout, voiceSetInputDevice } from '@/lib/tauri';
 import { TerminalTheme } from '@/types/terminal';
 
 export const THEMES: Record<string, TerminalTheme> = {
@@ -184,6 +184,10 @@ export interface AppSettings {
   lineHeight: number;
   terminalOpacity: number;
   voiceToTerminal: boolean;
+  /** Auto-stop silence timeout in ms (gap 10). */
+  voiceSilenceTimeoutMs: number;
+  /** Preferred microphone input device name ('' = system default) (gap 14). */
+  voiceInputDevice: string;
 }
 
 const defaultSettings: AppSettings = {
@@ -198,6 +202,8 @@ const defaultSettings: AppSettings = {
   lineHeight: 1.2,
   terminalOpacity: 1,
   voiceToTerminal: false,
+  voiceSilenceTimeoutMs: 1600,
+  voiceInputDevice: '',
 };
 
 function loadSettings(): AppSettings {
@@ -248,6 +254,8 @@ interface SettingsState extends AppSettings {
   setLineHeight: (height: number) => void;
   setTerminalOpacity: (opacity: number) => void;
   setVoiceToTerminal: (enabled: boolean) => void;
+  setVoiceSilenceTimeoutMs: (ms: number) => void;
+  setVoiceInputDevice: (name: string) => void;
   resetSettings: () => void;
   exportSettings: () => string;
   importSettings: (json: string) => boolean;
@@ -321,6 +329,17 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ voiceToTerminal });
     persist(get());
   },
+  setVoiceSilenceTimeoutMs: (ms: number) => {
+    const voiceSilenceTimeoutMs = Math.max(600, Math.min(5000, Math.round(ms)));
+    set({ voiceSilenceTimeoutMs });
+    persist(get());
+    voiceSetSilenceTimeout(voiceSilenceTimeoutMs).catch(console.error);
+  },
+  setVoiceInputDevice: (name: string) => {
+    set({ voiceInputDevice: name });
+    persist(get());
+    voiceSetInputDevice(name).catch(console.error);
+  },
 
   resetSettings: () => {
     try {
@@ -331,11 +350,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     applyThemeVariables(defaultSettings.themeName);
     set({ ...defaultSettings });
     setBatchInterval(defaultSettings.ipcBatchIntervalMs).catch(console.error);
+    // Audit find 3: Reset must also push voice settings back to Rust — otherwise
+    // the silence timeout / mic device silently stay at their previous values.
+    voiceSetSilenceTimeout(defaultSettings.voiceSilenceTimeoutMs).catch(console.error);
+    voiceSetInputDevice(defaultSettings.voiceInputDevice).catch(console.error);
   },
 
   exportSettings: () => {
-    const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal } = get();
-    return JSON.stringify({ fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal }, null, 2);
+    const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal, voiceSilenceTimeoutMs, voiceInputDevice } = get();
+    return JSON.stringify({ fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal, voiceSilenceTimeoutMs, voiceInputDevice }, null, 2);
   },
 
   importSettings: (json: string) => {
@@ -349,6 +372,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       set(next);
       persist(next);
       setBatchInterval(next.ipcBatchIntervalMs).catch(console.error);
+      // Audit find 3: importing a settings file must re-apply the voice settings
+      // on the Rust side too — the setters are the only channel Rust learns from.
+      voiceSetSilenceTimeout(next.voiceSilenceTimeoutMs).catch(console.error);
+      voiceSetInputDevice(next.voiceInputDevice).catch(console.error);
       return true;
     } catch (e) {
       return false;

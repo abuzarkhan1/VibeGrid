@@ -12,6 +12,7 @@ import { spawnPty, writeToPty, resizePty, killPty, listenTerminalBatch, isTauri 
 import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
 import { usePaneStore } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
+import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { SearchBar } from '../ui/SearchBar';
 import { TerminalContextMenu, ContextMenuItem } from './TerminalContextMenu';
 import { Copy, ClipboardPaste, Search, Eraser, Columns, Rows, X } from 'lucide-react';
@@ -38,6 +39,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false); // visual feedback while dragging paths over the pane (gap 8)
 
   const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, fontLigatures, lineHeight, terminalOpacity } = useSettingsStore();
   const { root, setPanePtyId, setFocusedPane, splitPane } = usePaneStore();
@@ -71,7 +73,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     };
   }, [menu]);
 
-  // Drag-and-drop of files/folders: insert shell-escaped paths into the focused pane
+  // Drag-and-drop of files/folders: insert shell-escaped paths into the focused pane,
+  // with a dashed-border highlight while a drag is over the pane (gap 8).
   useEffect(() => {
     if (!isTauri()) return;
     let unlisten: (() => void) | null = null;
@@ -80,13 +83,25 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       .then(({ getCurrentWindow }) => {
         getCurrentWindow()
           .onDragDropEvent((event) => {
-            if (event.payload.type !== 'drop') return;
-            if (!isFocused) return;
-            const paths = (event.payload as { paths: string[] }).paths || [];
-            if (paths.length === 0 || !ptyPaneIdRef.current) return;
-            const text = paths.map(escapeShellPath).join(' ');
-            const bracketed = `\x1b[200~${text} \x1b[201~`;
-            writeToPty(ptyPaneIdRef.current, bracketed);
+            switch (event.payload.type) {
+              case 'enter':
+              case 'over':
+                if (isFocused) setIsDragOver(true);
+                return;
+              case 'leave':
+                setIsDragOver(false);
+                return;
+              case 'drop': {
+                setIsDragOver(false);
+                if (!isFocused) return;
+                const paths = (event.payload as { paths: string[] }).paths || [];
+                if (paths.length === 0 || !ptyPaneIdRef.current) return;
+                const text = paths.map(escapeShellPath).join(' ');
+                const bracketed = `\x1b[200~${text} \x1b[201~`;
+                writeToPty(ptyPaneIdRef.current, bracketed);
+                return;
+              }
+            }
           })
           .then((fn) => {
             unlisten = fn;
@@ -97,9 +112,24 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       });
 
     return () => {
+      setIsDragOver(false);
       if (unlisten) unlisten();
     };
   }, [isFocused]);
+
+  // Focus requests from the voice hook (gap 4): after inserting dictation the
+  // focused terminal re-focuses so the user can keep typing immediately.
+  useEffect(() => {
+    const onFocusPane = (e: Event) => {
+      const targetId = (e as CustomEvent<string>).detail;
+      if (targetId === id) {
+        setFocusedPane(id);
+        terminalRef.current?.focus();
+      }
+    };
+    window.addEventListener('vibegrid:focus-pane', onFocusPane as EventListener);
+    return () => window.removeEventListener('vibegrid:focus-pane', onFocusPane as EventListener);
+  }, [id, setFocusedPane]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -158,11 +188,20 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           releaseWebglSlot(id);
           webglAddon.dispose();
           term.loadAddon(new CanvasAddon());
+          // Gap 9: surface the silent fallback so users know why rendering changed.
+          // Only on context loss (a runtime event), not on initial init failure —
+          // the catch below stays quiet to avoid startup toast spam across panes.
+          useUIStore.getState().addToast({
+            type: 'warning',
+            title: 'GPU rendering unavailable',
+            description: 'This pane fell back to the Canvas renderer after a WebGL context loss.',
+          });
         });
         term.loadAddon(webglAddon);
       } catch (e) {
         releaseWebglSlot(id);
         term.loadAddon(new CanvasAddon());
+        console.warn('[VibeGrid] WebGL init failed for pane', id, '; using Canvas renderer');
       }
     } else {
       term.loadAddon(new CanvasAddon());
@@ -184,14 +223,14 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       const isMod = ev.metaKey || ev.ctrlKey;
 
       if (ev.type === 'keydown') {
-        // Cmd/Ctrl+F -> Open Search
-        if (isMod && ev.code === 'KeyF') {
+        // Audit find 4: search/clear now honor the keybindings store (live read,
+        // so a remap in Settings takes effect without remounting the pane).
+        if (useKeybindingsStore.getState().matchesKeybinding(ev, 'search-terminal')) {
           setIsSearchOpen(true);
           return false;
         }
 
-        // Cmd/Ctrl+K -> Clear Terminal (FR-019)
-        if (isMod && ev.code === 'KeyK') {
+        if (useKeybindingsStore.getState().matchesKeybinding(ev, 'clear-terminal')) {
           term.clear();
           return false;
         }
@@ -225,6 +264,11 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     });
 
     let unlistenBatch: (() => void) | null = null;
+    // Audit find 2: guards against the async-spawn race — if the pane unmounts
+    // while `spawnPty`/`listenTerminalBatch` are in flight, the shell used to
+    // leak forever and the batch listener was never unregistered (duplicate
+    // terminal output after rapid workspace switching).
+    let disposed = false;
 
     // Spawn or Reuse PTY session
     const initPty = async () => {
@@ -235,6 +279,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         let ptyId = existingPtyId;
         if (!ptyId) {
           ptyId = await spawnPty(cols, rows, parentCwd);
+          if (disposed) {
+            // Unmounted mid-spawn — kill the orphan shell immediately instead of
+            // leaking a process with no handle.
+            killPty(ptyId).catch(() => {});
+            return;
+          }
           setPanePtyId(id, ptyId);
         }
         ptyPaneIdRef.current = ptyId;
@@ -283,6 +333,18 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             }
           }
         });
+        if (disposed) {
+          // Unmounted while the listener was registering — drop it and the shell
+          // right away so no duplicate listeners / orphan processes accumulate.
+          if (unlistenBatch) {
+            unlistenBatch();
+            unlistenBatch = null;
+          }
+          if (ptyPaneIdRef.current) {
+            killPty(ptyPaneIdRef.current).catch(() => {});
+          }
+          return;
+        }
       } catch (error) {
         console.error('[VibeGrid] Failed to spawn PTY:', error);
         term.writeln(`\x1b[1;31mError spawning shell PTY: ${error}\x1b[0m`);
@@ -307,6 +369,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     resizeObserver.observe(containerRef.current);
 
     return () => {
+      disposed = true; // audit find 2: stop any in-flight initPty continuation
       resizeObserver.disconnect();
       if (unlistenBatch) unlistenBatch();
 
@@ -425,6 +488,16 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         <SearchBar searchAddon={searchAddonRef.current} onClose={() => setIsSearchOpen(false)} />
       )}
       <div ref={containerRef} className="h-full w-full overflow-hidden" />
+
+      {/* Drag-over highlight (gap 8): dashed forest border while files hover the pane */}
+      {isDragOver && (
+        <div className="pointer-events-none absolute inset-1 z-30 rounded-lg border-2 border-dashed border-forest-bright bg-forest/10 flex items-center justify-center animate-fade-in">
+          <span className="px-3 py-1.5 rounded-full bg-surfaceCard/95 border border-forest/40 text-[11px] text-forest-light shadow-lg backdrop-blur-md">
+            Release to insert path(s)
+          </span>
+        </div>
+      )}
+
       {menu && <TerminalContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
     </div>
   );

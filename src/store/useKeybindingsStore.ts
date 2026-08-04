@@ -99,15 +99,33 @@ function loadStoredBindings(): Record<string, Keybinding> {
   return defaultBindings;
 }
 
+/**
+ * Audit find 7: canonicalize an accelerator string so modifier aliases are
+ * treated as equal — 'Mod+D' and 'Ctrl+D' (and 'Cmd+D') match identically at
+ * runtime on most platforms, so they must conflict instead of silently
+ * shadowing each other.
+ */
+function normalizeAccel(key: string): string {
+  return key
+    .toLowerCase()
+    .split('+')
+    .map((part) => {
+      const p = part.trim();
+      if (p === 'cmd' || p === 'ctrl') return 'mod';
+      return p;
+    })
+    .join('+');
+}
+
 export const useKeybindingsStore = create<KeybindingsState>((set, get) => ({
   keybindings: loadStoredBindings(),
 
   updateKeybinding: (id: string, newKey: string): boolean => {
     const { keybindings } = get();
 
-    // Check for conflict
+    // Check for conflict (modifier aliases normalized — audit find 7)
     const conflict = Object.values(keybindings).find(
-      (b) => b.id !== id && b.currentKey.toLowerCase() === newKey.toLowerCase()
+      (b) => b.id !== id && normalizeAccel(b.currentKey) === normalizeAccel(newKey)
     );
 
     if (conflict) {

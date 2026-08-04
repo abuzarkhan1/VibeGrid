@@ -62,9 +62,12 @@ pub fn run_mcp_stdio_server() {
                                 let tool_name = req.get("params").and_then(|p| p.get("name")).and_then(|n| n.as_str()).unwrap_or("");
                                 
                                 if tool_name == "vibegrid_get_panes" {
-                                    // Make HTTP request to VibeGrid
+                                    // Make HTTP request to VibeGrid (audit find 8:
+                                    // share the port override with the app so both
+                                    // sides stay in sync).
+                                    let port = crate::http_server::http_port();
                                     let req_client = reqwest::blocking::Client::new();
-                                    let text = match req_client.get("http://127.0.0.1:8792/panes").send() {
+                                    let text = match req_client.get(format!("http://127.0.0.1:{port}/panes")).send() {
                                         Ok(res) => res.text().unwrap_or_else(|_| "[]".to_string()),
                                         Err(e) => format!("Error connecting to VibeGrid: {}", e),
                                     };

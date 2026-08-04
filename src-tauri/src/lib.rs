@@ -144,6 +144,9 @@ pub fn run() {
             commands::voice_stop_recording,
             commands::voice_cancel_recording,
             commands::voice_is_recording,
+            commands::voice_set_silence_timeout,
+            commands::voice_set_input_device,
+            commands::voice_list_input_devices,
         ])
         .build(tauri::generate_context!())
         .expect("error while building VibeGrid application");

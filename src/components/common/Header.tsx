@@ -14,8 +14,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = true, onToggleSidebar }) => {
   const { splitPane, focusedPaneId, resetLayout, paneCount, maxPanes, setLayoutPreset } = usePaneStore();
-  const { toggleCommandPalette, toggleSettings, addToast, requestSwitchWorkspace } = useUIStore();
-  const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
+  const { toggleCommandPalette, toggleSettings, addToast, requestSwitchWorkspace, requestCreateWorkspace } = useUIStore();
+  const { workspaces, activeWorkspaceId, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
 
   const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -105,6 +105,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                     requestSwitchWorkspace(ws.id);
                     setIsWsDropdownOpen(false);
                   }}
+                  onDoubleClick={() => {
+                    // Gap 12: double-click a workspace in the dropdown to rename it inline.
+                    setRenameWsId(ws.id);
+                    setIsWsDropdownOpen(false);
+                  }}
+                  title={ws.id === activeWorkspaceId ? `${ws.name} (double-click to rename)` : `Switch to ${ws.name} (double-click to rename)`}
                   className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
                     ws.id === activeWorkspaceId ? 'bg-forest/10 text-forest-light font-semibold' : 'text-white/65 hover:bg-white/5'
                   }`}
@@ -245,7 +251,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           title="Create New Workspace"
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => createWorkspace(name.slice(0, 50))}
+          onSave={(name) => requestCreateWorkspace(name.slice(0, 50))}
           onClose={() => setShowCreateModal(false)}
         />
       )}

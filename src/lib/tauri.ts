@@ -114,6 +114,27 @@ export async function voiceIsRecording(): Promise<boolean> {
   return await invoke<boolean>('voice_is_recording');
 }
 
+/** Configure the auto-stop silence timeout (ms) used by the Rust watcher (gap 10). */
+export async function voiceSetSilenceTimeout(ms: number): Promise<number> {
+  if (!isTauri()) return ms;
+  try {
+    return await invoke<number>('voice_set_silence_timeout', { ms });
+  } catch (e) {
+    console.error('[VibeGrid] voice_set_silence_timeout failed:', e);
+    return ms;
+  }
+}
+
+/** Prefer a specific microphone by name ('' = system default) for recording (gap 14). */
+export async function voiceSetInputDevice(name: string): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    await invoke('voice_set_input_device', { name });
+  } catch (e) {
+    console.error('[VibeGrid] voice_set_input_device failed:', e);
+  }
+}
+
 /** Live mic level (0..1) for the real-time waveform while dictating. */
 export interface AudioLevelPayload {
   level: number;

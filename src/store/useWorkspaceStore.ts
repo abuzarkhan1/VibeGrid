@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { usePaneStore } from './usePaneStore';
-import { PaneNode } from '@/types/layout';
+import { usePaneStore, getTerminalNodes } from './usePaneStore';
+import { PaneNode, TerminalNode } from '@/types/layout';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri } from '@/lib/tauri';
 
@@ -18,7 +18,7 @@ interface WorkspaceState {
   isLoading: boolean;
 
   // Actions
-  createWorkspace: (name: string) => void;
+  createWorkspace: (name: string, opts?: { activate?: boolean }) => string;
   switchWorkspace: (id: string) => void;
   renameWorkspace: (id: string, newName: string) => void;
   deleteWorkspace: (id: string) => void;
@@ -27,6 +27,24 @@ interface WorkspaceState {
 }
 
 const defaultWorkspaceId = 'default-workspace';
+const ACTIVE_WS_STORAGE_KEY = 'vibegrid.active-workspace';
+
+function persistActiveWorkspaceId(id: string) {
+  try {
+    localStorage.setItem(ACTIVE_WS_STORAGE_KEY, id);
+  } catch {
+    // storage unavailable (web preview / privacy mode) — non-fatal
+  }
+}
+
+function readStoredActiveWorkspaceId(): string | null {
+  try {
+    return localStorage.getItem(ACTIVE_WS_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 const defaultWorkspace: Workspace = {
   id: defaultWorkspaceId,
   name: 'Default Workspace',
@@ -39,12 +57,80 @@ const defaultWorkspace: Workspace = {
   updatedAt: Date.now(),
 };
 
+/**
+ * Strip runtime-only state from a layout tree before persisting it.
+ *
+ * `paneId` is the live PTY UUID from the Rust backend — it is meaningless
+ * after a restart (the process is gone) and after a workspace switch (the
+ * process was killed). Persisting it would make TerminalPane reuse a dead PTY
+ * instead of spawning a fresh shell, so it must never be written to disk or
+ * stored in a restored workspace. Titles, cwds and shells are kept.
+ */
+function sanitizeLayout(node: PaneNode): PaneNode {
+  // Defensive: a persisted layout could be malformed (e.g. hand-edited JSON) —
+  // never crash the store on it, fall back to a safe single terminal.
+  if (node?.type === 'terminal') {
+    const rest = { ...node };
+    delete (rest as { paneId?: string }).paneId;
+    return rest as TerminalNode;
+  }
+  if (node?.type === 'split' && Array.isArray(node.children) && node.children.length === 2) {
+    return {
+      ...node,
+      children: [sanitizeLayout(node.children[0]), sanitizeLayout(node.children[1])],
+    };
+  }
+  // Unknown shape — safe fresh terminal (unique id, matching the codebase
+  // pattern so multiple malformed workspaces can't collide in the same ms)
+  return {
+    type: 'terminal',
+    id: `term-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    title: 'Terminal 1',
+  };
+}
+
+/**
+ * Apply a (sanitized) persisted layout to the pane store, reconstructing the
+ * derived state (paneCount, layoutMode, focusedPaneId) so the UI is correct
+ * after a restart or workspace switch — the layout tree alone doesn't carry
+ * those (persistence-fidelity audit fix).
+ */
+function applyLayoutToPaneStore(layout: PaneNode) {
+  const terminals = getTerminalNodes(layout);
+  if (terminals.length === 0) {
+    // Malformed/empty persisted tree — render a single fresh terminal instead
+    // of a blank grid with no focusable pane.
+    const fallback: TerminalNode = { type: 'terminal', id: `term-${Date.now()}-${Math.floor(Math.random() * 10000)}`, title: 'Terminal 1' };
+    usePaneStore.setState({
+      root: fallback,
+      focusedPaneId: fallback.id,
+      maximizedPaneId: null,
+      paneCount: 1,
+      layoutMode: 'preset',
+      presetCount: 1,
+    });
+    return;
+  }
+  const firstTermId = terminals[0]?.id ?? null;
+  usePaneStore.setState({
+    root: layout,
+    focusedPaneId: firstTermId,
+    maximizedPaneId: null,
+    paneCount: terminals.length,
+    layoutMode: layout.type === 'terminal' ? 'preset' : 'custom',
+    // presetCount only makes sense for the preset grids (1/2/4/6/8/16); a
+    // custom split tree uses 1 so the value is always valid.
+    presetCount: 1,
+  });
+}
+
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   workspaces: [defaultWorkspace],
   activeWorkspaceId: defaultWorkspaceId,
   isLoading: true,
 
-  createWorkspace: (name: string) => {
+  createWorkspace: (name: string, opts?: { activate?: boolean }): string => {
+    const activate = opts?.activate !== false;
     const id = `ws-${Date.now()}`;
     const newWs: Workspace = {
       id,
@@ -60,18 +146,19 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     set((state) => ({
       workspaces: [...state.workspaces, newWs],
-      activeWorkspaceId: id,
+      activeWorkspaceId: activate ? id : state.activeWorkspaceId,
     }));
 
-    // Apply layout to pane store
-    usePaneStore.setState({
-      root: newWs.layout,
-      focusedPaneId: newWs.layout.type === 'terminal' ? newWs.layout.id : null,
-      maximizedPaneId: null,
-      paneCount: 1,
-    });
+    // When deferred (guarded create), DON'T touch the pane store: the current
+    // workspace keeps its live layout and processes until the user confirms the
+    // switch — activating now would silently kill them.
+    if (activate) {
+      applyLayoutToPaneStore(newWs.layout);
+    }
 
+    persistActiveWorkspaceId(get().activeWorkspaceId);
     get().saveCurrentWorkspace();
+    return id;
   },
 
   switchWorkspace: (id: string) => {
@@ -85,13 +172,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     if (!targetWs) return;
 
     set({ activeWorkspaceId: id });
+    persistActiveWorkspaceId(id);
 
-    // Restore target workspace layout in pane store
-    usePaneStore.setState({
-      root: targetWs.layout,
-      focusedPaneId: targetWs.layout.type === 'terminal' ? targetWs.layout.id : null,
-      maximizedPaneId: null,
-    });
+    // Restore target workspace layout in pane store. The stored layout is
+    // always sanitized (no paneId), so the panes spawn fresh shells — the old
+    // PTYs were killed when this workspace was left (see sanitizeLayout).
+    applyLayoutToPaneStore(targetWs.layout);
   },
 
   renameWorkspace: (id: string, newName: string) => {
@@ -110,13 +196,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     if (activeWorkspaceId === id) {
       nextActiveId = remaining[0].id;
-      usePaneStore.setState({ root: remaining[0].layout });
+      applyLayoutToPaneStore(remaining[0].layout);
     }
 
     set({
       workspaces: remaining,
       activeWorkspaceId: nextActiveId,
     });
+    persistActiveWorkspaceId(nextActiveId);
 
     if (isTauri()) {
       invoke('delete_workspace', { id }).catch(console.error);
@@ -129,20 +216,34 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       return;
     }
     try {
-      const list = await invoke<Array<{ id: string; name: string; layout_json: string; created_at: number; updated_at: number }>>('list_workspaces');
+      // The Rust WorkspaceData struct serializes the layout as a `layout`
+      // JSON object (serde_json::Value) — NOT a string. Read it directly.
+      const list = await invoke<
+        Array<{ id: string; name: string; layout: PaneNode; created_at: number; updated_at: number }>
+      >('list_workspaces');
       if (list && list.length > 0) {
         const loaded: Workspace[] = list.map((w) => ({
           id: w.id,
           name: w.name,
-          layout: JSON.parse(w.layout_json),
+          layout: sanitizeLayout(w.layout),
           createdAt: w.created_at,
           updatedAt: w.updated_at,
         }));
+
+        // Restore the workspace the user was actually in last session (audit
+        // fix): the disk list is ordered by most-recently-updated, but the
+        // active choice is only known if we persisted it.
+        const storedId = readStoredActiveWorkspaceId();
+        const storedIndex = storedId ? loaded.findIndex((w) => w.id === storedId) : -1;
+        const activeId = storedIndex !== -1 ? loaded[storedIndex].id : loaded[0].id;
+        const activeLayout = loaded.find((w) => w.id === activeId)?.layout ?? loaded[0].layout;
+
         set({
           workspaces: loaded,
-          activeWorkspaceId: loaded[0].id,
+          activeWorkspaceId: activeId,
         });
-        usePaneStore.setState({ root: loaded[0].layout });
+        persistActiveWorkspaceId(activeId);
+        applyLayoutToPaneStore(activeLayout);
       }
     } catch (e) {
       console.warn('[WorkspaceStore] Load workspaces notice:', e);
@@ -152,6 +253,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   },
 
   saveCurrentWorkspace: async () => {
+    // Never persist during the initial load window: until loadWorkspaces()
+    // resolves, the in-memory state is still the DEFAULT workspace, and saving
+    // now would overwrite the persisted (renamed, multi-pane) workspace on disk
+    // — re-introducing the exact "name reverts / terminals gone" bug.
+    if (get().isLoading) return;
+
     const { workspaces, activeWorkspaceId } = get();
     const currentRoot = usePaneStore.getState().root;
 
@@ -159,7 +266,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       if (w.id === activeWorkspaceId) {
         return {
           ...w,
-          layout: currentRoot,
+          // Persist a sanitized layout (no runtime paneId) so both the disk
+          // copy and the in-memory restore spawn fresh shells later.
+          layout: sanitizeLayout(currentRoot),
           updatedAt: Date.now(),
         };
       }
@@ -171,11 +280,14 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const activeWs = updatedWorkspaces.find((w) => w.id === activeWorkspaceId);
     if (activeWs && isTauri()) {
       try {
+        // Send `layout` as the structured object — matches the Rust
+        // WorkspaceData field (previously `layout_json` string was sent and
+        // Rust rejected the save with "missing field `layout`").
         await invoke('save_workspace', {
           workspace: {
             id: activeWs.id,
             name: activeWs.name,
-            layout_json: JSON.stringify(activeWs.layout),
+            layout: activeWs.layout,
             created_at: activeWs.createdAt,
             updated_at: activeWs.updatedAt,
           },

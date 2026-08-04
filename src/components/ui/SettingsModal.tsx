@@ -7,6 +7,27 @@ import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { eventToAccelerator } from '@/lib/commandUtils';
 import { InputModal } from './InputModal';
 import { ConfirmModal } from './ConfirmModal';
+import { voiceModelStatus, listenModelProgress } from '@/lib/tauri';
+import { invoke } from '@tauri-apps/api/core';
+
+/** Styled toggle switch (gap 13) — replaces raw checkboxes for prominent toggles. */
+const ToggleSwitch: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    onClick={() => onChange(!checked)}
+    className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-bright/60 ${
+      checked ? 'bg-forest' : 'bg-white/15 hover:bg-white/20'
+    }`}
+  >
+    <span
+      className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+        checked ? 'translate-x-4' : 'translate-x-0'
+      }`}
+    />
+  </button>
+);
 
 export const SettingsModal: React.FC = () => {
   const { isSettingsOpen, toggleSettings } = useUIStore();
@@ -22,6 +43,8 @@ export const SettingsModal: React.FC = () => {
     lineHeight,
     terminalOpacity,
     voiceToTerminal,
+    voiceSilenceTimeoutMs,
+    voiceInputDevice,
     setFontSize,
     setFontFamily,
     setThemeName,
@@ -33,14 +56,16 @@ export const SettingsModal: React.FC = () => {
     setLineHeight,
     setTerminalOpacity,
     setVoiceToTerminal,
+    setVoiceSilenceTimeoutMs,
+    setVoiceInputDevice,
     resetSettings,
     exportSettings,
     importSettings,
   } = useSettingsStore();
 
-  const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace, switchWorkspace } = useWorkspaceStore();
+  const { workspaces, activeWorkspaceId, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
   const { keybindings, updateKeybinding, resetKeybindings } = useKeybindingsStore();
-  const { addToast } = useUIStore();
+  const { addToast, requestSwitchWorkspace, requestCreateWorkspace } = useUIStore();
 
   const [activeTab, setActiveTab] = useState<'font' | 'theme' | 'terminal' | 'workspaces' | 'keyboard'>('font');
 
@@ -49,6 +74,9 @@ export const SettingsModal: React.FC = () => {
   const [deleteWsId, setDeleteWsId] = useState<string | null>(null);
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [modelReady, setModelReady] = useState<boolean | null>(null);
+  const [micDevices, setMicDevices] = useState<string[]>([]);
+  const [micLoading, setMicLoading] = useState(false);
 
   // Capture the new shortcut while a binding is in "recording" mode
   useEffect(() => {
@@ -104,6 +132,58 @@ export const SettingsModal: React.FC = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [isSettingsOpen, toggleSettings, recordingId]);
+
+  // Gap 17: show whether the Whisper model is downloaded (badge on the Terminal
+  // tab). Subscribes to download progress too, so the badge flips to "ready" the
+  // moment a background download completes while Settings is open.
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+
+    voiceModelStatus()
+      .then((status) => {
+        if (!cancelled && status) setModelReady(status.ready);
+      })
+      .catch(() => {});
+
+    listenModelProgress(({ payload }) => {
+      if (cancelled) return;
+      if (payload.percent >= 100) setModelReady(true);
+    }).then((fn) => {
+      if (cancelled) {
+        fn();
+      } else {
+        unlisten = fn;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [isSettingsOpen]);
+
+  // Gap 14: enumerate microphones once when the modal opens so the user can pick one.
+  useEffect(() => {
+    if (!isSettingsOpen) return;
+    let cancelled = false;
+    setMicLoading(true);
+    invoke<string[]>('voice_list_input_devices')
+      .then((devices) => {
+        if (!cancelled) setMicDevices(devices);
+      })
+      .catch((e) => {
+        // Not supported in web preview or this build — keep the dropdown hidden.
+        console.warn('[VibeGrid] Could not list input devices:', e);
+      })
+      .finally(() => {
+        if (!cancelled) setMicLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSettingsOpen]);
 
   if (!isSettingsOpen) return null;
 
@@ -345,16 +425,54 @@ export const SettingsModal: React.FC = () => {
                   <span className="text-xs font-semibold text-white/70 flex items-center gap-1.5">
                     <Mic className="w-3.5 h-3.5 text-forest-bright" />
                     Voice-to-Terminal
+                    {/* Gap 17: model-downloaded badge */}
+                    {modelReady === false && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[9px] font-medium text-amber-400">model not downloaded</span>
+                    )}
+                    {modelReady === true && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-forest/15 border border-forest/30 text-[9px] font-medium text-forest-light">model ready</span>
+                    )}
                   </span>
                   <span className="block text-[10px] text-white/40 mt-0.5">Dictate into the focused pane with Cmd/Ctrl+Shift+V. Audio is transcribed locally with the Whisper model — nothing leaves your machine.</span>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={voiceToTerminal}
-                  onChange={(e) => setVoiceToTerminal(e.target.checked)}
-                  className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
-                />
+                <ToggleSwitch checked={voiceToTerminal} onChange={setVoiceToTerminal} />
               </div>
+
+              {/* Gap 10: silence timeout — how long to wait after you stop speaking before auto-inserting */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-xs font-semibold text-white/70">Auto-stop after silence ({voiceSilenceTimeoutMs} ms)</label>
+                </div>
+                <input
+                  type="range"
+                  min={600}
+                  max={5000}
+                  step={100}
+                  value={voiceSilenceTimeoutMs}
+                  onChange={(e) => setVoiceSilenceTimeoutMs(Number(e.target.value))}
+                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
+                />
+                <span className="block text-[10px] text-white/40 mt-0.5">Lower = snappier dictation, higher = safer for natural pauses.</span>
+              </div>
+
+              {/* Gap 14: microphone selection */}
+              {!micLoading && micDevices.length > 0 && (
+                <div>
+                  <label className="block text-xs font-semibold text-white/70 mb-2">Microphone</label>
+                  <select
+                    value={voiceInputDevice}
+                    onChange={(e) => setVoiceInputDevice(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                  >
+                    <option value="">System Default</option>
+                    {micDevices.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <p className="text-[10px] text-white/35 mt-1.5 leading-relaxed">
                 On first dictation, VibeGrid downloads the local Whisper model (~142 MB) into your app data folder.
                 Press Cmd/Ctrl+Shift+V to start listening — speak, then press Enter to insert it in the focused pane,
@@ -393,7 +511,7 @@ export const SettingsModal: React.FC = () => {
                 </button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1.5 -mr-1.5">
                 {workspaces.map((ws) => (
                   <div
                     key={ws.id}
@@ -411,7 +529,10 @@ export const SettingsModal: React.FC = () => {
                     <div className="flex items-center gap-2">
                       {ws.id !== activeWorkspaceId && (
                         <button
-                          onClick={() => switchWorkspace(ws.id)}
+                          // Audit fix: route through the guard so switching from
+                          // Settings warns before terminating running processes,
+                          // matching Header / Sidebar / Palette behavior.
+                          onClick={() => requestSwitchWorkspace(ws.id)}
                           className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-xs text-white/65 transition-colors"
                         >
                           Switch
@@ -540,7 +661,7 @@ export const SettingsModal: React.FC = () => {
           title="Create New Workspace"
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => createWorkspace(name.slice(0, 50))}
+          onSave={(name) => requestCreateWorkspace(name.slice(0, 50))}
           onClose={() => setShowCreateModal(false)}
         />
       )}

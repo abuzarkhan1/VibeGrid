@@ -5,7 +5,9 @@ import { usePaneStore } from '@/store/usePaneStore';
 import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
+import { useVoiceStore } from '@/store/useVoiceStore';
 import { fuzzyScore } from '@/lib/commandUtils';
+import { writeToPty } from '@/lib/tauri';
 import { InputModal } from './InputModal';
 
 interface CommandItem {
@@ -37,6 +39,16 @@ function loadRecents(): string[] {
   return [];
 }
 
+/**
+ * Gap 7: drop recents whose command ids no longer exist (stale across
+ * versions), so the recents list never points at removed commands.
+ */
+function pruneRecents(recents: string[], validIds: Set<string>): string[] {
+  const pruned = recents.filter((id) => validIds.has(id));
+  if (pruned.length !== recents.length) saveRecents(pruned);
+  return pruned;
+}
+
 function saveRecents(recents: string[]) {
   try {
     localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, MAX_RECENTS)));
@@ -46,11 +58,14 @@ function saveRecents(recents: string[]) {
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) => {
-  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace } = useUIStore();
+  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace, requestCreateWorkspace } = useUIStore();
   const { splitPane, toggleMaximize, resetLayout, setPaneTitle, setPaneCwd, focusedPaneId, paneCount, maxPanes, setLayoutPreset } = usePaneStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings } = useSettingsStore();
-  const { createWorkspace, workspaces } = useWorkspaceStore();
+  const { workspaces } = useWorkspaceStore();
   const { keybindings } = useKeybindingsStore();
+  // Gap 19: last transcription, re-playable from the palette. Must be called
+  // before any early return (rules-of-hooks).
+  const lastTranscript = useVoiceStore((s) => s.lastTranscript);
 
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -68,6 +83,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       setSelectedIndex(0);
     }
   }, [isCommandPaletteOpen]);
+
+
 
   if (!isCommandPaletteOpen && !showWsModal && !showTitleModal && !showFolderModal) return null;
 
@@ -263,6 +280,42 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
     },
   ];
 
+  // Gap 19: replay the last transcription into the focused pane.
+  if (lastTranscript) {
+    commands.push({
+      id: 'replay-last-transcript',
+      label: `Re-Insert Last Transcription: "${lastTranscript.length > 30 ? lastTranscript.slice(0, 30) + '…' : lastTranscript}"`,
+      category: 'Voice',
+      icon: <Mic className="w-4 h-4 text-forest-light" />,
+      action: () => {
+        const paneId = usePaneStore.getState().focusedPaneId;
+        const nodes = usePaneStore.getState().root;
+        // Find the terminal pane id for the focused layout node
+        const find = (node: import('@/types/layout').PaneNode | null): string | undefined => {
+          if (!node) return undefined;
+          if (node.id === paneId && node.type === 'terminal') return node.paneId;
+          if (node.type === 'split') return find(node.children[0]) || find(node.children[1]);
+          return undefined;
+        };
+        const ptyId = find(nodes);
+        if (ptyId) {
+          writeToPty(ptyId, lastTranscript);
+          addToast({ type: 'success', title: 'Re-inserted', description: `"${lastTranscript}"` });
+        } else {
+          addToast({ type: 'error', title: 'No active pane', description: 'Could not re-insert the last transcription.' });
+        }
+      },
+    });
+  }
+
+  // Gap 7: prune stale recents against the current command ids. Done as a
+  // guarded render-time computation (no effect needed): once recents contain
+  // only valid ids the guard stops firing, so this never loops.
+  const validIds = new Set(commands.map((c) => c.id));
+  if (recents.some((id) => !validIds.has(id))) {
+    setRecents(pruneRecents(recents, validIds));
+  }
+
   // Fuzzy filter + rank (recents first on empty query)
   const ranked = commands
     .map((cmd) => ({ cmd, score: fuzzyScore(query, cmd.label) + fuzzyScore(query, cmd.category) / 100 }))
@@ -390,7 +443,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           title="Create New Workspace"
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => createWorkspace(name.slice(0, 50))}
+          onSave={(name) => requestCreateWorkspace(name.slice(0, 50))}
           onClose={() => setShowWsModal(false)}
         />
       )}

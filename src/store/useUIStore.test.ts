@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useUIStore } from './useUIStore';
+import { usePaneStore } from './usePaneStore';
+import { useWorkspaceStore } from './useWorkspaceStore';
 
 describe('VibeGrid UI Store', () => {
   beforeEach(() => {
@@ -9,6 +11,22 @@ describe('VibeGrid UI Store', () => {
       activeWebglPanes: [],
       pendingClosePaneId: null,
       pendingSwitchWsId: null,
+      pendingCreateWsId: null,
+      isCreateWsModalOpen: false,
+    });
+    // Isolate store singletons per test: pane store clean (no paneIds →
+    // nothing running), workspace store back to the single default workspace.
+    usePaneStore.setState({
+      root: { type: 'terminal', id: 'term-init', title: 'Terminal 1' } as never,
+      paneCount: 1,
+      focusedPaneId: 'term-init',
+    });
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' }, createdAt: Date.now(), updatedAt: Date.now() },
+      ],
+      activeWorkspaceId: 'default-workspace',
+      isLoading: true, // fresh-start guard: saves skipped (no invoke needed)
     });
   });
 
@@ -37,6 +55,36 @@ describe('VibeGrid UI Store', () => {
       useUIStore.getState().requestClosePane('term-1');
       useUIStore.getState().requestClosePane('term-2');
       expect(useUIStore.getState().pendingClosePaneId).toBe('term-2');
+    });
+
+    it('requestCreateWorkspace creates immediately when nothing is running', () => {
+      useUIStore.getState().requestCreateWorkspace('Fresh');
+
+      expect(useUIStore.getState().pendingCreateWsId).toBeNull();
+      expect(useWorkspaceStore.getState().workspaces.some((w) => w.name === 'Fresh')).toBe(true);
+      expect(useWorkspaceStore.getState().activeWorkspaceId).not.toBe('default-workspace');
+    });
+
+    it('requestCreateWorkspace defers the switch when processes are running', () => {
+      // A live PTY is attached to the pane
+      usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never });
+      const before = useWorkspaceStore.getState().activeWorkspaceId;
+
+      useUIStore.getState().requestCreateWorkspace('Guarded');
+
+      // Confirm required: workspace created deferred, active workspace untouched
+      expect(useUIStore.getState().pendingCreateWsId).not.toBeNull();
+      expect(useWorkspaceStore.getState().activeWorkspaceId).toBe(before);
+      expect(useWorkspaceStore.getState().workspaces.some((w) => w.name === 'Guarded')).toBe(true);
+    });
+
+    it('cancelPendingCreate clears the pending id', () => {
+      usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never });
+      useUIStore.getState().requestCreateWorkspace('Cancelled');
+      expect(useUIStore.getState().pendingCreateWsId).not.toBeNull();
+
+      useUIStore.getState().cancelPendingCreate();
+      expect(useUIStore.getState().pendingCreateWsId).toBeNull();
     });
   });
 
@@ -99,6 +147,14 @@ describe('VibeGrid UI Store', () => {
       expect(useUIStore.getState().isCommandPaletteOpen).toBe(true);
       useUIStore.getState().toggleCommandPalette();
       expect(useUIStore.getState().isCommandPaletteOpen).toBe(false);
+    });
+
+    it('openCreateWsModal / closeCreateWsModal drive the global create modal (audit find 4)', () => {
+      expect(useUIStore.getState().isCreateWsModalOpen).toBe(false);
+      useUIStore.getState().openCreateWsModal();
+      expect(useUIStore.getState().isCreateWsModalOpen).toBe(true);
+      useUIStore.getState().closeCreateWsModal();
+      expect(useUIStore.getState().isCreateWsModalOpen).toBe(false);
     });
   });
 });

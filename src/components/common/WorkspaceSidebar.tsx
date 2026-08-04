@@ -12,9 +12,9 @@ interface WorkspaceSidebarProps {
 }
 
 export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onToggle }) => {
-  const { workspaces, activeWorkspaceId, createWorkspace, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
+  const { workspaces, activeWorkspaceId, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
   const { paneCount } = usePaneStore();
-  const { requestSwitchWorkspace } = useUIStore();
+  const { requestSwitchWorkspace, requestCreateWorkspace } = useUIStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -183,7 +183,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
           title="Create New Workspace"
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => createWorkspace(name.slice(0, 50))}
+          onSave={(name) => requestCreateWorkspace(name.slice(0, 50))}
           onClose={() => setShowCreateModal(false)}
         />
       )}

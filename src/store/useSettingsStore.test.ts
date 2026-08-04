@@ -1,9 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useSettingsStore, THEMES } from './useSettingsStore';
-import { setBatchInterval } from '@/lib/tauri';
+import { setBatchInterval, voiceSetSilenceTimeout, voiceSetInputDevice } from '@/lib/tauri';
 
 vi.mock('@/lib/tauri', () => ({
   setBatchInterval: vi.fn(async (intervalMs: number) => intervalMs),
+  voiceSetSilenceTimeout: vi.fn(async (ms: number) => ms),
+  voiceSetInputDevice: vi.fn(async () => {}),
 }));
 
 const STORAGE_KEY = 'vibegrid_settings_v1';
@@ -112,6 +114,30 @@ describe('VibeGrid Settings Store', () => {
       expect(useSettingsStore.getState().themeName).toBe('dracula');
       expect(THEMES[useSettingsStore.getState().themeName]).toBeDefined();
     });
+
+    it('clamps voiceSilenceTimeoutMs to [600, 5000] and pushes to Rust (gap 10)', () => {
+      useSettingsStore.getState().setVoiceSilenceTimeoutMs(100);
+      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(600);
+      expect(voiceSetSilenceTimeout).toHaveBeenCalledWith(600);
+
+      useSettingsStore.getState().setVoiceSilenceTimeoutMs(9999);
+      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(5000);
+      expect(voiceSetSilenceTimeout).toHaveBeenLastCalledWith(5000);
+
+      useSettingsStore.getState().setVoiceSilenceTimeoutMs(1200);
+      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(1200);
+      expect(voiceSetSilenceTimeout).toHaveBeenLastCalledWith(1200);
+    });
+
+    it('defaults voiceInputDevice to system default and pushes selections to Rust (gap 14)', () => {
+      expect(useSettingsStore.getState().voiceInputDevice).toBe('');
+      useSettingsStore.getState().setVoiceInputDevice('MacBook Pro Microphone');
+      expect(useSettingsStore.getState().voiceInputDevice).toBe('MacBook Pro Microphone');
+      expect(voiceSetInputDevice).toHaveBeenCalledWith('MacBook Pro Microphone');
+      // '' resets to the system default.
+      useSettingsStore.getState().setVoiceInputDevice('');
+      expect(voiceSetInputDevice).toHaveBeenLastCalledWith('');
+    });
   });
 
   describe('persistence', () => {
@@ -126,12 +152,14 @@ describe('VibeGrid Settings Store', () => {
     it('restores persisted settings on a fresh module load', async () => {
       useSettingsStore.getState().setFontSize(21);
       useSettingsStore.getState().setThemeName('nord');
+      useSettingsStore.getState().setVoiceSilenceTimeoutMs(2000);
 
       // Simulate app restart: clear the module registry so the store re-initializes
       vi.resetModules();
       const { useSettingsStore: FreshStore } = await import('./useSettingsStore');
       expect(FreshStore.getState().fontSize).toBe(21);
       expect(FreshStore.getState().themeName).toBe('nord');
+      expect(FreshStore.getState().voiceSilenceTimeoutMs).toBe(2000);
     });
   });
 
@@ -153,6 +181,25 @@ describe('VibeGrid Settings Store', () => {
       expect(useSettingsStore.getState().scrollback).toBe(999);
       // Clamped after import
       expect(setBatchInterval).toHaveBeenCalledWith(useSettingsStore.getState().ipcBatchIntervalMs);
+    });
+
+    it('import pushes imported voice settings to the Rust backend (audit find 3)', () => {
+      const json = JSON.stringify({ fontSize: 20, voiceSilenceTimeoutMs: 2400, voiceInputDevice: 'USB Mic' });
+      useSettingsStore.getState().importSettings(json);
+      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(2400);
+      expect(useSettingsStore.getState().voiceInputDevice).toBe('USB Mic');
+      expect(voiceSetSilenceTimeout).toHaveBeenLastCalledWith(2400);
+      expect(voiceSetInputDevice).toHaveBeenLastCalledWith('USB Mic');
+    });
+
+    it('resetSettings pushes default voice settings to the Rust backend (audit find 3)', () => {
+      useSettingsStore.getState().setVoiceSilenceTimeoutMs(3000);
+      useSettingsStore.getState().setVoiceInputDevice('USB Mic');
+      useSettingsStore.getState().resetSettings();
+      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(1600);
+      expect(useSettingsStore.getState().voiceInputDevice).toBe('');
+      expect(voiceSetSilenceTimeout).toHaveBeenLastCalledWith(1600);
+      expect(voiceSetInputDevice).toHaveBeenLastCalledWith('');
     });
 
     it('rejects invalid JSON without corrupting state', () => {
