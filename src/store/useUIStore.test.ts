@@ -3,7 +3,7 @@ import { useUIStore } from './useUIStore';
 import { usePaneStore } from './usePaneStore';
 import { useWorkspaceStore } from './useWorkspaceStore';
 
-describe('VibeGrid UI Store', () => {
+describe('useUIStore', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     useUIStore.setState({

@@ -188,6 +188,10 @@ export default function Home() {
                 {item}
               </a>
             ))}
+            <a href="/about"
+              className="rounded-md px-3 py-1.5 text-[13.5px] text-white/55 transition-colors hover:text-white hover:bg-white/5">
+              About
+            </a>
           </nav>
 
           {/* Right side */}
@@ -278,8 +282,8 @@ export default function Home() {
               Windows
             </a>
             <div className="flex items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.04] px-4 py-3 font-mono text-[13px] text-white/50">
-              npm i -g vibegrid
-              <button className="transition-colors hover:text-white/80" onClick={() => navigator.clipboard?.writeText('npm i -g vibegrid')}>
+              curl -fsSL https://vibegrid.vercel.app/install.sh | sh
+              <button className="transition-colors hover:text-white/80" onClick={() => navigator.clipboard?.writeText('curl -fsSL https://vibegrid.vercel.app/install.sh | sh')}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
                 </svg>
@@ -423,21 +427,18 @@ export default function Home() {
           <div className="mx-auto max-w-4xl">
             <div className="fb-hidden fb-in-rise mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
-                CLI
+                INSTALLER
               </div>
               <h2 className="lp-feature-heading text-white">
                 One command to <span className="text-forest-bright lp-text-glow-green">install</span>
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-[15px] text-white/50">
-                Install the desktop app with npm, or pipe the official installer script —
-                it detects your OS and architecture and grabs the right build.
+                Pipe the official installer script — it detects your OS and architecture and grabs the right build.
               </p>
             </div>
 
             <div className="fb-hidden fb-in-rise mx-auto flex max-w-xl flex-col gap-3">
-              <InstallCmd cmd="npm i -g vibegrid" />
               <InstallCmd cmd="curl -fsSL https://vibegrid.vercel.app/install.sh | sh" />
-              <InstallCmd cmd="vibegrid --mcp   # expose terminal panes to your AI agent via MCP" />
             </div>
           </div>
         </section>
@@ -630,7 +631,6 @@ export default function Home() {
                   >
                     Download for Windows
                   </a>
-                  <InstallCmd cmd="npm i -g vibegrid" />
                 </div>
               </div>
             </div>
