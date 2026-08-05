@@ -16,22 +16,23 @@ ARCH="$(uname -m)"
 
 case "$OS" in
   Darwin)
-    case "$ARCH" in
-      arm64) ASSET="VibeGrid_${VERSION}_aarch64.dmg" ;;
-      x86_64) ASSET="VibeGrid_${VERSION}_x64.dmg" ;;
-      *) echo "Unsupported macOS architecture: $ARCH" >&2; exit 1 ;;
-    esac
+    # One universal DMG runs on BOTH Apple Silicon (M-series) and Intel Macs —
+    # the release pipeline lipos aarch64 + x86_64 into a single binary.
+    ASSET="VibeGrid_${VERSION}_universal.dmg"
     ;;
   MINGW*|MSYS*|CYGWIN*)
     case "$ARCH" in
       x86_64) ASSET="VibeGrid_${VERSION}_x64-setup.exe" ;;
-      arm64) ASSET="VibeGrid_${VERSION}_arm64-setup.exe" ;;
+      arm64)  ASSET="VibeGrid_${VERSION}_arm64-setup.exe" ;;
       *) echo "Unsupported Windows architecture: $ARCH" >&2; exit 1 ;;
     esac
     ;;
   Linux)
-    echo "VibeGrid does not yet ship a Linux binary. Use the macOS/Windows installers." >&2
-    exit 1
+    case "$ARCH" in
+      x86_64)              ASSET="VibeGrid_${VERSION}_amd64.AppImage" ;;
+      aarch64|arm64)       ASSET="VibeGrid_${VERSION}_aarch64.AppImage" ;;
+      *) echo "Unsupported Linux architecture: $ARCH" >&2; exit 1 ;;
+    esac
     ;;
   *)
     echo "Unsupported OS: $OS" >&2
@@ -57,9 +58,10 @@ echo "Saved to $OUT"
 
 case "$OS" in
   Darwin) echo "Mount the DMG and drag VibeGrid.app into Applications:" ;;
+  Linux)  chmod +x "$OUT" 2>/dev/null || true; echo "The AppImage is executable — run it directly:" ;;
   *)      echo "Run the installer to complete setup:" ;;
 esac
-echo "  open \"$OUT\"  # macOS"
-echo "  \"$OUT\"         # Windows"
+echo "  open \"$OUT\"   # macOS"
+echo "  \"$OUT\"        # Windows / Linux (AppImage)"
 echo
 echo "Then launch with:  vibegrid open"

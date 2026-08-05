@@ -6,9 +6,15 @@ vi.mock('@/lib/tauri', () => ({
   setBatchInterval: vi.fn(async (intervalMs: number) => intervalMs),
   voiceSetSilenceTimeout: vi.fn(async (ms: number) => ms),
   voiceSetInputDevice: vi.fn(async () => {}),
+  // Customization audit C28/C9: voice language/model + autostart are pushed to
+  // the Rust backend on reset/import/update — mock them like the others.
+  voiceSetLanguage: vi.fn(async () => {}),
+  voiceSetModelSize: vi.fn(async () => {}),
+  autostartSetEnabled: vi.fn(async () => {}),
 }));
 
-const STORAGE_KEY = 'vibegrid_settings_v1';
+const STORAGE_KEY = 'vibegrid_settings_v2';
+const LEGACY_STORAGE_KEY = 'vibegrid_settings_v1';
 const DEFAULT_THEME = 'vibeDark';
 
 describe('VibeGrid Settings Store', () => {
@@ -59,31 +65,34 @@ describe('VibeGrid Settings Store', () => {
       expect(useSettingsStore.getState().fontSize).toBe(18);
     });
 
-    it('clamps scrollback to [100, 100000]', () => {
+    // Customization audit L4/L5/L6: the clamp bounds are now configurable
+    // settings; defaults widened (scrollback 1e6, lineHeight 0.8–2.5, opacity
+    // 0.1–1) so users can go truly translucent / very tight or tall.
+    it('clamps scrollback to the default [100, 1000000] range', () => {
       useSettingsStore.getState().setScrollback(10);
       expect(useSettingsStore.getState().scrollback).toBe(100);
 
-      useSettingsStore.getState().setScrollback(1_000_000);
-      expect(useSettingsStore.getState().scrollback).toBe(100000);
+      useSettingsStore.getState().setScrollback(5_000_000);
+      expect(useSettingsStore.getState().scrollback).toBe(1000000);
 
       useSettingsStore.getState().setScrollback(5000);
       expect(useSettingsStore.getState().scrollback).toBe(5000);
     });
 
-    it('clamps lineHeight to [1, 2] with 2 decimals', () => {
+    it('clamps lineHeight to the default [0.8, 2.5] with 2 decimals', () => {
       useSettingsStore.getState().setLineHeight(0.5);
-      expect(useSettingsStore.getState().lineHeight).toBe(1);
+      expect(useSettingsStore.getState().lineHeight).toBe(0.8);
 
       useSettingsStore.getState().setLineHeight(3);
-      expect(useSettingsStore.getState().lineHeight).toBe(2);
+      expect(useSettingsStore.getState().lineHeight).toBe(2.5);
 
       useSettingsStore.getState().setLineHeight(1.333);
       expect(useSettingsStore.getState().lineHeight).toBe(1.33);
     });
 
-    it('clamps terminalOpacity to [0.6, 1]', () => {
+    it('clamps terminalOpacity to the default [0.1, 1] range', () => {
       useSettingsStore.getState().setTerminalOpacity(0.1);
-      expect(useSettingsStore.getState().terminalOpacity).toBe(0.6);
+      expect(useSettingsStore.getState().terminalOpacity).toBe(0.1);
 
       useSettingsStore.getState().setTerminalOpacity(0.85);
       expect(useSettingsStore.getState().terminalOpacity).toBe(0.85);
@@ -121,14 +130,15 @@ describe('VibeGrid Settings Store', () => {
       expect(THEMES[useSettingsStore.getState().themeName]).toBeDefined();
     });
 
-    it('clamps voiceSilenceTimeoutMs to [600, 5000] and pushes to Rust (gap 10)', () => {
+    // Customization audit L8: silence-timeout bounds widened to [200, 15000].
+    it('clamps voiceSilenceTimeoutMs to the default [200, 15000] and pushes to Rust (gap 10)', () => {
       useSettingsStore.getState().setVoiceSilenceTimeoutMs(100);
-      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(600);
-      expect(voiceSetSilenceTimeout).toHaveBeenCalledWith(600);
+      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(200);
+      expect(voiceSetSilenceTimeout).toHaveBeenCalledWith(200);
 
-      useSettingsStore.getState().setVoiceSilenceTimeoutMs(9999);
-      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(5000);
-      expect(voiceSetSilenceTimeout).toHaveBeenLastCalledWith(5000);
+      useSettingsStore.getState().setVoiceSilenceTimeoutMs(20000);
+      expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(15000);
+      expect(voiceSetSilenceTimeout).toHaveBeenLastCalledWith(15000);
 
       useSettingsStore.getState().setVoiceSilenceTimeoutMs(1200);
       expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(1200);
@@ -236,6 +246,48 @@ describe('VibeGrid Settings Store', () => {
       expect(useSettingsStore.getState().fontSize).toBe(14);
       expect(useSettingsStore.getState().themeName).toBe(DEFAULT_THEME);
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
+    });
+
+    // Customization audit S2: a legacy v1 blob is migrated in place to the v2
+    // schema (schemaVersion stamped, themeMode defaulted, canonical key used).
+    it('migrates legacy v1 storage to the v2 schema on load', async () => {
+      localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({ fontSize: 19, themeName: 'nord' }));
+      vi.resetModules();
+      const { useSettingsStore: FreshStore } = await import('./useSettingsStore');
+      expect(FreshStore.getState().fontSize).toBe(19);
+      expect(FreshStore.getState().themeName).toBe('nord');
+      expect(FreshStore.getState().schemaVersion).toBe(2);
+      expect(FreshStore.getState().themeMode).toBe('dark');
+      // The legacy key is consumed and the canonical v2 key is written.
+      expect(localStorage.getItem(LEGACY_STORAGE_KEY)).toBeNull();
+      const raw = localStorage.getItem(STORAGE_KEY);
+      expect(raw).not.toBeNull();
+      expect(JSON.parse(raw as string).schemaVersion).toBe(2);
+    });
+
+    // Customization audit C3: themeMode defaults to dark and persists.
+    it('themeMode defaults to dark and persists through updateSettings', () => {
+      expect(useSettingsStore.getState().themeMode).toBe('dark');
+      useSettingsStore.getState().updateSettings({ themeMode: 'light' });
+      expect(useSettingsStore.getState().themeMode).toBe('light');
+      const raw = localStorage.getItem(STORAGE_KEY);
+      expect(raw).not.toBeNull();
+      expect(JSON.parse(raw as string).themeMode).toBe('light');
+    });
+
+    // Customization audit S1: named settings profiles round-trip.
+    it('settings profiles save / apply / delete roundtrip', () => {
+      useSettingsStore.getState().setFontSize(23);
+      expect(useSettingsStore.getState().saveSettingsProfile('Work')).toBe(true);
+      expect(useSettingsStore.getState().listSettingsProfiles()).toContain('Work');
+
+      // Change the live settings, then apply the profile back.
+      useSettingsStore.getState().setFontSize(10);
+      expect(useSettingsStore.getState().loadSettingsProfile('Work')).toBe(true);
+      expect(useSettingsStore.getState().fontSize).toBe(23);
+
+      useSettingsStore.getState().deleteSettingsProfile('Work');
+      expect(useSettingsStore.getState().listSettingsProfiles()).not.toContain('Work');
     });
   });
 });

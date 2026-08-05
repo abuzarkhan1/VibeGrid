@@ -14,7 +14,7 @@ const BAR_COUNT = 24;
  *
  * The indicator also renders transient commit states:
  * - 'transcribing' → spinner while Rust runs Whisper
- * - 'inserted'     → green check + the transcript (brief flash)
+ * - 'inserted'     → accent check + the transcript (brief flash)
  */
 export const VoiceIndicator: React.FC = () => {
   const isListening = useVoiceStore((s) => s.isListening);
@@ -76,7 +76,7 @@ export const VoiceIndicator: React.FC = () => {
 
       {phase === 'inserted' && (
         <>
-          {/* Success flash — green check + the inserted text */}
+          {/* Success flash — accent check + the inserted text */}
           <div className="relative flex items-center justify-center">
             <span className="absolute inline-flex h-6 w-6 rounded-full bg-forest/30 animate-ping" />
             <Check className="w-4 h-4 text-forest-bright relative" />

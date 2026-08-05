@@ -35,7 +35,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-forest/20 border border-forest/40 mb-6">
             <Bug className="w-7 h-7 text-forest-bright" />
           </div>
-          <h1 className="lp-serif text-3xl text-white mb-2">Something went wrong</h1>
+          <h1 className="vg-serif text-3xl text-white mb-2">Something went wrong</h1>
           <p className="text-sm text-white/50 max-w-md text-center leading-relaxed mb-6">
             VibeGrid hit an unexpected error. Your workspaces are saved on disk — nothing is lost. Reload the app to continue.
           </p>

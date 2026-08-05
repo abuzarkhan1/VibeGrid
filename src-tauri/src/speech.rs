@@ -18,12 +18,11 @@ use whisper_rs::{
     FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperState,
 };
 
-/// Model used for transcription (English, ~142 MB, good accuracy/speed balance).
-/// Override with `VIBEGRID_WHISPER_MODEL` env var (e.g. ggml-tiny.en.bin).
-pub const MODEL_FILE: &str = "ggml-base.en.bin";
-
 /// Whisper expects 16 kHz mono f32 PCM.
 pub const TARGET_SAMPLE_RATE: u32 = 16_000;
+
+/// Valid Whisper model sizes (customization audit C28).
+pub const MODEL_SIZES: [&str; 4] = ["tiny", "base", "small", "medium"];
 
 /// Soft safety cap on recording length (seconds). Keeps an abandoned recording
 /// from growing memory indefinitely — audio past this point is truncated.
@@ -100,6 +99,10 @@ pub struct SpeechManager {
     silence_timeout_ms: AtomicU64,
     /// Preferred input device name ('' = system default) (gap 14).
     preferred_input: Mutex<Option<String>>,
+    /// Whisper transcription language ('auto' = auto-detect) (audit C28).
+    language: Mutex<String>,
+    /// Whisper model size: tiny | base | small | medium (audit C28).
+    model_size: Mutex<String>,
 }
 
 impl Default for SpeechManager {
@@ -115,6 +118,8 @@ impl SpeechManager {
             whisper: Mutex::new(None),
             silence_timeout_ms: AtomicU64::new(SILENCE_TIMEOUT_DEFAULT_MS),
             preferred_input: Mutex::new(None),
+            language: Mutex::new(String::from("auto")),
+            model_size: Mutex::new(String::from("base")),
         }
     }
 
@@ -142,6 +147,52 @@ impl SpeechManager {
         } else {
             Some(name)
         };
+    }
+
+    /// Set the Whisper transcription language ('auto' = auto-detect, '' same).
+    /// Changing it may swap the MODEL file used (English .en build vs the
+    /// multilingual build), so the cached Whisper context is dropped and
+    /// re-loaded on the next dictation (audit C28).
+    pub fn set_language(&self, language: String) -> String {
+        let lang = language.trim().to_lowercase();
+        let lang = if lang.is_empty() { String::from("auto") } else { lang };
+        let changed = *self.language.lock() != lang;
+        *self.language.lock() = lang.clone();
+        if changed {
+            *self.whisper.lock() = None;
+        }
+        lang
+    }
+
+    /// Set the Whisper model size (tiny | base | small | medium; anything else
+    /// falls back to 'base'). The cached context is dropped so the next
+    /// dictation loads — and downloads, if missing — the new model file (C28).
+    pub fn set_model_size(&self, size: String) -> String {
+        let size = size.trim().to_lowercase();
+        let size = if MODEL_SIZES.contains(&size.as_str()) {
+            size
+        } else {
+            String::from("base")
+        };
+        let changed = *self.model_size.lock() != size;
+        *self.model_size.lock() = size.clone();
+        if changed {
+            *self.whisper.lock() = None;
+        }
+        size
+    }
+
+    /// The model file name for the current size/language: English uses the
+    /// `ggml-<size>.en.bin` build (smaller + faster); anything else — including
+    /// auto-detect — uses the multilingual `ggml-<size>.bin`.
+    pub fn model_file_name(&self) -> String {
+        let size = self.model_size.lock().clone();
+        let lang = self.language.lock().clone();
+        if lang == "en" {
+            format!("ggml-{size}.en.bin")
+        } else {
+            format!("ggml-{size}.bin")
+        }
     }
 
     /// Enumerate available input (microphone) device names for the Settings UI.
@@ -178,19 +229,19 @@ impl SpeechManager {
             .ok_or_else(|| "No microphone input device found. Connect a microphone or grant microphone access in System Settings → Privacy & Security → Microphone.".to_string())
     }
 
-    /// Resolve the model file path inside the app data dir.
-    pub fn model_path(app: &AppHandle) -> Result<PathBuf, String> {
+    /// Resolve the current model file path inside the app data dir.
+    pub fn model_path(&self, app: &AppHandle) -> Result<PathBuf, String> {
         let dir = app
             .path()
             .app_data_dir()
             .map_err(|e| format!("Could not resolve app data dir: {e}"))?
             .join("models");
-        Ok(dir.join(MODEL_FILE))
+        Ok(dir.join(self.model_file_name()))
     }
 
-    /// True when the model file already exists on disk.
-    pub fn model_ready(app: &AppHandle) -> bool {
-        Self::model_path(app).map(|p| p.exists()).unwrap_or(false)
+    /// True when the current model file already exists on disk.
+    pub fn model_ready(&self, app: &AppHandle) -> bool {
+        self.model_path(app).map(|p| p.exists()).unwrap_or(false)
     }
 
     /// Start capturing microphone audio into a buffer.
@@ -361,7 +412,14 @@ impl SpeechManager {
             .map_err(|e| format!("Failed to create Whisper state: {e}"))?;
 
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-        params.set_language(Some("en"));
+        // Customization audit C28: language is user-configurable now ('auto'
+        // disables the hint so Whisper detects the language itself).
+        let language = self.language.lock().clone();
+        if language == "auto" {
+            params.set_language(None);
+        } else {
+            params.set_language(Some(&language));
+        }
         params.set_suppress_blank(true);
         // Anti-hallucination for short dictations:
         // - no_context: don't condition on previous segment text (avoids
@@ -476,9 +534,9 @@ impl SpeechManager {
         }
     }
 
-    /// Download the Whisper model if missing, emitting progress events.
-    pub fn ensure_model(app: &AppHandle) -> Result<PathBuf, String> {
-        let path = Self::model_path(app)?;
+    /// Download the current Whisper model if missing, emitting progress events.
+    pub fn ensure_model(&self, app: &AppHandle) -> Result<PathBuf, String> {
+        let path = self.model_path(app)?;
         if path.exists() {
             return Ok(path);
         }
@@ -487,10 +545,11 @@ impl SpeechManager {
         }
 
         // Direct download from the whisper.cpp HuggingFace repo (env-overridable).
+        let model_file = self.model_file_name();
         let name = path
             .file_name()
             .and_then(|n| n.to_str())
-            .unwrap_or(MODEL_FILE);
+            .unwrap_or(model_file.as_str());
         let mut urls = vec![
             format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{name}"),
             format!("https://huggingface.co/ggml-org/whisper.cpp/resolve/main/{name}"),
@@ -518,7 +577,7 @@ impl SpeechManager {
             }
         }
         Err(format!(
-            "Failed to download Whisper model ({MODEL_FILE}). {last_error}"
+            "Failed to download Whisper model ({model_file}). {last_error}"
         ))
     }
 }
@@ -637,12 +696,14 @@ mod meter_tests {
         }
         // Final value is one of the written values.
         let v = meter.rms();
-        assert!((0.0..=1.0).contains(&v) || v < 0.0 || v > 1.0); // stored bits always decode to a float
+        // The meter must never hold NaN — stored bits always decode to a real
+        // float (NaN would break every comparison downstream).
+        assert!(!v.is_nan());
     }
 
     #[test]
     fn silence_timeout_clamps_to_supported_range() {
-        let mut mgr = SpeechManager::new();
+        let mgr = SpeechManager::new();
         // Out-of-range values are clamped (audit: the Settings slider exposes
         // 600–5000 ms; enforce the same bounds programmatically).
         let clamped = mgr.set_silence_timeout_ms(100);

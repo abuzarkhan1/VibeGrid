@@ -20,6 +20,15 @@ pub struct WorkspaceData {
     /// Schema version for forward/backward compatibility (audit improvement:
     /// old files without the field default to 1 and are migrated in place).
     pub version: u32,
+    /// Optional per-workspace settings overrides (customization audit C12):
+    /// theme/font/shell/cwd/opacity scoped to this workspace. Opaque JSON so
+    /// the frontend owns the shape; old files without the field default to
+    /// None via `#[serde(default)]` on the struct.
+    pub overrides: Option<serde_json::Value>,
+    /// Optional emoji badge (customization audit C23).
+    pub emoji: Option<String>,
+    /// Soft-delete flag (customization audit C23).
+    pub archived: Option<bool>,
 }
 
 impl Default for WorkspaceData {
@@ -31,6 +40,9 @@ impl Default for WorkspaceData {
             created_at: 0,
             updated_at: 0,
             version: WORKSPACE_SCHEMA_VERSION,
+            overrides: None,
+            emoji: None,
+            archived: None,
         }
     }
 }
@@ -221,6 +233,9 @@ mod tests {
             created_at: 1000,
             updated_at: 1000,
             version: 1,
+            overrides: Some(serde_json::json!({"themeName": "nord"})),
+            emoji: Some("🚀".to_string()),
+            archived: Some(false),
         };
 
         assert!(manager.save_workspace(&ws).is_ok());
@@ -257,6 +272,9 @@ mod tests {
                         created_at: 0,
                         updated_at: i as u64,
                         version: 1,
+                        overrides: None,
+                        emoji: None,
+                        archived: None,
                     };
                     manager.save_workspace(&ws).unwrap();
                 })
@@ -298,10 +316,13 @@ mod tests {
                 created_at: 0,
                 updated_at: 0,
                 version: 1,
+                overrides: None,
+                emoji: None,
+                archived: None,
             };
             assert!(manager.save_workspace(&ws).is_err(), "save should refuse {bad:?}");
-            assert!(manager.load_workspace(&bad).is_err(), "load should refuse {bad:?}");
-            assert!(manager.delete_workspace(&bad).is_err(), "delete should refuse {bad:?}");
+            assert!(manager.load_workspace(bad).is_err(), "load should refuse {bad:?}");
+            assert!(manager.delete_workspace(bad).is_err(), "delete should refuse {bad:?}");
         }
 
         // A well-formed generated id (ws- + timestamp) passes.
@@ -312,6 +333,9 @@ mod tests {
             created_at: 0,
             updated_at: 0,
             version: 1,
+            overrides: None,
+            emoji: None,
+            archived: None,
         };
         assert!(manager.save_workspace(&ok).is_ok());
     }
@@ -328,6 +352,9 @@ mod tests {
             created_at: 0,
             updated_at: 0,
             version: 1,
+            overrides: None,
+            emoji: None,
+            archived: None,
         };
         manager.save_workspace(&ws).unwrap();
 

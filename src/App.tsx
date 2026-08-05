@@ -18,9 +18,23 @@ import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
-import { useKeybindingsStore } from '@/store/useKeybindingsStore';
+import { useKeybindingsStore, matchesAccel } from '@/store/useKeybindingsStore';
 import { useVoiceToTerminal } from '@/hooks/useVoiceToTerminal';
-import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setBatchInterval, setGlobalSummon, isTauri } from '@/lib/tauri';
+import { runMacro } from '@/lib/macros';
+import { useShallow } from 'zustand/react/shallow';
+import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setBatchInterval, setGlobalSummon, voiceSetLanguage, voiceSetModelSize, autostartSetEnabled, isTauri } from '@/lib/tauri';
+
+// Perf: the grid is the ONLY consumer of the layout tree. It subscribes to
+// `root` itself so the rest of the app shell (Header, modals, StatusBar) does
+// not re-render on every divider drag / ratio change.
+const LayoutView: React.FC = () => {
+  const root = usePaneStore((s) => s.root);
+  return (
+    <div className="flex-1 h-full overflow-hidden relative">
+      <GridRenderer node={root} />
+    </div>
+  );
+};
 
 // Set when the user explicitly confirms the quit dialog: the subsequent
 // win.close() re-enters onCloseRequested, which must not ask again.
@@ -28,16 +42,31 @@ let quitApproved = false;
 
 export const App: React.FC = () => {
   useVoiceToTerminal();
-  const {
-    root,
-    focusedPaneId,
-    closePane,
-    toggleMaximize,
-    navigateFocus,
-    paneCount,
-    maxPanes,
-  } = usePaneStore();
+  const focusedPaneId = usePaneStore((s) => s.focusedPaneId);
+  const closePane = usePaneStore((s) => s.closePane);
+  const toggleMaximize = usePaneStore((s) => s.toggleMaximize);
+  const navigateFocus = usePaneStore((s) => s.navigateFocus);
+  const paneCount = usePaneStore((s) => s.paneCount);
+  const maxPanes = usePaneStore((s) => s.maxPanes);
 
+  const ui = useUIStore(
+    useShallow((s) => ({
+      toggleCommandPalette: s.toggleCommandPalette,
+      toggleSettings: s.toggleSettings,
+      addToast: s.addToast,
+      pendingClosePaneId: s.pendingClosePaneId,
+      cancelPendingClose: s.cancelPendingClose,
+      pendingLayoutAction: s.pendingLayoutAction,
+      confirmPendingLayoutAction: s.confirmPendingLayoutAction,
+      cancelPendingLayoutAction: s.cancelPendingLayoutAction,
+      pendingQuit: s.pendingQuit,
+      cancelQuit: s.cancelQuit,
+      isCreateWsModalOpen: s.isCreateWsModalOpen,
+      openCreateWsModal: s.openCreateWsModal,
+      closeCreateWsModal: s.closeCreateWsModal,
+      requestCreateWorkspace: s.requestCreateWorkspace,
+    }))
+  );
   const {
     toggleCommandPalette,
     toggleSettings,
@@ -53,18 +82,92 @@ export const App: React.FC = () => {
     openCreateWsModal,
     closeCreateWsModal,
     requestCreateWorkspace,
-  } = useUIStore();
-  const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore();
-  const { workspaces, activeWorkspaceId, isLoading, loadWorkspaces, saveCurrentWorkspace } = useWorkspaceStore();
-  const { matchesKeybinding } = useKeybindingsStore();
+  } = ui;
+  const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore(
+    useShallow((s) => ({
+      increaseFontSize: s.increaseFontSize,
+      decreaseFontSize: s.decreaseFontSize,
+      resetFontSize: s.resetFontSize,
+    }))
+  );
+  const { workspaces, activeWorkspaceId, isLoading, loadWorkspaces, saveCurrentWorkspace } = useWorkspaceStore(
+    useShallow((s) => ({
+      workspaces: s.workspaces,
+      activeWorkspaceId: s.activeWorkspaceId,
+      isLoading: s.isLoading,
+      loadWorkspaces: s.loadWorkspaces,
+      saveCurrentWorkspace: s.saveCurrentWorkspace,
+    }))
+  );
+  const matchesKeybinding = useKeybindingsStore((s) => s.matchesKeybinding);
 
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  // Customization audit: show/hide the splash screen at startup.
+  const showSplash = useSettingsStore((s) => s.showSplash);
+  // Customization audit: UI zoom, animation master switch, compact chrome.
+  const uiZoom = useSettingsStore((s) => s.uiZoom);
+  const animationsEnabled = useSettingsStore((s) => s.animationsEnabled);
+  const compactMode = useSettingsStore((s) => s.compactMode);
 
+  // Sync global appearance classes (animations / compact) onto <html> so every
+  // component's CSS animations + padding react to them without per-component
+  // plumbing (customization audit C14/C26).
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle('vibegrid-no-anim', !animationsEnabled);
+    root.classList.toggle('vibegrid-compact', compactMode);
+  }, [animationsEnabled, compactMode]);
+
+  // Customization audit C3: follow the OS color scheme (and the Tauri window
+  // theme when available) so themeMode 'system' stays live. The settings store
+  // re-applies the chrome variables on every preference change.
+  useEffect(() => {
+    const apply = (prefersDark: boolean) => {
+      useSettingsStore.getState().setSystemPrefersDark(prefersDark);
+    };
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    apply(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => apply(e.matches);
+    mq.addEventListener('change', onChange);
+    // Tauri reports the window theme more reliably than the CSS media query in
+    // some webviews — adopt it when it resolves to a concrete value.
+    let unlisten: (() => void) | undefined;
+    if (isTauri()) {
+      import('@tauri-apps/api/window')
+        .then(({ getCurrentWindow }) => {
+          const win = getCurrentWindow();
+          win
+            .theme()
+            .then((t) => {
+              if (t === 'dark' || t === 'light') apply(t === 'dark');
+            })
+            .catch(() => {});
+          win
+            .onThemeChanged(({ payload }) => {
+              if (payload === 'dark' || payload === 'light') apply(payload === 'dark');
+            })
+            .then((fn) => {
+              unlisten = fn;
+            })
+            .catch(() => {});
+        })
+        .catch(() => {});
+    }
+    return () => {
+      mq.removeEventListener('change', onChange);
+      unlisten?.();
+    };
+  }, []);
+
+  // Perf: these two guards read the layout tree via selectors that return a
+  // constant while no dialog is pending, so App itself does NOT re-render on
+  // every layout change (divider drags) — only while a close/quit dialog is
+  // actually open, when the live count matters.
   // Does the specific pane being closed have a live PTY? (accurate copy for the close dialog)
-  const closingPaneHasPty = pendingClosePaneId
-    ? getTerminalNodes(root).some((t) => t.id === pendingClosePaneId && Boolean(t.paneId))
-    : false;
+  const closingPaneHasPty = usePaneStore((s) =>
+    pendingClosePaneId ? getTerminalNodes(s.root).some((t) => t.id === pendingClosePaneId && Boolean(t.paneId)) : false
+  );
 
   // Load saved workspaces on app mount
   useEffect(() => {
@@ -129,7 +232,10 @@ export const App: React.FC = () => {
       } finally {
         if (unlisten) unlisten();
         const win = (await import('@tauri-apps/api/window')).getCurrentWindow();
-        if (useSettingsStore.getState().minimizeToTray) {
+        // Customization audit C10: either minimizeToTray OR closeToTray hides
+        // to the tray instead of quitting; the tray icon shows the window again.
+        const { minimizeToTray, closeToTray } = useSettingsStore.getState();
+        if (minimizeToTray || closeToTray) {
           await win.hide();
         } else {
           await win.close();
@@ -149,7 +255,11 @@ export const App: React.FC = () => {
             return;
           }
           const running = getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length;
-          if (running > 0 && !useSettingsStore.getState().minimizeToTray) {
+          // Customization audit L19: with quit confirmation disabled, close
+          // immediately (finalizeClose still saves + hides to tray if set).
+          // C10: hiding to the tray terminates nothing, so no confirm needed.
+          const { minimizeToTray, closeToTray, confirmations } = useSettingsStore.getState();
+          if (running > 0 && !minimizeToTray && !closeToTray && confirmations.quit === 'always') {
             useUIStore.getState().requestQuit();
             return;
           }
@@ -174,8 +284,9 @@ export const App: React.FC = () => {
   }, [saveCurrentWorkspace]);
 
   // Debounced auto-save: any layout change (split, close, resize, title, cwd)
-  // is persisted ~500ms later, so nothing is lost if the app crashes or is
-  // killed without a clean close.
+  // is persisted a short while later, so nothing is lost if the app crashes or
+  // is killed without a clean close. Customization audit C24: the interval is
+  // user-configurable (100–10000ms).
   useEffect(() => {
     let timer: number | undefined;
     const unsub = usePaneStore.subscribe((state, prev) => {
@@ -183,7 +294,7 @@ export const App: React.FC = () => {
       if (timer) window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         saveCurrentWorkspace();
-      }, 500);
+      }, useSettingsStore.getState().autosaveIntervalMs);
     });
     return () => {
       unsub();
@@ -211,11 +322,33 @@ export const App: React.FC = () => {
   // them through their setters — push them all once on startup. Without the
   // batch interval the Rust batcher silently stays on its own 16 ms default
   // after every restart even when the UI shows a different persisted value.
+  // Customization audit C28/C9: voice language/model + launch-at-login too.
   useEffect(() => {
-    const { voiceSilenceTimeoutMs, voiceInputDevice, ipcBatchIntervalMs } = useSettingsStore.getState();
+    const { voiceSilenceTimeoutMs, voiceInputDevice, ipcBatchIntervalMs, voiceLanguage, voiceModelSize, launchAtLogin } = useSettingsStore.getState();
     voiceSetSilenceTimeout(voiceSilenceTimeoutMs).catch(() => {});
     voiceSetInputDevice(voiceInputDevice).catch(() => {});
     setBatchInterval(ipcBatchIntervalMs).catch(() => {});
+    voiceSetLanguage(voiceLanguage).catch(() => {});
+    voiceSetModelSize(voiceModelSize).catch(() => {});
+    autostartSetEnabled(launchAtLogin).catch(() => {});
+  }, []);
+
+  // Customization audit C8: apply the startup window behavior ONCE after the
+  // webview is live (start maximized / start hidden to the tray). These are
+  // startup-only — toggling them mid-session does not move the window.
+  useEffect(() => {
+    if (!isTauri()) return;
+    const { startMaximized, startHidden } = useSettingsStore.getState();
+    (async () => {
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const win = getCurrentWindow();
+        if (startMaximized) await win.maximize();
+        if (startHidden) await win.hide();
+      } catch (e) {
+        console.warn('[VibeGrid] Could not apply startup window behavior:', e);
+      }
+    })();
   }, []);
 
   // Reassignable system-wide summon (audit): sync the persisted 'global-summon'
@@ -374,6 +507,18 @@ export const App: React.FC = () => {
         resetFontSize();
         return;
       }
+
+      // Customization audit C22: user macro keybindings (checked last, so a
+      // macro combo that collides with a built-in binding loses to the
+      // built-in — predictable and safe).
+      const { macros } = useSettingsStore.getState();
+      for (const macro of macros) {
+        if (macro.keybinding && matchesAccel(e, macro.keybinding)) {
+          e.preventDefault();
+          runMacro(macro);
+          return;
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -411,10 +556,15 @@ export const App: React.FC = () => {
     await getCurrentWindow().close();
   };
 
-  const quittingRunningCount = getTerminalNodes(root).filter((t) => t.paneId).length;
+  const quittingRunningCount = usePaneStore((s) =>
+    pendingQuit ? getTerminalNodes(s.root).filter((t) => t.paneId).length : 0
+  );
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-bgDark text-foreground overflow-hidden select-none">
+    <div
+      className="h-screen w-screen flex flex-col bg-bgDark text-foreground overflow-hidden select-none"
+      style={{ zoom: uiZoom / 100 }}
+    >
       <Header
         onOpenAbout={() => setIsAboutOpen(true)}
         isSidebarOpen={isSidebarOpen}
@@ -422,9 +572,7 @@ export const App: React.FC = () => {
       />
       <main className="flex-1 w-full overflow-hidden relative flex">
         <WorkspaceSidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen((prev) => !prev)} />
-        <div className="flex-1 h-full overflow-hidden relative">
-          <GridRenderer node={root} />
-        </div>
+        <LayoutView />
       </main>
       <StatusBar />
       <VoiceIndicator />
@@ -434,8 +582,9 @@ export const App: React.FC = () => {
       {isAboutOpen && <AboutModal onClose={() => setIsAboutOpen(false)} />}
       <NotificationToastContainer />
       {/* Audit: the splash is tied to the real workspace-restore load, not a
-          fixed timer — on a slow disk it stays until loadWorkspaces resolves. */}
-      <SplashScreen ready={!isLoading} />
+          fixed timer — on a slow disk it stays until loadWorkspaces resolves.
+          Customization audit: users can disable the splash entirely. */}
+      {showSplash && <SplashScreen ready={!isLoading} />}
       <FirstRunHint />
 
       {/* Guarded: quit with running processes (UX audit P0 #1) */}
@@ -489,7 +638,7 @@ export const App: React.FC = () => {
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
           onSave={(name) => {
-            requestCreateWorkspace(name.slice(0, 50));
+            requestCreateWorkspace(name.slice(0, useSettingsStore.getState().workspaceNameMaxLength));
           }}
           onClose={closeCreateWsModal}
         />

@@ -223,6 +223,38 @@ function normalizeAccel(key: string): string {
     .join('+');
 }
 
+/**
+ * Match a raw accelerator string against a KeyboardEvent. Shared by the
+ * built-in keybinding store AND user macro keybindings (customization audit
+ * C22), so a macro combo behaves exactly like a built-in binding.
+ */
+export function matchesAccel(e: KeyboardEvent, accel: string): boolean {
+  if (!accel) return false;
+  const parts = accel.split('+').map((s) => s.trim().toLowerCase());
+  const isModReq = parts.includes('mod') || parts.includes('cmd') || parts.includes('ctrl');
+  const isShiftReq = parts.includes('shift');
+  const isAltReq = parts.includes('alt');
+  const keyReq = parts.find((p) => !['mod', 'cmd', 'ctrl', 'shift', 'alt'].includes(p));
+  const isModPressed = e.metaKey || e.ctrlKey;
+  const isShiftPressed = e.shiftKey;
+  const isAltPressed = e.altKey;
+  if (isModReq !== isModPressed) return false;
+  if (isShiftReq !== isShiftPressed) return false;
+  if (isAltReq !== isAltPressed) return false;
+  if (!keyReq) return false;
+  if (keyReq === 'enter' && e.code === 'Enter') return true;
+  if (keyReq === 'comma' || keyReq === ',') return e.key === ',';
+  if (keyReq.length === 1) {
+    return e.key.toLowerCase() === keyReq || e.code.toLowerCase() === `key${keyReq}`;
+  }
+  // Arrow keys / Tab: match on the physical key (e.code) so Mod+Tab,
+  // Mod+ArrowLeft, Mod+Shift+Tab etc. work regardless of keyboard layout.
+  if (keyReq === 'arrowleft' || keyReq === 'arrowright' || keyReq === 'arrowup' || keyReq === 'arrowdown' || keyReq === 'tab') {
+    return e.code.toLowerCase() === keyReq;
+  }
+  return e.code.toLowerCase() === keyReq;
+}
+
 export const useKeybindingsStore = create<KeybindingsState>((set, get) => ({
   keybindings: loadStoredBindings(),
 
@@ -272,36 +304,6 @@ export const useKeybindingsStore = create<KeybindingsState>((set, get) => ({
   matchesKeybinding: (e: KeyboardEvent, id: string) => {
     const binding = get().keybindings[id];
     if (!binding) return false;
-
-    const parts = binding.currentKey.split('+').map((s) => s.trim().toLowerCase());
-    const isModReq = parts.includes('mod') || parts.includes('cmd') || parts.includes('ctrl');
-    const isShiftReq = parts.includes('shift');
-    const isAltReq = parts.includes('alt');
-
-    const keyReq = parts.find((p) => !['mod', 'cmd', 'ctrl', 'shift', 'alt'].includes(p));
-
-    const isModPressed = e.metaKey || e.ctrlKey;
-    const isShiftPressed = e.shiftKey;
-    const isAltPressed = e.altKey;
-
-    if (isModReq !== isModPressed) return false;
-    if (isShiftReq !== isShiftPressed) return false;
-    if (isAltReq !== isAltPressed) return false;
-
-    if (!keyReq) return false;
-
-    if (keyReq === 'enter' && e.code === 'Enter') return true;
-    if (keyReq === 'comma' || keyReq === ',') return e.key === ',';
-    if (keyReq.length === 1) {
-      return e.key.toLowerCase() === keyReq || e.code.toLowerCase() === `key${keyReq}`;
-    }
-
-    // Arrow keys / Tab: match on the physical key (e.code) so Mod+Tab,
-    // Mod+ArrowLeft, Mod+Shift+Tab etc. work regardless of keyboard layout.
-    if (keyReq === 'arrowleft' || keyReq === 'arrowright' || keyReq === 'arrowup' || keyReq === 'arrowdown' || keyReq === 'tab') {
-      return e.code.toLowerCase() === keyReq;
-    }
-
-    return e.code.toLowerCase() === keyReq;
+    return matchesAccel(e, binding.currentKey);
   },
 }));

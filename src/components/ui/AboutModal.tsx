@@ -127,7 +127,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.03]">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-[6px] bg-forest flex items-center justify-center shadow-[0_0_8px_rgba(44,122,64,0.35)]">
+            <div className="w-5 h-5 rounded-[6px] bg-forest flex items-center justify-center shadow-[0_0_8px_rgba(11,107,196,0.35)]">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                 <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
                 <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
@@ -148,7 +148,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
 
         {/* Content */}
         <div className="p-6 text-center space-y-4">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-forest flex items-center justify-center shadow-[0_0_16px_rgba(84,169,103,0.3)]">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-forest flex items-center justify-center shadow-[0_0_16px_rgba(60,149,240,0.3)]">
             <svg width="32" height="32" viewBox="0 0 16 16" fill="none">
               <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
               <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
@@ -158,7 +158,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
           </div>
 
           <div>
-            <h3 className="lp-serif hover-glow-flare text-[34px] leading-none text-white lp-text-glow-green">VibeGrid</h3>
+            <h3 className="vg-serif vg-glow-flare text-[34px] leading-none text-white vg-text-glow">VibeGrid</h3>
             <p className="text-xs text-forest-bright font-mono mt-1">Version {appVersion}</p>
             <p className="text-xs text-white/50 mt-2 max-w-xs mx-auto leading-relaxed">
               The free, open-source GPU-accelerated multi-pane terminal workspace built for vibe coding.

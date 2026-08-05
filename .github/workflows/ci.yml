@@ -32,6 +32,24 @@ jobs:
         with:
           components: clippy, rustfmt
 
+      # Tauri (wry) + whisper-rs (whisper.cpp) need system libraries to
+      # COMPILE on Linux. Without these, `cargo clippy`/`cargo test` fail at
+      # pkg-config (webkit2gtk-4.1) or CMake (whisper). Canonical dep set from
+      # the Tauri v2 docs. NOTE: only libayatana-appindicator3-dev — the old
+      # libappindicator3-dev was REMOVED from Ubuntu 24.04 (ubuntu-latest),
+      # and ayatana provides the tray icon on 22.04+.
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            libayatana-appindicator3-dev \
+            patchelf \
+            libxdo-dev \
+            libssl-dev \
+            cmake
+
       - name: Rust format check
         run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
 

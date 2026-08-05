@@ -36,7 +36,7 @@ const VALUES = [
     desc: 'Zero telemetry, zero analytics, zero accounts. A 100% local desktop process — your terminals never leave your machine.',
   },
   {
-    icon: <Cpu size={26} className="stroke-emerald-400" />,
+    icon: <Cpu size={26} className="stroke-[#3C95F0]" />,
     title: 'Fast by design',
     desc: '60 FPS WebGL rendering with a Rust PTY backend for sub-10ms keystroke latency. Tools should never slow you down.',
   },
@@ -58,7 +58,7 @@ export default function AboutContent() {
   useScrollReveal();
 
   return (
-    <div className="dark relative min-h-screen bg-black font-sans text-white overflow-x-hidden selection:bg-emerald-500 selection:text-black">
+    <div className="dark relative min-h-screen bg-black font-sans text-white overflow-x-hidden selection:bg-[#3C95F0] selection:text-black">
 
       {/* ═══════════════════════════ NAVBAR ═══════════════════════════ */}
       <Navbar active="about" />
@@ -76,7 +76,7 @@ export default function AboutContent() {
         <div className="relative z-10 mx-auto max-w-4xl px-6 pb-24 pt-36 text-center sm:pb-28">
 
           {/* Badge */}
-          <div className="fb-hidden fb-in-rise mb-8 inline-flex items-center gap-2 rounded-full border border-forest/30 bg-forest/10 px-3.5 py-1 text-[12px] text-forest-bright">
+          <div className="vg-hidden vg-in-rise mb-8 inline-flex items-center gap-2 rounded-full border border-forest/30 bg-forest/10 px-3.5 py-1 text-[12px] text-forest-bright">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-forest-bright" />
@@ -86,25 +86,25 @@ export default function AboutContent() {
 
 
           {/* Main heading */}
-          <h1 className="lp-hero-heading fb-hidden fb-in-text text-[40px] leading-[1.08] text-white sm:text-[54px] md:text-[64px] lg:text-[72px]"
-              style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+          <h1 className="vg-hero-heading vg-hidden vg-in-text text-[40px] leading-[1.08] text-white sm:text-[54px] md:text-[64px] lg:text-[72px]"
+              style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
             Hi, I&apos;m{' '}
-            <StaggeredText text="Abuzar Khan" className="lp-text-glow-green text-forest-bright" step={40} startDelay={420} />
+            <StaggeredText text="Abuzar Khan" className="vg-text-glow text-forest-bright" step={40} startDelay={420} />
           </h1>
 
           {/* Sub text */}
-          <p className="fb-hidden fb-in-rise mx-auto mt-6 max-w-2xl text-[17px] leading-relaxed text-white/55"
-             style={{ '--fb-delay': '0.14s' } as React.CSSProperties}>
+          <p className="vg-hidden vg-in-rise mx-auto mt-6 max-w-2xl text-[17px] leading-relaxed text-white/55"
+             style={{ '--vg-delay': '0.14s' } as React.CSSProperties}>
             I build open-source tools that make developers&apos; work easier — faster, freer,
             and a little more fun. <strong className="text-white">VibeGrid</strong> is my love letter
             to everyone who codes.
           </p>
 
           {/* CTA buttons */}
-          <div className="fb-hidden fb-in-rise mt-10 flex flex-wrap items-center justify-center gap-3"
-               style={{ '--fb-delay': '0.2s' } as React.CSSProperties}>
+          <div className="vg-hidden vg-in-rise mt-10 flex flex-wrap items-center justify-center gap-3"
+               style={{ '--vg-delay': '0.2s' } as React.CSSProperties}>
             <a href="https://github.com/abuzarkhan1" target="_blank" rel="noreferrer"
-              className="group flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-[14px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_28px_rgba(84,169,103,0.55)]">
+              className="group flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-[14px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_28px_rgba(60,149,240,0.55)]">
               <Github size={16} />
               Follow on GitHub
             </a>
@@ -123,13 +123,13 @@ export default function AboutContent() {
         {/* ── Mission ── */}
         <section className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="fb-hidden fb-in-rise mb-12">
+            <div className="vg-hidden vg-in-rise mb-12">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                 The Why
               </div>
-              <h2 className="lp-feature-heading text-white">
+              <h2 className="vg-feature-heading text-white">
                 Built for one simple reason — to make{' '}
-                <span className="text-forest-bright lp-text-glow-green">developers&apos; work easier</span>
+                <span className="text-forest-bright vg-text-glow">developers&apos; work easier</span>
               </h2>
               <p className="mx-auto mt-6 max-w-2xl text-[15px] leading-relaxed text-white/50">
                 VibeGrid started as a frustration. Terminal tools were either slow, expensive, or locked
@@ -145,10 +145,10 @@ export default function AboutContent() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {STATS.map((s, i) => (
                 <div key={s.label}
-                     className="fb-hidden fb-in-fall group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
-                     style={{ '--fb-index': i, '--fb-step': '60ms' } as React.CSSProperties}>
+                     className="vg-hidden vg-in-fall group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
+                     style={{ '--vg-index': i, '--vg-step': '60ms' } as React.CSSProperties}>
                   <div className="shine-layer" aria-hidden="true" />
-                  <div className="lp-serif text-[34px] leading-none text-forest-bright">{s.value}</div>
+                  <div className="vg-serif text-[34px] leading-none text-forest-bright">{s.value}</div>
                   <div className="mt-2 text-[11.5px] text-white/40">{s.label}</div>
                 </div>
               ))}
@@ -160,11 +160,11 @@ export default function AboutContent() {
         <section className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-6xl">
             <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
-              <div className="fb-hidden fb-in-rise">
+              <div className="vg-hidden vg-in-rise">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                   The Story
                 </div>
-                <h2 className="lp-feature-heading text-white">
+                <h2 className="vg-feature-heading text-white">
                   One developer, <span className="text-forest-bright">one mission</span>
                 </h2>
                 <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/50">
@@ -188,7 +188,7 @@ export default function AboutContent() {
               </div>
 
               {/* Terminal mock */}
-              <div className="fb-hidden fb-in-right" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+              <div className="vg-hidden vg-in-right" style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
                 <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0b0d] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
                   <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
                     <span className="h-3 w-3 rounded-full bg-red-500/70" />
@@ -221,20 +221,20 @@ export default function AboutContent() {
         {/* ── Values ── */}
         <section className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-6xl">
-            <div className="fb-hidden fb-in-rise mb-12 text-center">
+            <div className="vg-hidden vg-in-rise mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                 What I believe
               </div>
-              <h2 className="lp-feature-heading text-white">
-                The principles behind <span className="animate-glow-pulse text-forest-bright lp-text-glow-green">every line</span>
+              <h2 className="vg-feature-heading text-white">
+                The principles behind <span className="animate-glow-pulse text-forest-bright vg-text-glow">every line</span>
               </h2>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {VALUES.map((v, i) => (
                 <div key={i}
-                     className="fb-hidden fb-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
-                     style={{ '--fb-index': i, '--fb-step': '70ms', '--fb-delay': '0.05s' } as React.CSSProperties}>
+                     className="vg-hidden vg-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
+                     style={{ '--vg-index': i, '--vg-step': '70ms', '--vg-delay': '0.05s' } as React.CSSProperties}>
                   <div className="shine-layer" aria-hidden="true" />
                   <div className="mb-4 flex items-center h-8">{v.icon}</div>
                   <h3 className="mb-2 text-[15px] font-medium text-white/90">{v.title}</h3>
@@ -248,11 +248,11 @@ export default function AboutContent() {
         {/* ── Stack ── */}
         <section className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-4xl">
-            <div className="fb-hidden fb-in-rise mb-12 text-center">
+            <div className="vg-hidden vg-in-rise mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                 The Stack
               </div>
-              <h2 className="lp-feature-heading text-white">
+              <h2 className="vg-feature-heading text-white">
                 Built with <span className="text-forest-bright">tools I love</span>
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-[15px] text-white/50">
@@ -260,11 +260,11 @@ export default function AboutContent() {
               </p>
             </div>
 
-            <div className="fb-hidden fb-in-rise flex flex-wrap items-center justify-center gap-2.5">
+            <div className="vg-hidden vg-in-rise flex flex-wrap items-center justify-center gap-2.5">
               {STACK.map((s, i) => (
                 <span key={s}
-                  className="fb-hidden fb-in-fall rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 font-mono text-[12.5px] text-white/60 transition-all duration-300 hover:border-forest/40 hover:text-forest-bright"
-                  style={{ '--fb-index': i, '--fb-step': '50ms' } as React.CSSProperties}>
+                  className="vg-hidden vg-in-fall rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 font-mono text-[12.5px] text-white/60 transition-all duration-300 hover:border-forest/40 hover:text-forest-bright"
+                  style={{ '--vg-index': i, '--vg-step': '50ms' } as React.CSSProperties}>
                   {s}
                 </span>
               ))}
@@ -275,12 +275,12 @@ export default function AboutContent() {
         {/* ── Connect ── */}
         <section className="relative bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-3xl">
-            <div className="fb-hidden fb-in-rise rounded-2xl border border-forest/20 bg-gradient-to-b from-forest/[0.06] to-transparent p-8 text-center sm:p-12">
+            <div className="vg-hidden vg-in-rise rounded-2xl border border-forest/20 bg-gradient-to-b from-forest/[0.06] to-transparent p-8 text-center sm:p-12">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-forest/30 bg-forest/10 px-3 py-1 text-[11px] text-forest-bright uppercase tracking-widest">
                 Let&apos;s connect
               </div>
-              <h2 className="lp-feature-heading text-white">
-                Let&apos;s build something <span className="text-forest-bright lp-text-glow-green">together</span>
+              <h2 className="vg-feature-heading text-white">
+                Let&apos;s build something <span className="text-forest-bright vg-text-glow">together</span>
               </h2>
               <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-white/50">
                 VibeGrid is open to everyone — contributors, testers, and dreamers. Found a bug, want a
@@ -288,7 +288,7 @@ export default function AboutContent() {
               </p>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <a href="https://github.com/abuzarkhan1/VibeGrid" target="_blank" rel="noreferrer"
-                  className="install-box-glow flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-[14px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_28px_rgba(84,169,103,0.55)]">
+                  className="vg-install-glow flex items-center gap-2 rounded-xl bg-forest px-5 py-3 text-[14px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_28px_rgba(60,149,240,0.55)]">
                   <Star size={16} className="fill-white" />
                   Star on GitHub
                 </a>

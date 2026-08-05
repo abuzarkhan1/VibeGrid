@@ -52,7 +52,7 @@ function Landscape() {
         {/* Bushes foreground */}
         <img src="/bushes-fg.webp" alt="" aria-hidden="true"
              decoding="async" draggable="false"
-             className="lp-gpu pointer-events-none absolute inset-x-0 bottom-0 z-[2] w-full select-none object-cover" />
+             className="vg-gpu pointer-events-none absolute inset-x-0 bottom-0 z-[2] w-full select-none object-cover" />
 
         {/* VibeGrid wordmark in landscape */}
         <div className="absolute inset-x-0 bottom-[18%] z-[3] flex items-center justify-center">

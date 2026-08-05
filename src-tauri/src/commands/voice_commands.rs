@@ -11,22 +11,23 @@ pub struct VoiceModelStatus {
 }
 
 #[tauri::command]
-pub fn voice_model_status(app: AppHandle) -> Result<VoiceModelStatus, String> {
-    let path = SpeechManager::model_path(&app)?;
+pub fn voice_model_status(app: AppHandle, state: State<'_, AppState>) -> Result<VoiceModelStatus, String> {
+    let path = state.speech.model_path(&app)?;
     let size_bytes = std::fs::metadata(&path).ok().map(|m| m.len());
     Ok(VoiceModelStatus {
-        ready: SpeechManager::model_ready(&app),
+        ready: state.speech.model_ready(&app),
         path: Some(path.display().to_string()),
         size_bytes,
     })
 }
 
 #[tauri::command]
-pub async fn voice_ensure_model(app: AppHandle) -> Result<String, String> {
+pub async fn voice_ensure_model(app: AppHandle, state: State<'_, AppState>) -> Result<String, String> {
     // Download (or confirm) the model on a blocking thread so the async runtime
     // is not stalled by a multi-MB download.
     let handle = app.clone();
-    tauri::async_runtime::spawn_blocking(move || SpeechManager::ensure_model(&handle))
+    let speech = state.speech.clone();
+    tauri::async_runtime::spawn_blocking(move || speech.ensure_model(&handle))
         .await
         .map_err(|e| format!("Model download task failed: {e}"))?
         .map(|p| p.display().to_string())
@@ -41,7 +42,7 @@ pub fn voice_start_recording(
     // this failed after start_recording, the command would error but the mic
     // would keep capturing with no auto-stop watcher and no listening state on
     // the frontend — leaving it open until the app exits.
-    let model = SpeechManager::model_path(&app)?;
+    let model = state.speech.model_path(&app)?;
     state.speech.start_recording()?;
     // Spawn the watcher that streams audio levels to the UI and auto-commits
     // after silence.
@@ -62,7 +63,7 @@ pub async fn voice_stop_recording(
 ) -> Result<String, String> {
     // Resolve the model path (cheap), then run Whisper inference on a blocking
     // thread so the main thread / UI is never frozen during transcription.
-    let model = SpeechManager::model_path(&app)?;
+    let model = state.speech.model_path(&app)?;
     let speech = state.speech.clone();
     tauri::async_runtime::spawn_blocking(move || speech.stop_and_transcribe(&model))
         .await
@@ -73,6 +74,18 @@ pub async fn voice_stop_recording(
 #[tauri::command]
 pub fn voice_set_silence_timeout(state: State<'_, AppState>, ms: u64) -> u64 {
     state.speech.set_silence_timeout_ms(ms)
+}
+
+/// Configure the Whisper transcription language ('auto' = auto-detect) — audit C28.
+#[tauri::command]
+pub fn voice_set_language(state: State<'_, AppState>, language: String) -> String {
+    state.speech.set_language(language)
+}
+
+/// Configure the Whisper model size (tiny | base | small | medium) — audit C28.
+#[tauri::command]
+pub fn voice_set_model_size(state: State<'_, AppState>, size: String) -> String {
+    state.speech.set_model_size(size)
 }
 
 /// Prefer a specific microphone by name ('' = system default) — gap 14.

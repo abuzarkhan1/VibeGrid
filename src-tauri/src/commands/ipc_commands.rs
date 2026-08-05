@@ -9,6 +9,14 @@ pub async fn set_batch_interval(
     Ok(state.batcher.set_interval(interval_ms))
 }
 
+/// The port the MCP/HTTP endpoint listens on (customization audit S8 — the
+/// Settings UI surfaces it so users can point external MCP clients at it).
+/// Env-overridable via VIBEGRID_HTTP_PORT; defaults to 8792.
+#[tauri::command]
+pub fn get_http_port() -> u16 {
+    crate::http_server::http_port()
+}
+
 /// Return the recent output history of a pane (last ~256 KB) plus whether its
 /// process already exited. The frontend calls this when switching back to a
 /// workspace so terminals that were unmounted while hidden can repaint what

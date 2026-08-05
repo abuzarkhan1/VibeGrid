@@ -168,4 +168,30 @@ describe('VibeGrid Layout Store', () => {
     expect(kept.map((t) => t.id)).toEqual(['c', 'a']);
     expect(removed.map((t) => t.id)).toEqual(['b', 'd']);
   });
+
+  // Customization audit L12: 3/5/9/12 preset grids.
+  it('expands to the new 3/5/9/12 preset grids and re-apply is a no-op', () => {
+    for (const count of [3, 5, 9, 12] as const) {
+      usePaneStore.getState().setLayoutPreset(count);
+      const state = usePaneStore.getState();
+      expect(state.paneCount).toBe(count);
+      expect(state.layoutMode).toBe('preset');
+      expect(state.presetCount).toBe(count);
+      expect(getTerminalNodes(state.root)).toHaveLength(count);
+      // Re-applying the SAME preset is a no-op (isEqualPresetTree recognizes
+      // the pristine grid, including the 1/3 splits inside 3-cell rows).
+      usePaneStore.getState().setLayoutPreset(count);
+      expect(usePaneStore.getState().paneCount).toBe(count);
+    }
+  });
+
+  it('shrinks from a 12-pane preset to 5 keeping the focused pane', () => {
+    usePaneStore.getState().setLayoutPreset(12);
+    const focusedId = usePaneStore.getState().focusedPaneId!;
+    usePaneStore.getState().setLayoutPreset(5);
+    const state = usePaneStore.getState();
+    expect(state.paneCount).toBe(5);
+    expect(state.layoutMode).toBe('preset');
+    expect(getTerminalNodes(state.root).some((t) => t.id === focusedId)).toBe(true);
+  });
 });

@@ -1,23 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { Command, Columns, X } from 'lucide-react';
+import { useSettingsStore } from '@/store/useSettingsStore';
 
 const FIRST_RUN_KEY = 'vibegrid_first_run_v1';
-const HINT_DURATION = 9000;
 
 export const FirstRunHint: React.FC = () => {
   const [visible, setVisible] = useState(false);
+  // Customization audit: the auto-dismiss duration is a user setting
+  // (0 = stays until dismissed).
+  const hintDurationMs = useSettingsStore((s) => s.hintDurationMs);
 
   useEffect(() => {
+    if (hintDurationMs === 0) return; // sticky — never auto-dismiss
     try {
       if (localStorage.getItem(FIRST_RUN_KEY)) return;
       localStorage.setItem(FIRST_RUN_KEY, '1');
       setVisible(true);
-      const t = setTimeout(() => setVisible(false), HINT_DURATION);
+      const t = setTimeout(() => setVisible(false), hintDurationMs);
       return () => clearTimeout(t);
     } catch (e) {
       // ignore storage errors
     }
-  }, []);
+  }, [hintDurationMs]);
 
   if (!visible) return null;
 

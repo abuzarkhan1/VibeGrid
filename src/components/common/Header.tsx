@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Columns, Rows, Command, RotateCcw, Plus, Settings, ChevronDown, Trash2, Info, Edit2, PanelLeft, Grid } from 'lucide-react';
-import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
+import { usePaneStore, getTerminalNodes, PresetCount } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import { useSettingsStore } from '@/store/useSettingsStore';
 import { InputModal } from '@/components/ui/InputModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
@@ -16,11 +17,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
   const { splitPane, focusedPaneId, paneCount, maxPanes } = usePaneStore();
   const { toggleCommandPalette, toggleSettings, addToast, requestSwitchWorkspace, requestCreateWorkspace, requestSetLayoutPreset, requestResetLayout } = useUIStore();
   const { workspaces, activeWorkspaceId, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
+  // Customization audit: the whole header can be hidden. The early return must
+  // sit BELOW every hook so the hook order stays stable across renders.
+  const hideHeader = useSettingsStore((s) => s.hideHeader);
 
   const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [renameWsId, setRenameWsId] = useState<string | null>(null);
   const [deleteWsId, setDeleteWsId] = useState<string | null>(null);
+
+  if (hideHeader) return null;
 
   const activeWs = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
   const renameTarget = workspaces.find((w) => w.id === renameWsId);
@@ -60,7 +66,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
     }
   };
 
-  const presets: (1 | 2 | 4 | 6 | 8 | 16)[] = [1, 2, 4, 6, 8, 16];
+  // Customization audit L12: 3/5/9/12 added to the equal-grid presets.
+  const presets: PresetCount[] = [1, 2, 3, 4, 5, 6, 8, 9, 12, 16];
 
   return (
     <header className="h-9 w-full bg-surface/95 backdrop-blur-md border-b border-white/[0.06] px-3 flex items-center justify-between select-none z-20">
@@ -80,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         )}
 
         <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={onOpenAbout} title="About VibeGrid">
-          <div className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-forest text-white shadow-[0_0_8px_rgba(44,122,64,0.35)]">
+          <div className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-forest text-white shadow-[0_0_8px_rgba(11,107,196,0.35)]">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
               <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
               <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
@@ -161,20 +168,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                       <Edit2 className="w-3 h-3" />
                     </button>
 
-                    {workspaces.length > 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteWsId(ws.id);
-                          setIsWsDropdownOpen(false);
-                        }}
-                        title="Delete Workspace"
-                        aria-label={`Delete workspace ${ws.name}`}
-                        className="p-0.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
+                    {/* Customization audit L16: the delete button is ALWAYS shown —
+                        deleting the last workspace resets to a fresh default. */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteWsId(ws.id);
+                        setIsWsDropdownOpen(false);
+                      }}
+                      title="Delete Workspace"
+                      aria-label={`Delete workspace ${ws.name}`}
+                      className="p-0.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
                 );
@@ -276,7 +283,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         </button>          <button
             onClick={toggleCommandPalette}
             aria-label="Open command palette"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-forest hover:bg-forest-bright border border-forest/40 text-xs font-medium text-white transition-all hover:shadow-[0_0_14px_rgba(84,169,103,0.35)]"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-forest hover:bg-forest-bright border border-forest/40 text-xs font-medium text-white transition-all hover:shadow-[0_0_14px_rgba(60,149,240,0.35)]"
           >
           <Command className="w-3.5 h-3.5 text-white" />
           <span className="hidden sm:inline">Palette</span>
@@ -289,7 +296,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           title="Create New Workspace"
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => requestCreateWorkspace(name.slice(0, 50))}
+          onSave={(name) => requestCreateWorkspace(name.slice(0, useSettingsStore.getState().workspaceNameMaxLength))}
           onClose={() => setShowCreateModal(false)}
         />
       )}
@@ -299,7 +306,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           title="Rename Workspace"
           initialValue={renameTarget.name}
           onSave={(name) => {
-            renameWorkspace(renameWsId, name.slice(0, 50));
+            renameWorkspace(renameWsId, name.slice(0, useSettingsStore.getState().workspaceNameMaxLength));
             setRenameWsId(null);
           }}
           onClose={() => setRenameWsId(null)}
@@ -310,9 +317,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         <ConfirmModal
           title="Delete Workspace"
           message={
-            deleteRunningCount > 0
-              ? `Delete workspace "${deleteTarget.name}"? This will terminate ${deleteRunningCount} running terminal${deleteRunningCount > 1 ? 's' : ''} in it. This action cannot be undone.`
-              : `Delete workspace "${deleteTarget.name}"? This action cannot be undone.`
+            // Customization audit L16: deleting the LAST workspace resets to a
+            // fresh default instead of refusing.
+            workspaces.length === 1
+              ? `Delete the last workspace "${deleteTarget.name}"? VibeGrid will reset to a fresh Default Workspace and terminate any running terminals.`
+              : deleteRunningCount > 0
+                ? `Delete workspace "${deleteTarget.name}"? This will terminate ${deleteRunningCount} running terminal${deleteRunningCount > 1 ? 's' : ''} in it. This action cannot be undone.`
+                : `Delete workspace "${deleteTarget.name}"? This action cannot be undone.`
           }
           confirmLabel="Delete Workspace"
           isDanger={true}

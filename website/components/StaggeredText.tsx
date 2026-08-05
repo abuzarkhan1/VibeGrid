@@ -4,7 +4,7 @@ import React from 'react';
 
 /**
  * Staggered letter reveal — each character fades up with a cascading delay
- * using the Freebuff `letter-fade-in` keyframe (globals.css). Falls back to
+ * using the `letter-fade-in` keyframe (globals.css). Falls back to
  * plain text under prefers-reduced-motion (CSS handles the animation).
  */
 export default function StaggeredText({

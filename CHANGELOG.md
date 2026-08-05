@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform-aware shell escaping: POSIX `'\''` vs PowerShell `''` vs raw cmd paste; fixed a bug where `/win/i` matched macOS `darwin`.
 - Workspace IDs sanitized on the Rust side (path-safe charset) and made collision-proof on the frontend; `kill_pane` no longer holds the sessions lock during its exit wait.
 - Website postcss bumped to 8.5.25 (audit: 2 → 1 high, remaining next.js advisories require a React 19 migration).
+- **Brand identity**: green accent palette replaced with the azure-blue `oklch(0.66 0.16 252)` family across the marketing site and desktop app; the Freebuff-derived `fb-*`/`lp-*` class system renamed to VibeGrid's `vg-*`; Freebuff attribution headers and references purged. Note: `VibeDark`'s ANSI green now renders azure (#3c95f0) by design, so colored `ls`/git output in the default theme is blue.
 
 ### Removed
 - Removed ~137 stale build artifacts from `website/public` (hashed chunks, analytics scripts, and a vendored third-party site directory that were served to production visitors).

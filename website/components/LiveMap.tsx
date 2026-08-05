@@ -6,9 +6,9 @@ import { useScrollReveal } from './useScrollReveal';
 import CountUp from './CountUp';
 import { CONTINENT_PATHS, MAP_DOTS } from './livemap-data';
 
-/* ─── Top countries (mirrors Freebuff's live-stats ordering) ─── */
+/* ─── Top countries ─── */
 const COUNTRIES = [
-  { code: 'US', name: 'United States', count: 223 },
+  { code: 'PK', name: 'Pakistan', count: 223 },
   { code: 'IN', name: 'India', count: 82 },
   { code: 'DE', name: 'Germany', count: 76 },
   { code: 'BR', name: 'Brazil', count: 72 },
@@ -28,8 +28,8 @@ export default function LiveMap() {
     <section className="relative bg-black px-6 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-12">
-          {/* ── Live stats card (Freebuff LiveUsage) ── */}
-          <div className="fb-hidden fb-in-rise rounded-2xl bg-white/[0.02] p-6 md:p-8">
+          {/* ── Live stats card ── */}
+          <div className="vg-hidden vg-in-rise rounded-2xl bg-white/[0.02] p-6 md:p-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="relative flex h-2.5 w-2.5">
@@ -46,7 +46,7 @@ export default function LiveMap() {
             </div>
 
             <div className="mt-6 flex items-end gap-3">
-              <span className="lp-text-glow-green font-mono text-5xl leading-none text-forest-bright md:text-6xl">
+              <span className="vg-text-glow font-mono text-5xl leading-none text-forest-bright md:text-6xl">
                 <CountUp target={4821} duration={1.8} />
               </span>
               <span className="pb-1 text-sm leading-tight text-white/55">
@@ -70,7 +70,7 @@ export default function LiveMap() {
                     <motion.div
                       className="h-full rounded-full"
                       style={{
-                        background: 'linear-gradient(90deg, #2c7a40, #54a967)',
+                        background: 'linear-gradient(90deg, #056fc7, #3c95f0)',
                       }}
                       initial={{ width: 0 }}
                       whileInView={{ width: `${(c.count / MAX_COUNT) * 100}%` }}
@@ -91,8 +91,8 @@ export default function LiveMap() {
             </a>
           </div>
 
-          {/* ── World map with pulsing dots (Freebuff /live) ── */}
-          <div className="fb-hidden fb-in-right overflow-hidden rounded-2xl border border-forest/15 bg-[#03100d] p-2 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]">
+          {/* ── World map with pulsing dots ── */}
+          <div className="vg-hidden vg-in-right overflow-hidden rounded-2xl border border-forest/15 bg-[#030d18] p-2 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]">
             <svg
               viewBox="0 0 1000 520"
               preserveAspectRatio="xMidYMid slice"
@@ -102,12 +102,12 @@ export default function LiveMap() {
             >
               <defs>
                 <pattern id="vg-map-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                  <path d="M48 0H0V48" fill="none" stroke="rgba(124,255,63,0.055)" strokeWidth="1" />
+                  <path d="M48 0H0V48" fill="none" stroke="rgba(92,194,255,0.06)" strokeWidth="1" />
                 </pattern>
                 <linearGradient id="vg-ocean" x1="0" x2="1" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#03100d" />
-                  <stop offset="46%" stopColor="#041918" />
-                  <stop offset="100%" stopColor="#010504" />
+                  <stop offset="0%" stopColor="#030d18" />
+                  <stop offset="46%" stopColor="#041a26" />
+                  <stop offset="100%" stopColor="#01060a" />
                 </linearGradient>
               </defs>
 
@@ -120,8 +120,8 @@ export default function LiveMap() {
                 <path
                   key={i}
                   d={d}
-                  fill="rgba(44,122,64,0.22)"
-                  stroke="rgba(84,169,103,0.28)"
+              fill="rgba(11,107,196,0.22)"
+              stroke="rgba(60,149,240,0.28)"
                   strokeWidth="0.8"
                 />
               ))}
@@ -130,12 +130,12 @@ export default function LiveMap() {
               {MAP_DOTS.map((dot, i) => (
                 <g key={i}>
                   <circle
-                    className="lp-lm-pulse"
+                    className="vg-lm-pulse"
                     cx={dot.x}
                     cy={dot.y}
                     r={dot.r}
-                    fill="rgba(34,211,238,0.14)"
-                    stroke="rgba(34,211,238,0.48)"
+                    fill="rgba(60,149,240,0.14)"
+                    stroke="rgba(60,149,240,0.48)"
                     strokeWidth="1.8"
                     style={{ '--dur': `${dot.dur}s`, '--delay': `${dot.delay}s` } as React.CSSProperties}
                   />
@@ -143,7 +143,7 @@ export default function LiveMap() {
                     cx={dot.x}
                     cy={dot.y}
                     r={Math.max(2.2, dot.r / 4)}
-                    fill="#7CFF3F"
+                    fill="#5CC2FF"
                     stroke="rgba(255,255,255,0.82)"
                     strokeWidth="1.2"
                   />
