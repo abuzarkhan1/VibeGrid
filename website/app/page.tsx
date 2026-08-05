@@ -11,6 +11,19 @@ import {
   AppleHoverIcon,
   WindowHoverIcon,
 } from '../components/ItsHoverIcons';
+import dynamic from 'next/dynamic';
+import { useScrollReveal } from '../components/useScrollReveal';
+import { StarsCanvas } from '../components/StarsCanvas';
+import { Navbar } from '../components/Navbar';
+import { SiteFooter } from '../components/SiteFooter';
+import StaggeredText from '../components/StaggeredText';
+
+/* Live map (world SVG + 110 pulsing dots) is below the fold — lazy-load it
+   so the 115KB map data + framer-motion don't inflate first load. */
+const LiveMap = dynamic(() => import('../components/LiveMap'), {
+  ssr: false,
+  loading: () => <div className="h-[420px]" aria-hidden="true" />,
+});
 
 /* ─── Install command chip with copy button (CLI section) ─── */
 function InstallCmd({ cmd }: { cmd: string }) {
@@ -39,29 +52,6 @@ function InstallCmd({ cmd }: { cmd: string }) {
       </button>
     </div>
   );
-}
-
-/* ─── Scroll-reveal hook (IntersectionObserver → fb-animate) ─── */
-function useScrollReveal() {
-  useEffect(() => {
-    const els = document.querySelectorAll<HTMLElement>('.fb-hidden');
-    if (!els.length) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const el = entry.target as HTMLElement;
-            el.classList.remove('fb-hidden');
-            el.classList.add('fb-animate');
-            observer.unobserve(el);
-          }
-        });
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -48px 0px' }
-    );
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, []);
 }
 
 /* ─── Parallax hook for footer hills ─── */
@@ -107,43 +97,14 @@ function useParallax() {
   return { skyRef, hillsRef, cardRef };
 }
 
-/* ─── Stars data ─── */
-const STARS = [
-  { left:'84.18%', top:'8.85%',  w:2, min:0.5, max:1, glow:'4px', dur:'5.949s', delay:'0.101s' },
-  { left:'8.42%',  top:'51.41%', w:3, min:0.5, max:1, glow:'5px', dur:'5.516s', delay:'1.879s' },
-  { left:'21.10%', top:'22.89%', w:3, min:0.5, max:1, glow:'5px', dur:'3.545s', delay:'1.894s' },
-  { left:'26.15%', top:'7.74%',  w:3, min:0.5, max:1, glow:'5px', dur:'4.636s', delay:'2.575s' },
-  { left:'26.46%', top:'66.14%', w:3, min:0.5, max:1, glow:'5px', dur:'4.070s', delay:'4.793s' },
-  { left:'89.21%', top:'3.14%',  w:3, min:0.5, max:1, glow:'5px', dur:'5.912s', delay:'1.773s' },
-  { left:'55.25%', top:'55.31%', w:2, min:0.5, max:1, glow:'4px', dur:'5.115s', delay:'0.597s' },
-  { left:'32.67%', top:'22.03%', w:3, min:0.5, max:1, glow:'5px', dur:'4.444s', delay:'2.224s' },
-  { left:'76.28%', top:'73.86%', w:3, min:0.5, max:1, glow:'5px', dur:'4.523s', delay:'2.250s' },
-  { left:'5.32%',  top:'71.79%', w:2, min:0.5, max:1, glow:'4px', dur:'4.107s', delay:'2.597s' },
-  { left:'12.38%', top:'12.62%', w:2, min:0.5, max:1, glow:'4px', dur:'6.023s', delay:'0.312s' },
-  { left:'63.11%', top:'18.44%', w:3, min:0.5, max:1, glow:'5px', dur:'3.882s', delay:'3.107s' },
-  { left:'47.55%', top:'44.22%', w:2, min:0.5, max:1, glow:'4px', dur:'5.331s', delay:'1.450s' },
-  { left:'38.90%', top:'35.67%', w:3, min:0.5, max:1, glow:'5px', dur:'4.788s', delay:'0.820s' },
-  { left:'72.44%', top:'60.19%', w:2, min:0.5, max:1, glow:'4px', dur:'5.673s', delay:'3.995s' },
-  { left:'18.72%', top:'82.55%', w:3, min:0.5, max:1, glow:'5px', dur:'4.231s', delay:'2.040s' },
-];
-
-const SHOOTING_STARS = [
-  { top:'8%',  left:'6%',  dx:'360px', dy:'190px', dur:'6s',   delay:'0.5s' },
-  { top:'14%', left:'52%', dx:'420px', dy:'220px', dur:'7s',   delay:'2.2s' },
-  { top:'22%', left:'78%', dx:'320px', dy:'170px', dur:'6.5s', delay:'4s'   },
-  { top:'30%', left:'20%', dx:'460px', dy:'250px', dur:'8s',   delay:'1.4s' },
-  { top:'38%', left:'64%', dx:'380px', dy:'200px', dur:'7.5s', delay:'3.3s' },
-  { top:'46%', left:'34%', dx:'300px', dy:'160px', dur:'6.8s', delay:'5s'   },
-];
-
 /* ─── Comparison data ─── */
 const COMPETITORS = [
-  { name: 'VibeGrid',    price: '$0',    pct: 3,    primary: true },
-  { name: 'BridgeSpace', price: '$120',  pct: 14.7, primary: false },
-  { name: 'Warp Pro',    price: '$240',  pct: 29.5, primary: false },
-  { name: 'iTerm2 Grid', price: '$480',  pct: 48.2, primary: false },
-  { name: 'tmux',        price: '$720',  pct: 62.8, primary: false },
-  { name: 'WezTerm',     price: '$1200', pct: 82.4, primary: false },
+  { name: 'VibeGrid',        price: '$0',    pct: 3,    primary: true },
+  { name: 'MobaXterm Pro',   price: '$69',   pct: 20,   primary: false },
+  { name: 'SecureCRT',       price: '$99',   pct: 30,   primary: false },
+  { name: 'Termius Pro',     price: '$120',  pct: 40,   primary: false },
+  { name: 'BridgeSpace',     price: '$120',  pct: 45,   primary: false },
+  { name: 'Warp Pro',        price: '$240',  pct: 80,   primary: false },
 ];
 
 /* ─── FAQ data ─── */
@@ -153,7 +114,7 @@ const FAQS = [
   { q: 'What makes VibeGrid different from other terminals?', a: 'VibeGrid uses WebGL GPU-accelerated rendering for 60 FPS across up to 16 live panes simultaneously, with a Rust PTY backend for <10ms keystroke latency.' },
   { q: 'Which platforms are supported?', a: 'macOS (Apple Silicon & Intel) and Windows (x64). Linux support is coming soon.' },
   { q: 'How do workspaces work?', a: 'Create named workspaces with Cmd+Shift+N, switch between them instantly. Each workspace remembers your exact pane layout and restores it on launch — switching to another workspace starts fresh shells, so running processes in the current one are terminated after confirmation.' },
-  { q: 'Can I customize themes and keybindings?', a: 'Yes. VibeGrid ships with 7 built-in themes (VibeDark, Midnight Blue, Dracula, Nord, Solarized Dark/Light, VibeLight) and a full keybinding editor.' },
+  { q: 'Can I customize themes and keybindings?', a: 'Yes. VibeGrid ships with 8 built-in themes (VibeDark, One Dark Pro, Nord, Tokyo Night, Catppuccin, Gruvbox Dark, Solarized Dark, GitHub Dark) and a full keybinding editor.' },
 ];
 
 export default function Home() {
@@ -164,52 +125,7 @@ export default function Home() {
     <div className="dark relative min-h-screen bg-black font-sans text-white overflow-x-hidden selection:bg-emerald-500 selection:text-black">
 
       {/* ═══════════════════════════ NAVBAR ═══════════════════════════ */}
-      <header className="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-black/85 backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
-
-          {/* Logo */}
-          <a href="/" className="flex shrink-0 items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-forest text-white shadow-[0_0_18px_rgba(44,122,64,0.55)]">
-              <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
-                <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-                <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-                <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2"/>
-              </svg>
-            </div>
-            <span className="text-sm font-medium text-white/90 tracking-tight">VibeGrid</span>
-          </a>
-
-          {/* Nav links */}
-          <nav className="hidden items-center gap-1 md:flex">
-            {['Desktop','CLI','Workspaces','Themes'].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`}
-                className="rounded-md px-3 py-1.5 text-[13.5px] text-white/55 transition-colors hover:text-white hover:bg-white/5">
-                {item}
-              </a>
-            ))}
-            <a href="/about"
-              className="rounded-md px-3 py-1.5 text-[13.5px] text-white/55 transition-colors hover:text-white hover:bg-white/5">
-              About
-            </a>
-          </nav>
-
-          {/* Right side */}
-          <div className="flex items-center gap-2.5">
-            <a href="https://github.com/abuzarkhan1/VibeGrid" target="_blank" rel="noreferrer"
-              className="hidden items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition-colors hover:border-white/20 hover:text-white sm:flex">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.929.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
-              </svg>
-              <span>Star us</span>
-            </a>
-            <a href="#download"
-               className="rounded-md bg-forest px-3.5 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_16px_rgba(84,169,103,0.4)] install-box-glow">
-              Download
-            </a>
-          </div>
-        </div>
-      </header>
+      <Navbar active="home" />
 
       {/* ═══════════════════════════ HERO ═══════════════════════════ */}
       <section className="relative isolate overflow-hidden">
@@ -218,26 +134,7 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,#03060a_0%,#060c12_24%,#101f23_44%,#172a29_57%,#121a1a_71%,#070a0b_86%,#000000_100%)]" />
 
         {/* Stars canvas */}
-        <div className="lp-gpu pointer-events-none absolute inset-0">
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            {STARS.map((s, i) => (
-              <span key={i} className="lp-star" style={{
-                left: s.left, top: s.top,
-                width: `${s.w}px`, height: `${s.w}px`,
-                '--min': s.min, '--max': s.max,
-                '--glow': s.glow, '--dur': s.dur, '--delay': s.delay,
-              } as React.CSSProperties} />
-            ))}
-          </div>
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            {SHOOTING_STARS.map((s, i) => (
-              <span key={i} className="lp-shooting-star" style={{
-                top: s.top, left: s.left,
-                '--dx': s.dx, '--dy': s.dy, '--dur': s.dur, '--delay': s.delay,
-              } as React.CSSProperties} />
-            ))}
-          </div>
-        </div>
+        <StarsCanvas />
 
         {/* Hero content */}
         <div className="relative z-10 mx-auto max-w-4xl px-6 pb-32 pt-36 text-center">
@@ -255,7 +152,7 @@ export default function Home() {
           <h1 className="lp-hero-heading fb-hidden fb-in-text text-[44px] leading-[1.08] text-white sm:text-[58px] md:text-[72px] lg:text-[84px]"
               style={{ '--fb-delay': '0.05s' } as React.CSSProperties}>
             The "Agnostic"<br />
-            <span className="lp-text-glow-green text-forest-bright">Vibe Coder</span>{' '}
+            <StaggeredText text="Vibe Coder" className="lp-text-glow-green text-forest-bright" step={45} startDelay={450} />{' '}
           </h1>
 
           {/* Sub text */}
@@ -267,14 +164,14 @@ export default function Home() {
           {/* CTA buttons */}
           <div className="fb-hidden fb-in-rise mt-10 flex flex-wrap items-center justify-center gap-3"
                style={{ '--fb-delay': '0.18s' } as React.CSSProperties}>
-            <a href="#download"
+            <a href="/#download"
                className="install-box-glow group flex items-center gap-2 rounded-xl border border-forest/40 bg-forest px-5 py-3 text-[14px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_28px_rgba(84,169,103,0.55)]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 5v14M5 12l7 7 7-7"/>
               </svg>
               Download for macOS
             </a>
-            <a href="#download"
+            <a href="/#download"
                className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-[14px] text-white/70 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
@@ -292,8 +189,12 @@ export default function Home() {
           </div>
 
           {/* Social proof */}
-          <p className="fb-hidden fb-in-rise mt-6 text-[13px] text-white/30"
+          <p className="fb-hidden fb-in-rise mt-6 flex items-center justify-center gap-2 text-[13px] text-white/30"
              style={{ '--fb-delay': '0.24s' } as React.CSSProperties}>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-75" />
+              <span className="animate-pulse relative inline-flex h-2 w-2 rounded-full bg-forest-bright" />
+            </span>
             100% free & open source · no account, no telemetry, no walled garden
           </p>
         </div>
@@ -389,13 +290,13 @@ export default function Home() {
                   Run coding agents in parallel on your machine — each in its own workspace.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <a href="#download" className="install-box-glow inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-forest-bright">
+                  <a href="/#download" className="install-box-glow inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-forest-bright">
                     Download free →
                   </a>
                 </div>
               </div>
               {/* Terminal mock */}
-              <div className="fb-hidden fb-in-pop" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+              <div className="fb-hidden fb-in-right" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
                 <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0b0d] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
                   {/* Terminal title bar */}
                   <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
@@ -412,7 +313,15 @@ export default function Home() {
                         <div className="text-white/40">$ <span className="text-white/70">git status</span></div>
                         <div className="mt-1 text-white/30 text-[11px]">On branch main</div>
                         <div className="text-white/30 text-[11px]">nothing to commit</div>
-                        <div className="mt-2 text-white/70">$ <span className="lp-caret-blink text-forest-bright">▌</span></div>
+                        {pane === 1 && (
+                          <div className="mt-2 flex items-center gap-1.5 text-forest-bright/80">
+                            <span className="animate-thinking-dot h-1 w-1 rounded-full bg-forest-bright" />
+                            <span className="animate-thinking-dot h-1 w-1 rounded-full bg-forest-bright" style={{ animationDelay: '0.2s' }} />
+                            <span className="animate-thinking-dot h-1 w-1 rounded-full bg-forest-bright" style={{ animationDelay: '0.4s' }} />
+                            <span className="ml-1 text-[10px] text-forest-bright/60">agent orchestrating…</span>
+                          </div>
+                        )}
+                        <div className="mt-2 text-white/70">$ <span className="animate-terminal-cursor text-forest-bright">▌</span></div>
                       </div>
                     ))}
                   </div>
@@ -468,7 +377,7 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-              <div className="fb-hidden fb-in-pop" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+              <div className="fb-hidden fb-in-right" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
                 <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0b0d] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
                   <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
                     <span className="h-3 w-3 rounded-full bg-red-500/70" />
@@ -499,10 +408,10 @@ export default function Home() {
                 Themes
               </div>
               <h2 className="lp-feature-heading text-white">
-                7 built-in themes, <span className="text-forest-bright">fully customizable</span>
+                8 built-in themes, <span className="text-forest-bright">fully customizable</span>
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-[15px] text-white/50">
-                VibeDark, VibeLight, Midnight Blue, Solarized Dark/Light, Dracula and Nord —
+                VibeDark, One Dark Pro, Nord, Tokyo Night, Catppuccin, Gruvbox Dark, Solarized Dark, and GitHub Dark —
                 switch instantly or tune every color to your taste.
               </p>
             </div>
@@ -510,14 +419,16 @@ export default function Home() {
             <div className="fb-hidden fb-in-rise grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {[
                 { name: 'VibeDark', bg: '#0b0d12', fg: '#e2e8f0', acc: '#54a967' },
-                { name: 'VibeLight', bg: '#f8fafc', fg: '#0f172a', acc: '#4f46e5' },
-                { name: 'Midnight Blue', bg: '#0a1128', fg: '#d4e0ff', acc: '#3a86ff' },
-                { name: 'Dracula', bg: '#282a36', fg: '#f8f8f2', acc: '#50fa7b' },
-                { name: 'Solarized Dark', bg: '#002b36', fg: '#839496', acc: '#268bd2' },
-                { name: 'Solarized Light', bg: '#fdf6e3', fg: '#657b83', acc: '#586e75' },
+                { name: 'One Dark Pro', bg: '#282c34', fg: '#abb2bf', acc: '#61afef' },
                 { name: 'Nord', bg: '#2e3440', fg: '#d8dee9', acc: '#88c0d0' },
+                { name: 'Tokyo Night', bg: '#1a1b26', fg: '#c0caf5', acc: '#7aa2f7' },
+                { name: 'Catppuccin', bg: '#1e1e2e', fg: '#cdd6f4', acc: '#cba6f7' },
+                { name: 'Gruvbox Dark', bg: '#282828', fg: '#ebdbb2', acc: '#fabd2f' },
+                { name: 'Solarized Dark', bg: '#002b36', fg: '#839496', acc: '#268bd2' },
+                { name: 'GitHub Dark', bg: '#0d1117', fg: '#c9d1d9', acc: '#58a6ff' },
               ].map((t) => (
-                <div key={t.name} className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 transition-colors hover:border-forest/30">
+                <div key={t.name} className="group relative overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 transition-colors hover:border-forest/30">
+                  <div className="shine-layer" aria-hidden="true" />
                   <div className="mb-2 flex h-12 items-end gap-1.5 rounded-lg border border-white/[0.06] p-2" style={{ backgroundColor: t.bg }}>
                     <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.acc }} />
                     <span className="h-3 w-1.5 rounded-sm" style={{ backgroundColor: t.acc }} />
@@ -539,7 +450,7 @@ export default function Home() {
               </div>
               <h2 className="lp-feature-heading fb-hidden fb-in-text text-white">
                 Everything you need for Vibe Coding.<br/>
-                <span className="text-forest-bright lp-text-glow-green">No Walled Gardens.</span>
+                <span className="animate-glow-pulse text-forest-bright lp-text-glow-green">No Walled Gardens.</span>
               </h2>
             </div>
 
@@ -549,12 +460,13 @@ export default function Home() {
                 { icon: <CpuHoverIcon size={26} />, title: 'Rust PTY Backend', desc: '<10ms keystroke latency. Native OS pseudo-terminal with backpressure-aware IPC batching at 16ms.' },
                 { icon: <GridHoverIcon size={26} />, title: '1–16 Pane Grid', desc: 'Dynamically split into any layout. Perfect for orchestrating multiple AI agents side-by-side.' },
                 { icon: <HardDriveHoverIcon size={26} />, title: 'Agent Agnostic', desc: 'Break free from BridgeSpace. Run ANY AI coding agent locally without being locked into a walled garden ecosystem.' },
-                { icon: <PaletteHoverIcon size={26} />, title: '7 Built-in Themes', desc: 'VibeDark, Midnight Blue, Dracula, Nord, Solarized Dark/Light, VibeLight. Full customization.' },
+                { icon: <PaletteHoverIcon size={26} />, title: '8 Built-in Themes', desc: 'VibeDark, One Dark Pro, Nord, Tokyo Night, Catppuccin, Gruvbox, Solarized, GitHub Dark.' },
                 { icon: <KeyboardHoverIcon size={26} />, title: 'Command Palette', desc: 'Cmd+Shift+P fuzzy search. Every command, shortcut, and setting discoverable in one place.' },
               ].map((f, i) => (
                 <div key={i}
-                     className="fb-hidden fb-in-pop group rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
+                     className="fb-hidden fb-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
                      style={{ '--fb-index': i, '--fb-step': '70ms', '--fb-delay': '0.05s' } as React.CSSProperties}>
+                  <div className="shine-layer" aria-hidden="true" />
                   <div className="mb-4 flex items-center h-8">{f.icon}</div>
                   <h3 className="mb-2 text-[15px] font-medium text-white/90">{f.title}</h3>
                   <p className="text-[13.5px] leading-relaxed text-white/45">{f.desc}</p>
@@ -563,6 +475,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        {/* ── Live Map (Freebuff live-stats + pulsing world map) ── */}
+        <LiveMap />
 
         {/* ── Quote / Social Proof ── */}
         <section className="relative bg-black px-6 py-16 md:py-24">
@@ -590,6 +505,7 @@ export default function Home() {
               {/* macOS */}
               <div className="fb-hidden fb-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 transition-all hover:border-forest/30 hover:bg-forest/[0.03]"
                    style={{ '--fb-delay': '0s' } as React.CSSProperties}>
+                <div className="shine-layer" aria-hidden="true" />
                 <div className="absolute inset-0 animate-scan-line pointer-events-none">
                   <div className="h-px w-full bg-gradient-to-r from-transparent via-forest/10 to-transparent" />
                 </div>
@@ -619,6 +535,7 @@ export default function Home() {
               {/* Windows */}
               <div className="fb-hidden fb-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 transition-all hover:border-white/15"
                    style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+                <div className="shine-layer" aria-hidden="true" />
                 <div className="mb-6 flex items-center h-10"><WindowHoverIcon size={32} /></div>
                 <h3 className="mb-1 text-[18px] font-medium text-white">Windows</h3>
                 <p className="mb-6 text-[13px] text-white/40">Windows 10/11 · x64</p>
@@ -645,7 +562,8 @@ export default function Home() {
             </div>
             <div className="divide-y divide-white/[0.06]">
               {FAQS.map((faq, i) => (
-                <details key={i} className="group py-5">
+                <details key={i} className="fb-hidden fb-in-fall group py-5"
+                         style={{ '--fb-index': i, '--fb-step': '60ms' } as React.CSSProperties}>
                   <summary className="flex cursor-pointer items-center justify-between text-[15px] font-normal text-white/80 transition-colors hover:text-white list-none">
                     {faq.q}
                     <svg className="h-4 w-4 shrink-0 text-white/30 transition-transform group-open:rotate-45" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -661,23 +579,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Footer Landscape ── */}
-        <section className="relative overflow-hidden bg-black">
-          <div className="parallax-container relative h-[60vh] w-full">
-
-            {/* Bushes foreground */}
-            <img src="/bushes-fg.webp" alt="" aria-hidden="true"
-                 decoding="async" draggable="false"
-                 className="lp-gpu pointer-events-none absolute inset-x-0 bottom-0 z-[2] w-full select-none object-cover" />
-
-            {/* VibeGrid wordmark in landscape */}
-            <div className="absolute inset-x-0 bottom-[18%] z-[3] flex items-center justify-center">
-              <span className="select-none font-sans text-[clamp(3rem,10vw,9rem)] font-black uppercase tracking-[0.15em] text-white opacity-[0.22]">
-                VIBEGRID
-              </span>
-            </div>
-          </div>
-        </section>
+        {/* ── Footer ── */}
+        <SiteFooter active="home" />
 
       </div>
     </div>

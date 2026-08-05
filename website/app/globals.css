@@ -136,6 +136,63 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/* 20. Radix/Tailwind enter transition (modal/palette system) */
+@keyframes enter {
+  0% { opacity: var(--tw-enter-opacity, 1); transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0)); }
+}
+
+/* 21. Radix/Tailwind exit transition */
+@keyframes exit {
+  to { opacity: var(--tw-exit-opacity, 1); transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0)); }
+}
+
+/* 22. Scroll-reveal fall from top */
+@keyframes fb-fall {
+  0%   { opacity: 0; transform: translate3d(0, calc(-1 * var(--fb-distance, 10px)), 0); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* 23. Scroll-reveal slide from right */
+@keyframes fb-slide-left {
+  0%   { opacity: 0; transform: translate3d(var(--fb-distance, 18px), 0, 0); }
+  100% { opacity: 1; transform: none; }
+}
+
+/* 24. Text glow breathe */
+@keyframes glow-pulse {
+  0%, 100% { text-shadow: 0 0 20px rgba(124,255,63,0.4), 0 0 40px rgba(124,255,63,0.2), 0 0 80px rgba(124,255,63,0.1); }
+  50%      { text-shadow: 0 0 30px rgba(124,255,63,0.6), 0 0 60px rgba(124,255,63,0.3), 0 0 100px rgba(124,255,63,0.15); }
+}
+
+/* 25. Staggered letter fade-in */
+@keyframes letter-fade-in {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* 26. Opacity pulse */
+@keyframes pulse {
+  50% { opacity: 0.5; }
+}
+
+/* 27. Gradient shine sweep (hover cards) */
+@keyframes shine {
+  0% { background-position: 200%; }
+  100% { background-position: -200%; }
+}
+
+/* 28. Terminal cursor (blink) */
+@keyframes terminal-cursor {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* 29. AI thinking dots (bounce) */
+@keyframes thinking-dot {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40%           { opacity: 1; transform: translateY(-3px); }
+}
+
 /* ================================================================
    FREEBUFF COMPONENT CLASSES (exact)
    ================================================================ */
@@ -259,7 +316,9 @@
 .fb-animate.fb-in-rise   { animation-name: fb-rise; }
 .fb-animate.fb-in-fade   { animation-name: fb-fade; }
 .fb-animate.fb-in-pop    { animation-name: fb-pop; }
+.fb-animate.fb-in-fall   { animation-name: fb-fall; }
 .fb-animate.fb-in-left   { animation-name: fb-slide-right; }
+.fb-animate.fb-in-right  { animation-name: fb-slide-left; }
 .fb-animate.fb-in-text   { animation-name: fb-text; }
 
 /* Hidden until intersection observer fires */
@@ -280,11 +339,43 @@
 
 /* ---- Utility ---- */
 .animate-fade-in-up  { animation: 0.6s ease-out both fade-in-up; }
-.animate-glow-pulse  { animation: 3s ease-in-out infinite keyword-glow-enter; }
+.animate-glow-pulse  { animation: 3s ease-in-out infinite glow-pulse; }
 .animate-bounce      { animation: 1s infinite bounce; }
 .animate-shimmer     { animation: 2.5s infinite shimmer; }
 .animate-spin        { animation: 1s linear infinite spin; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.animate-pulse       { animation: 2s cubic-bezier(0.4, 0, 0.6, 1) infinite pulse; }
+.animate-terminal-cursor { animation: 1s step-end infinite terminal-cursor; }
+.animate-letter-fade-in  { animation: 0.4s ease-out forwards letter-fade-in; }
+.animate-thinking-dot    { animation: 1.4s ease-in-out infinite thinking-dot; }
+
+/* ---- Enter/Exit (modal & palette system) ---- */
+.animate-in {
+  --tw-enter-opacity: initial; --tw-enter-scale: initial; --tw-enter-rotate: initial;
+  --tw-enter-translate-x: initial; --tw-enter-translate-y: initial;
+  animation-name: enter;
+  animation-duration: 0.15s;
+}
+.animate-out {
+  --tw-exit-opacity: initial; --tw-exit-scale: initial; --tw-exit-rotate: initial;
+  --tw-exit-translate-x: initial; --tw-exit-translate-y: initial;
+  animation-name: exit;
+  animation-duration: 0.15s;
+}
+.fade-in-0 { --tw-enter-opacity: 0; }
+
+/* ---- Shine sweep on hover (cards) ---- */
+.shine-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.06) 36%, rgba(124,255,63,0.05) 50%, transparent 64%);
+  background-size: 200% 100%;
+  background-position: 200% 0;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.group:hover .shine-layer { opacity: 1; animation: 3s ease-in-out infinite shine; }
 
 /* ---- Accordion ---- */
 .animate-accordion-down { animation: accordion-down 0.2s ease-out; }
@@ -293,9 +384,12 @@
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .lp-star, .lp-shooting-star, .lp-lm-pulse, .lp-caret-blink,
-  .install-box-glow, .animate-ping, .animate-bounce,
-  .animate-logo-scroll, .animate-scan-line,
+  .install-box-glow, .animate-ping, .animate-pulse, .animate-bounce,
+  .animate-logo-scroll, .animate-scan-line, .animate-glow-pulse,
+  .animate-terminal-cursor, .animate-thinking-dot, .animate-letter-fade-in,
+  .animate-in, .animate-out,
   .fb-animate { animation: none !important; }
+  .shine-layer { opacity: 0; }
   .lp-star { opacity: var(--max, 1); }
   .lp-shooting-star { opacity: 0; }
   .fb-hidden { opacity: 1 !important; }
