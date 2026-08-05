@@ -678,6 +678,23 @@ function applyThemeVariables(
     root.style.setProperty('--color-border', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.07)');
     const accent = accentOverride ?? termTheme.cursor;
     root.style.setProperty('--color-accent', accent);
+    // Keep the alpha-capable channel triplets in sync so Tailwind opacity
+    // modifiers (border-forest/30, bg-surface/90, bg-surfaceCard/95 …) keep
+    // working after a theme switch — even for custom-theme cursors in exotic
+    // formats (rgba/oklch/named), which the probe-element parser resolves.
+    const accentChannels = colorToRgbChannels(accent);
+    if (accentChannels) {
+      root.style.setProperty('--color-accent-rgb', accentChannels);
+      root.style.setProperty('--color-accent-rgba', accentChannels.replace(/ /g, ', '));
+    }
+    const surfaceChannels = colorToRgbChannels(chrome.black);
+    if (surfaceChannels) {
+      root.style.setProperty('--color-surface-rgb', surfaceChannels);
+    }
+    const surfaceHoverChannels = colorToRgbChannels(chrome.brightBlack);
+    if (surfaceHoverChannels) {
+      root.style.setProperty('--color-surface-hover-rgb', surfaceHoverChannels);
+    }
     root.style.setProperty('--color-fg', chrome.foreground);
     root.style.setProperty('--color-muted', light ? '#57606a' : '#8b93a1');
     root.style.setProperty('--color-selection', termTheme.selectionBackground);
@@ -687,6 +704,38 @@ function applyThemeVariables(
     root.classList.toggle('vibegrid-light', light);
     root.style.colorScheme = light ? 'light' : 'dark';
   }
+}
+
+/** Convert any CSS color (6-digit hex, rgb()/rgba(), oklch(), named colors…)
+ *  into the space-separated RGB triplet form Tailwind's alpha-capable colors
+ *  need (e.g. '60 149 240'). Falls back to a probe-element + getComputedStyle
+ *  so custom-theme cursors in exotic formats still keep --color-accent-rgb in
+ *  sync with --color-accent. Returns null when the color can't be resolved. */
+function colorToRgbChannels(color: string | null | undefined): string | null {
+  if (!color) return null;
+  const hex = /^#?([0-9a-f]{6})$/i.exec(color.trim());
+  if (hex) {
+    const n = parseInt(hex[1], 16);
+    return `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`;
+  }
+  // General path: let the browser resolve any valid CSS color to its RGB form.
+  if (typeof document !== 'undefined') {
+    try {
+      const probe = document.createElement('div');
+      probe.style.color = color;
+      probe.style.display = 'none';
+      document.body.appendChild(probe);
+      const resolved = getComputedStyle(probe).color; // e.g. "rgb(60, 149, 240)"
+      document.body.removeChild(probe);
+      const m = /rgba?\(\s*([\d.]+)\s*[,\s]+\s*([\d.]+)\s*[,\s]+\s*([\d.]+)/i.exec(resolved);
+      if (m) {
+        return `${Math.round(parseFloat(m[1]))} ${Math.round(parseFloat(m[2]))} ${Math.round(parseFloat(m[3]))}`;
+      }
+    } catch {
+      // fall through to null
+    }
+  }
+  return null;
 }
 
 /** Re-apply the chrome from the CURRENT settings state (single source of truth

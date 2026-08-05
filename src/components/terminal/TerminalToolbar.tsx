@@ -2,6 +2,7 @@ import React from 'react';
 import { Columns, Rows, Maximize2, Minimize2, X, Terminal as TerminalIcon } from 'lucide-react';
 import { usePaneStore } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
+import { paneColorForIndex } from '@/lib/paneColors';
 
 interface TerminalToolbarProps {
   nodeId: string;
@@ -20,6 +21,11 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
 }) => {
   const { splitPane, toggleMaximize, paneCount, maxPanes } = usePaneStore();
   const { addToast, requestClosePane } = useUIStore();
+
+  // Per-pane identity: 0-based tree-order index → colored number badge.
+  const paneIndex = usePaneStore((s) => s.getPaneIndex(nodeId));
+  const badgeNumber = Math.max(paneIndex + 1, 1);
+  const paneColor = paneColorForIndex(paneIndex);
 
   const handleSplitHorizontal = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,19 +69,31 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
       onDoubleClick={handleToggleMaximize}
       className={`h-7 w-full px-2.5 flex items-center justify-between transition-colors border-b select-none cursor-pointer ${
         isFocused
-          ? 'bg-surface border-forest/30 text-white/80'
-          : 'bg-black/60 border-white/[0.06] text-white/45 opacity-70 hover:opacity-100'
+          ? 'bg-surface border-forest/60 text-white/90'
+          : 'bg-black/50 border-white/15 text-white/75 hover:bg-black/40 hover:text-white/90'
       }`}
     >
       {/* Pane info */}
       <div className="flex items-center gap-1.5 min-w-0">
+        {/* Pane index badge: a distinct colored number per pane, so a 2/3/4
+            pane grid is identifiable at a glance — even if borders fail. */}
+        <span
+          className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-[5px] px-1 text-[10px] font-bold text-black/85"
+          style={{ backgroundColor: paneColor }}
+          title={`Pane ${badgeNumber}`}
+        >
+          {badgeNumber}
+        </span>
         {/* macOS traffic lights (site terminal mock) */}
         <span className="flex items-center gap-1.5 mr-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
           <span className="h-2.5 w-2.5 rounded-full bg-forest/70" />
         </span>
-        <TerminalIcon className={`w-3.5 h-3.5 ${isFocused ? 'text-forest-bright' : 'text-white/40'}`} />
+        <TerminalIcon
+          className={`w-3.5 h-3.5 ${isFocused ? '' : 'text-white/40'}`}
+          style={{ color: isFocused ? paneColor : undefined }}
+        />
         <span className="text-xs font-medium truncate tracking-wide">{title}</span>
         {hasActivity && !isFocused && (
           <span

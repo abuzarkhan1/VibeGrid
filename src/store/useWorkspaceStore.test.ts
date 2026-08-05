@@ -138,6 +138,46 @@ describe('VibeGrid Workspace Persistence', () => {
     expect(pane.focusedPaneId).toBe('term-1');
   });
 
+  // Grid-collapse regression: a RESTART restores the saved layout through
+  // applyLayoutToPaneStore, which sets the pane-store root directly. That path
+  // must bump gridVersion — App.tsx keys the root GridRenderer on it, forcing
+  // a fresh Allotment mount so a restored deeper grid (2×2/3×3/4×4) can never
+  // inherit a stale collapsed layout from a previously-mounted Allotment tree.
+  it('loadWorkspaces bumps gridVersion so the restored grid remounts fresh', async () => {
+    mockedInvoke.mockResolvedValueOnce([
+      {
+        id: 'default-workspace',
+        name: 'My Project',
+        layout: fourPaneLayout(),
+        created_at: 1000,
+        updated_at: 2000,
+      },
+    ]);
+    const before = usePaneStore.getState().gridVersion;
+
+    await useWorkspaceStore.getState().loadWorkspaces();
+
+    expect(usePaneStore.getState().gridVersion).toBe(before + 1);
+    expect(usePaneStore.getState().paneCount).toBe(4);
+  });
+
+  it('switchWorkspace bumps gridVersion when restoring the target layout', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-second', name: 'Second', layout: fourPaneLayout() as never, createdAt: 2, updatedAt: 2, version: 1 },
+      ],
+      activeWorkspaceId: 'default-workspace',
+      isLoading: false,
+    });
+    const before = usePaneStore.getState().gridVersion;
+
+    useWorkspaceStore.getState().switchWorkspace('ws-second');
+
+    expect(usePaneStore.getState().gridVersion).toBe(before + 1);
+    expect(usePaneStore.getState().paneCount).toBe(4);
+  });
+
   it('keeps the default workspace when nothing is persisted yet', async () => {
     mockedInvoke.mockResolvedValueOnce([]);
     await useWorkspaceStore.getState().loadWorkspaces();

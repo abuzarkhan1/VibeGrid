@@ -9,6 +9,10 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 
 interface GridRendererProps {
   node: PaneNode;
+  /** Nesting depth (0 = top-level split). Used to scale the Allotment minSize
+   *  down for nested grids so a 2×2/3×3/4×4 layout can never collapse when the
+   *  fixed minPaneSize exceeds what a pane slot can hold. */
+  depth?: number;
 }
 
 /**
@@ -16,7 +20,7 @@ interface GridRendererProps {
  * untouched subtrees — whose `node` reference is stable — skip re-rendering
  * entirely. Only the split being resized re-renders per drag frame.
  */
-export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node }) => {
+export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node, depth = 0 }) => {
   const maximizedPaneId = usePaneStore((s) => s.maximizedPaneId);
 
   // If a pane is maximized, render only that pane
@@ -28,10 +32,12 @@ export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node }) =
     );
   }
 
-  // If node is a terminal leaf
+  // If node is a terminal leaf. The wrapper adds a visible gutter around
+  // every pane (the page bg shows through), so adjacent panes read as distinct
+  // tiles even before you notice the azure border.
   if (node.type === 'terminal') {
     return (
-      <div className="h-full w-full p-0.5 min-h-0 min-w-0 overflow-hidden">
+      <div className="h-full w-full p-1 min-h-0 min-w-0 overflow-hidden">
         <TerminalContainer id={node.id} title={node.title} />
       </div>
     );
@@ -39,19 +45,26 @@ export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node }) =
 
   // Split node → dedicated component so the hooks below are never called
   // after an early return (react-hooks/rules-of-hooks).
-  return <SplitView node={node} />;
+  return <SplitView node={node} depth={depth} />;
 });
 
 // A single split: renders through Allotment (resizable) and snaps back to the
 // pristine equal ratio when the store re-equalizes a preset the user dragged.
 // `node` is already narrowed to a split by the parent's early returns, but
 // the explicit SplitNode prop keeps the hooks' property access type-safe.
-const SplitView: React.FC<{ node: SplitNode }> = React.memo(({ node }) => {
+const SplitView: React.FC<{ node: SplitNode; depth: number }> = React.memo(({ node, depth }) => {
   const setRatio = usePaneStore((s) => s.setRatio);
   // Customization audit L9/L10/L11: min pane size, snap threshold, and the
   // snap + double-click behaviors are user settings now (fine-grained
   // selectors — these primitives only re-render this split, not the grid).
   const minPaneSize = useSettingsStore((s) => s.minPaneSize);
+  // CRITICAL: scale the Allotment minSize down with nesting depth. Allotment
+  // collapses a split to zero when the container is smaller than the sum of
+  // its panes' minSizes — a fixed 120px min turns a 2×2 grid (inner splits
+  // need 2×120 = 240px per column) into a BLANK area in medium windows, and
+  // 3×3/4×4 grids get even worse. Deeper grids divide the min so panes always
+  // fit their slot (preserving the setting's effect for top-level splits).
+  const effectiveMin = Math.max(24, Math.round(minPaneSize / (depth + 1)));
   const snapEpsilon = useSettingsStore((s) => s.snapEpsilon);
   const dividerSnap = useSettingsStore((s) => s.dividerSnap);
   const doubleClickEqualize = useSettingsStore((s) => s.doubleClickEqualize);
@@ -73,6 +86,46 @@ const SplitView: React.FC<{ node: SplitNode }> = React.memo(({ node }) => {
   // otherwise keep the dragged widths. Watch the store ratio and call reset(),
   // which snaps the panes back to their preferredSize (the equal split).
   const allotmentRef = useRef<AllotmentHandle>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Nested-allotment measurement fix: allotment v1 measures its container at
+  // first render, and a nested split inside a not-yet-laid-out parent pane can
+  // bake in a 0/transposed size and never re-measure on its own — the deeper
+  // preset grids (9/12/16) render blank rows because of it.
+  //
+  // TWO triggers re-run reset() (which re-applies preferredSize percentages
+  // against the CURRENT container size, re-measuring what the first render
+  // got wrong):
+  //  1. A ResizeObserver on this split's own container — fires when the parent
+  //     pane settles or the window resizes (any nesting depth, rAF-debounced).
+  //  2. A structural change of this split's children. Kept as defense-in-depth
+  //     only: the PRIMARY guarantee is the App.tsx remount (gridVersion key) —
+  //     a live Allotment instance can never actually see its children change,
+  //     because any structural re-grid bumps gridVersion and remounts the whole
+  //     tree first. And it can never fire during a divider drag: setRatio
+  //     changes the ratio, not the child identities.
+  useEffect(() => {
+    allotmentRef.current?.reset();
+  }, [node.children[0].id, node.children[1].id]);
+
+  useEffect(() => {
+    allotmentRef.current?.reset();
+    const el = containerRef.current;
+    if (!el) return;
+    // rAF-debounced so a continuous window resize re-layouts each split at most
+    // once per frame (no jank with 16 panes), while still catching every settle.
+    let raf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => allotmentRef.current?.reset());
+    });
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, []);
+
   const targetRatio = equalPresetRatio(node);
   const prevRatioRef = useRef(node.ratio);
   // REVIEWER FIX: an explicit equalize() (snap on drag-end, double-click)
@@ -142,27 +195,29 @@ const SplitView: React.FC<{ node: SplitNode }> = React.memo(({ node }) => {
       className="relative h-full w-full bg-bgDark overflow-hidden min-h-0 min-w-0"
       onDoubleClick={handleDoubleClick}
     >
-      <Allotment
-        ref={allotmentRef}
-        vertical={isVertical}
-        onChange={handleRatioChange}
-        onDragStart={() => {
-          // A real drag starts: clear any stale equalize-request flag so it
-          // can't fire a spurious reset() on the first drag frame (the flag is
-          // left set when equalize() ran at an already-equal ratio).
-          equalizeRequestedRef.current = false;
-        }}
-        onDragEnd={handleDragEnd}
-        separator={true}
-        className="vibegrid-allotment"
-      >
-        <Allotment.Pane minSize={minPaneSize} preferredSize={`${node.ratio * 100}%`}>
-          <GridRenderer node={node.children[0]} />
-        </Allotment.Pane>
-        <Allotment.Pane minSize={minPaneSize} preferredSize={`${(1 - node.ratio) * 100}%`}>
-          <GridRenderer node={node.children[1]} />
-        </Allotment.Pane>
-      </Allotment>
+      <div ref={containerRef} className="h-full w-full min-h-0 min-w-0">
+        <Allotment
+          ref={allotmentRef}
+          vertical={isVertical}
+          onChange={handleRatioChange}
+          onDragStart={() => {
+            // A real drag starts: clear any stale equalize-request flag so it
+            // can't fire a spurious reset() on the first drag frame (the flag is
+            // left set when equalize() ran at an already-equal ratio).
+            equalizeRequestedRef.current = false;
+          }}
+          onDragEnd={handleDragEnd}
+          separator={true}
+          className="vibegrid-allotment"
+        >
+          <Allotment.Pane minSize={effectiveMin} preferredSize={`${node.ratio * 100}%`}>
+            <GridRenderer node={node.children[0]} depth={depth + 1} />
+          </Allotment.Pane>
+          <Allotment.Pane minSize={effectiveMin} preferredSize={`${(1 - node.ratio) * 100}%`}>
+            <GridRenderer node={node.children[1]} depth={depth + 1} />
+          </Allotment.Pane>
+        </Allotment>
+      </div>
     </div>
   );
 });

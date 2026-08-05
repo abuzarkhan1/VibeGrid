@@ -37,6 +37,18 @@ interface PaneState {
   maxPanes: number;
   layoutMode: 'preset' | 'custom';
   presetCount: PresetCount;
+  /**
+   * Monotonic generation counter bumped on every STRUCTURAL layout change
+   * (preset re-grid, split, close, reset). App.tsx keys the root GridRenderer
+   * on it, forcing a full remount of the Allotment tree. This is the only
+   * reliable fix for allotment v1's in-place restructure bug: when the same
+   * Allotment component instance receives a deeper/taller child tree (e.g.
+   * preset 6→9 changes the nesting depth), it keeps stale internal sizes and
+   * collapses panes to zero — reset()/ResizeObserver cannot recover it, but a
+   * fresh mount always measures correctly. Terminals re-attach to their live
+   * PTY paneIds on remount (workspace-switch path), so no shell is lost.
+   */
+  gridVersion: number;
 
   // Actions
   splitPane: (targetId: string, direction: SplitDirection) => boolean;
@@ -56,6 +68,8 @@ interface PaneState {
   swapPanes: (idA: string, idB: string) => void;
   toggleMaximize: (id?: string) => void;
   navigateFocus: (direction: 'left' | 'right' | 'up' | 'down' | 'next' | 'prev') => void;
+  /** 0-based tree-order index of a terminal node (per-pane identity cues). */
+  getPaneIndex: (nodeId: string) => number;
   setLayoutPreset: (count: PresetCount) => void;
   resetLayout: () => void;
 }
@@ -205,27 +219,20 @@ function createRow(terms: TerminalNode[]): PaneNode {
   };
 }
 
-// Helper: Combine rows vertically into equal grid
+// Helper: Combine rows vertically into an EQUAL grid — every row gets exactly
+// 1/N of the height. Generic for any row count (2, 3, 4, …): splits at
+// floor(N/2)/N so odd row counts stay equal too (3 rows → 1/3 | 2/3 where the
+// 2/3 side splits 1/2+1/2). The old code only handled 1/2/4 rows, so the 3-row
+// presets (9, 12) came out as 2 rows + 1 row at 50/50 — unequal grid heights.
 function combineRows(rows: PaneNode[]): PaneNode {
   if (rows.length === 1) return rows[0];
-  if (rows.length === 2) {
-    return {
-      type: 'split',
-      id: nextSplitId(),
-      direction: 'vertical',
-      ratio: 0.5,
-      children: [rows[0], rows[1]],
-    };
-  }
-  // 4 rows
-  const top = combineRows(rows.slice(0, 2));
-  const bottom = combineRows(rows.slice(2, 4));
+  const k = Math.floor(rows.length / 2);
   return {
     type: 'split',
     id: nextSplitId(),
     direction: 'vertical',
-    ratio: 0.5,
-    children: [top, bottom],
+    ratio: k / rows.length,
+    children: [combineRows(rows.slice(0, k)), combineRows(rows.slice(k))],
   };
 }
 
@@ -309,7 +316,7 @@ export function isEqualPresetTree(node: PaneNode, count: number): boolean {
 function isEqualPresetShape(node: PaneNode): boolean {
   if (node.type === 'terminal') return true;
   if (node.type === 'split') {
-    const targetRatio = countTerminals(node) === 3 ? 1 / 3 : 0.5;
+    const targetRatio = equalPresetRatio(node);
     if (Math.abs(node.ratio - targetRatio) > 0.01) return false;
     return isEqualPresetShape(node.children[0]) && isEqualPresetShape(node.children[1]);
   }
@@ -322,8 +329,27 @@ function isEqualPresetShape(node: PaneNode): boolean {
  * isEqualPresetTree so GridRenderer can tell "equal" splits apart from
  * user-dragged ones.
  */
-export function equalPresetRatio(node: PaneNode): number {
-  return countTerminals(node) === 3 ? 1 / 3 : 0.5;
+/** Number of ROWS in a subtree: terminals and horizontal (in-row) splits are
+ *  one row; a vertical split is the sum of its children's rows. */
+function countRows(node: PaneNode): number {
+  if (node.type === 'terminal') return 1;
+  if (node.direction === 'vertical') return countRows(node.children[0]) + countRows(node.children[1]);
+  return 1;
+}
+
+/** The ratio a split node has in its pristine EQUAL preset grid.
+ *  - Vertical splits (row breaks) split by ROW share: equal row heights even
+ *    when rows hold different terminal counts (e.g. preset 5 = [3,2] rows,
+ *    root ratio 0.5; preset 9 = 3 rows, root ratio 1/3).
+ *  - Horizontal splits (inside a row) split by TERMINAL share (3-term row →
+ *    1/3, 2/4-term rows → 0.5).
+ *  This mirrors combineRows/createRow exactly and must match for
+ *  isEqualPresetTree to recognize pristine grids (re-click no-op). */
+export function equalPresetRatio(node: SplitNode): number {
+  if (node.direction === 'vertical') {
+    return countRows(node.children[0]) / countRows(node);
+  }
+  return countTerminals(node.children[0]) / countTerminals(node);
 }
 
 export function planPresetKeep(
@@ -351,6 +377,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
   maxPanes: useSettingsStore.getState().maxPanes,
   layoutMode: 'preset',
   presetCount: 1,
+  gridVersion: 0,
 
   splitPane: (targetId: string, direction: SplitDirection): boolean => {
     const { root, paneCount } = get();
@@ -391,6 +418,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
       focusedPaneId: newTermId,
       paneCount: newCount,
       layoutMode: 'custom', // Switch to custom layout on split
+      gridVersion: get().gridVersion + 1,
     });
 
     return true;
@@ -417,6 +445,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
         paneCount: 1,
         layoutMode: 'preset',
         presetCount: 1,
+        gridVersion: get().gridVersion + 1,
       });
       return;
     }
@@ -438,6 +467,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
       maximizedPaneId: maximizedPaneId === targetId ? null : maximizedPaneId,
       paneCount: newCount,
       layoutMode: 'custom',
+      gridVersion: get().gridVersion + 1,
     });
   },
 
@@ -622,6 +652,12 @@ export const usePaneStore = create<PaneState>((set, get) => ({
     set({ focusedPaneId: closestNodeId });
   },
 
+  // 0-based tree-order index of a terminal node (for per-pane identity cues
+  // like colored badges and alternating tints). -1 when not found.
+  getPaneIndex: (nodeId: string) => {
+    return getTerminalNodes(get().root).findIndex((t) => t.id === nodeId);
+  },
+
   // Set Preset Equal Grid Layout (1, 2, 3, 4, 5, 6, 8, 9, 12, 16).
   //   count > current → NON-DESTRUCTIVE EXPANSION: every existing terminal
   //     keeps its live paneId; only the missing panes are added fresh.
@@ -648,6 +684,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
         paneCount: count,
         layoutMode: 'preset',
         presetCount: count,
+        gridVersion: get().gridVersion + 1,
       });
       return;
     }
@@ -666,6 +703,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
         paneCount: count,
         layoutMode: 'preset',
         presetCount: count,
+        gridVersion: get().gridVersion + 1,
       });
       return;
     }
@@ -683,6 +721,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
       paneCount: count,
       layoutMode: 'preset',
       presetCount: count,
+      gridVersion: get().gridVersion + 1,
     });
   },
 
@@ -703,6 +742,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
       paneCount: 1,
       layoutMode: 'preset',
       presetCount: 1,
+      gridVersion: get().gridVersion + 1,
     });
   },
 }));
