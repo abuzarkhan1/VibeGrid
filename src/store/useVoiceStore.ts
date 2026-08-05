@@ -5,7 +5,7 @@ import { create } from 'zustand';
  * real-time waveform (updated ~10x/sec) only re-renders the indicator, never
  * the whole app tree.
  */
-export type VoicePhase = 'idle' | 'listening' | 'transcribing' | 'inserted';
+type VoicePhase = 'idle' | 'listening' | 'transcribing' | 'inserted';
 
 interface VoiceUIState {
   /** True while the mic is recording for dictation. */

@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-22.04, windows-latest]
+        platform: [macos-latest, windows-latest]
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -26,11 +26,13 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-22.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+      # whisper-rs compiles whisper.cpp — CMake + a C++ compiler are required
+      # on every platform (audit: the Windows release build previously lacked
+      # CMake and would fail at the whisper-rs-sys stage). CMake is only
+      # installed on Windows because macOS runners ship it preinstalled.
+      - name: Install CMake (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: lukka/get-cmake@v0.6.0
 
       - name: Install frontend dependencies
         run: npm ci
@@ -39,9 +41,37 @@ jobs:
         uses: tauri-apps/tauri-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          # --- Updater signing (audit: the auto-updater was enabled with a
+          # pubkey but CI had no private key, so latest.json was never signed
+          # and every in-app update check would fail). Add the key file as a
+          # GitHub secret named TAURI_SIGNING_PRIVATE_KEY (or point
+          # TAURI_SIGNING_PRIVATE_KEY_PATH at a secret base64 file). The key
+          # lives locally at ~/.vibegrid/vibegrid-updater.key — never commit it.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PATH: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PATH }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+          # --- macOS code signing + notarization (audit: builds shipped
+          # unsigned and Gatekeeper blocked every download). Set these GitHub
+          # secrets before the first release.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+          # --- Windows code signing (optional but recommended to avoid
+          # SmartScreen warnings).
+          WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+          WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: 'VibeGrid v__VERSION__'
           releaseBody: 'See CHANGELOG.md for details.'
           releaseDraft: true
           prerelease: false
+          # NOTE: with tauri-plugin-updater active in tauri.conf.json and
+          # TAURI_SIGNING_PRIVATE_KEY set above, tauri-action automatically
+          # generates and uploads latest.json to the release assets.

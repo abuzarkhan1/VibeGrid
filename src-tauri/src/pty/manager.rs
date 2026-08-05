@@ -13,6 +13,7 @@ use libc;
 
 use crate::ipc::IpcBatcher;
 use crate::pty::reader::spawn_pty_reader;
+use tauri::Runtime;
 
 /// Shared error message for unknown pane ids (audit: error consts — the three
 /// call sites used to hand-roll the same string, risking drift).
@@ -25,10 +26,18 @@ pub struct PaneSession {
     pub child: Box<dyn Child + Send + Sync>,
 }
 
-#[derive(Clone)]
-pub struct PtyManager {
+pub struct PtyManager<R: Runtime = tauri::Wry> {
     sessions: Arc<Mutex<HashMap<String, PaneSession>>>,
-    batcher: Arc<parking_lot::Mutex<Option<IpcBatcher>>>,
+    batcher: Arc<parking_lot::Mutex<Option<IpcBatcher<R>>>>,
+}
+
+impl<R: Runtime> Clone for PtyManager<R> {
+    fn clone(&self) -> Self {
+        Self {
+            sessions: self.sessions.clone(),
+            batcher: self.batcher.clone(),
+        }
+    }
 }
 
 impl Default for PtyManager {
@@ -37,7 +46,7 @@ impl Default for PtyManager {
     }
 }
 
-impl PtyManager {
+impl<R: Runtime> PtyManager<R> {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
@@ -48,7 +57,7 @@ impl PtyManager {
     /// The batcher is created in `setup` (needs the AppHandle); stash it so
     /// `kill_pane` can release per-pane buffers/history when a session is torn
     /// down before the reader thread observes EOF (audit: memory leak fix).
-    pub fn set_batcher(&self, batcher: IpcBatcher) {
+    pub fn set_batcher(&self, batcher: IpcBatcher<R>) {
         *self.batcher.lock() = Some(batcher);
     }
 
@@ -61,7 +70,7 @@ impl PtyManager {
         rows: u16,
         cwd: Option<String>,
         shell: Option<String>,
-        batcher: IpcBatcher,
+        batcher: IpcBatcher<R>,
     ) -> Result<String, String> {
         let pane_id = Uuid::new_v4().to_string();
         let pty_system = native_pty_system();
@@ -176,8 +185,15 @@ impl PtyManager {
     /// it (SIGKILL) if it lingers, so closing a pane actually stops the process
     /// tree in the common case.
     pub fn kill_pane(&self, pane_id: &str) -> Result<(), String> {
-        let mut sessions = self.sessions.lock();
-        if let Some(mut session) = sessions.remove(pane_id) {
+        // Remove the session and DROP the sessions lock before signalling and
+        // waiting for the child to exit (audit: the lock used to be held for the
+        // whole up-to-500ms reap, stalling every other pane's write/resize/spawn
+        // while one pane was closed). The temporary guard is dropped at the end
+        // of this statement.
+        let Some(mut session) = self.sessions.lock().remove(pane_id) else {
+            return Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"));
+        };
+        {
             // Release the pane's buffers/history immediately (audit: memory
             // leak fix) — the reader thread may be blocked or already gone.
             if let Some(batcher) = self.batcher.lock().as_ref() {
@@ -222,10 +238,8 @@ impl PtyManager {
             {
                 thread::sleep(Duration::from_millis(50));
             }
-            Ok(())
-        } else {
-            Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"))
         }
+        Ok(())
     }
 
     /// Terminate all PTY sessions on application exit (NFR-012)
@@ -264,7 +278,85 @@ mod tests {
 
     #[test]
     fn test_pty_manager_creation() {
-        let manager = PtyManager::new();
+        // Explicit type so the default runtime (Wry) is selected.
+        let manager: PtyManager = PtyManager::new();
         assert!(manager.sessions.lock().is_empty());
+    }
+
+    /// End-to-end PTY lifecycle (audit: the core spawn → write → read → kill
+    /// path had zero coverage). Uses tauri's mock app so IpcBatcher can be
+    /// constructed without a running desktop app; the reader thread drives
+    /// real output through the batcher just like production.
+    ///
+    /// Unix-only: the marker command (`printf`) is POSIX, and the
+    /// process-group kill path under test is `#[cfg(unix)]` anyway.
+    #[test]
+    #[cfg(unix)]
+    fn test_pty_lifecycle_spawn_write_read_kill() {
+        let app = tauri::test::mock_builder()
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .expect("mock app builds");
+        let batcher: IpcBatcher<tauri::test::MockRuntime> = IpcBatcher::new(app.handle().clone());
+        let manager: PtyManager<tauri::test::MockRuntime> = PtyManager::new();
+        // Wire the batcher in so kill_pane's per-pane buffer/history release
+        // (the audit memory-leak fix) is actually exercised by this test.
+        manager.set_batcher(batcher.clone());
+
+        // 1. Spawn a real shell.
+        let pane_id = manager
+            .spawn_pane(80, 24, None, None, batcher.clone())
+            .expect("spawn_pane should succeed");
+        assert!(
+            manager.sessions.lock().contains_key(&pane_id),
+            "session should exist after spawn"
+        );
+
+        // 2. Write a command that echoes a unique marker, then read it back.
+        let marker = format!("VG_PTY_TEST_{}", Uuid::new_v4().simple());
+        let cmd = format!("printf '{}'; printf '\\r\\n'; exit\n", marker);
+        manager
+            .write_to_pane(&pane_id, &cmd)
+            .expect("write_to_pane should succeed");
+
+        // The reader thread pushes output into the batcher's mcp_history;
+        // poll it (with a generous timeout) until the marker shows up.
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let mut seen = String::new();
+        while std::time::Instant::now() < deadline {
+            seen = batcher
+                .mcp_history
+                .lock()
+                .get(&pane_id)
+                .cloned()
+                .unwrap_or_default();
+            if seen.contains(&marker) {
+                break;
+            }
+            thread::sleep(Duration::from_millis(25));
+        }
+        assert!(
+            seen.contains(&marker),
+            "expected marker in pane output; got: {seen:?}"
+        );
+
+        // 3. Kill the pane; the session must be removed, the child reaped, and
+        //    the batcher must release the pane's output history (audit: memory
+        //    leak fix — long sessions with many short-lived panes leaked).
+        manager.kill_pane(&pane_id).expect("kill_pane should succeed");
+        assert!(
+            !manager.sessions.lock().contains_key(&pane_id),
+            "session should be removed after kill"
+        );
+        assert!(
+            !batcher.mcp_history.lock().contains_key(&pane_id),
+            "batcher should release the pane's output history after kill"
+        );
+
+        // Killing an already-removed pane reports ERR_PANE_NOT_FOUND.
+        let err = manager.kill_pane(&pane_id).unwrap_err();
+        assert!(
+            err.contains(ERR_PANE_NOT_FOUND),
+            "double-kill should report pane not found, got: {err}"
+        );
     }
 }

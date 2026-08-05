@@ -20,7 +20,7 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { useVoiceToTerminal } from '@/hooks/useVoiceToTerminal';
-import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setBatchInterval, isTauri } from '@/lib/tauri';
+import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setBatchInterval, setGlobalSummon, isTauri } from '@/lib/tauri';
 
 // Set when the user explicitly confirms the quit dialog: the subsequent
 // win.close() re-enters onCloseRequested, which must not ask again.
@@ -55,7 +55,7 @@ export const App: React.FC = () => {
     requestCreateWorkspace,
   } = useUIStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore();
-  const { workspaces, activeWorkspaceId, loadWorkspaces, saveCurrentWorkspace } = useWorkspaceStore();
+  const { workspaces, activeWorkspaceId, isLoading, loadWorkspaces, saveCurrentWorkspace } = useWorkspaceStore();
   const { matchesKeybinding } = useKeybindingsStore();
 
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -216,6 +216,19 @@ export const App: React.FC = () => {
     voiceSetSilenceTimeout(voiceSilenceTimeoutMs).catch(() => {});
     voiceSetInputDevice(voiceInputDevice).catch(() => {});
     setBatchInterval(ipcBatchIntervalMs).catch(() => {});
+  }, []);
+
+  // Reassignable system-wide summon (audit): sync the persisted 'global-summon'
+  // keybinding to the Rust backend on boot, and push changes live when the
+  // user reassigns it in Settings (or resets keybindings).
+  useEffect(() => {
+    const current = useKeybindingsStore.getState().keybindings['global-summon']?.currentKey;
+    if (current) setGlobalSummon(current).catch(() => {});
+    return useKeybindingsStore.subscribe((state, prev) => {
+      const a = state.keybindings['global-summon']?.currentKey;
+      const b = prev.keybindings['global-summon']?.currentKey;
+      if (a && a !== b) setGlobalSummon(a).catch(() => {});
+    });
   }, []);
 
   // Dynamic Global Keyboard Shortcuts
@@ -420,7 +433,9 @@ export const App: React.FC = () => {
       <ShortcutsModal />
       {isAboutOpen && <AboutModal onClose={() => setIsAboutOpen(false)} />}
       <NotificationToastContainer />
-      <SplashScreen />
+      {/* Audit: the splash is tied to the real workspace-restore load, not a
+          fixed timer — on a slow disk it stays until loadWorkspaces resolves. */}
+      <SplashScreen ready={!isLoading} />
       <FirstRunHint />
 
       {/* Guarded: quit with running processes (UX audit P0 #1) */}

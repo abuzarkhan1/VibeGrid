@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
 use parking_lot::Mutex;
-use tauri::{async_runtime, AppHandle, Emitter};
+use tauri::{async_runtime, AppHandle, Emitter, Runtime, Wry};
 use tokio::time::{self, Duration};
 
 const BATCH_INTERVAL_MS: u64 = 16; // ~60 FPS IPC batching (default)
@@ -20,18 +20,30 @@ fn clamp_interval_ms(interval_ms: u64) -> u64 {
     interval_ms.clamp(MIN_BATCH_INTERVAL_MS, MAX_BATCH_INTERVAL_MS)
 }
 
-#[derive(Clone)]
-pub struct IpcBatcher {
+pub struct IpcBatcher<R: Runtime = Wry> {
     buffers: Arc<Mutex<HashMap<String, Vec<u8>>>>,
     backpressure_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     pub mcp_history: Arc<Mutex<HashMap<String, String>>>,
     exited_panes: Arc<Mutex<HashMap<String, bool>>>,
     interval_ms: Arc<AtomicU64>,
-    app_handle: AppHandle,
+    app_handle: AppHandle<R>,
 }
 
-impl IpcBatcher {
-    pub fn new(app_handle: AppHandle) -> Self {
+impl<R: Runtime> Clone for IpcBatcher<R> {
+    fn clone(&self) -> Self {
+        Self {
+            buffers: self.buffers.clone(),
+            backpressure_flags: self.backpressure_flags.clone(),
+            mcp_history: self.mcp_history.clone(),
+            exited_panes: self.exited_panes.clone(),
+            interval_ms: self.interval_ms.clone(),
+            app_handle: self.app_handle.clone(),
+        }
+    }
+}
+
+impl<R: Runtime> IpcBatcher<R> {
+    pub fn new(app_handle: AppHandle<R>) -> Self {
         let batcher = Self {
             buffers: Arc::new(Mutex::new(HashMap::new())),
             backpressure_flags: Arc::new(Mutex::new(HashMap::new())),
@@ -48,6 +60,7 @@ impl IpcBatcher {
     /// Sets the IPC batching interval in milliseconds, clamped to the supported range,
     /// and returns the clamped value that is now in effect.
     pub fn set_interval(&self, interval_ms: u64) -> u64 {
+
         let clamped = clamp_interval_ms(interval_ms);
         self.interval_ms.store(clamped, Ordering::Relaxed);
         clamped

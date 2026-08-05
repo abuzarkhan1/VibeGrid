@@ -40,3 +40,17 @@ jobs:
 
       - name: Run Rust unit tests
         run: cargo test --manifest-path src-tauri/Cargo.toml
+
+      # Audit: the marketing website is part of the repo but was never checked
+      # by CI — a broken website could merge silently. Typecheck + build it.
+      - name: Install website dependencies
+        working-directory: website
+        run: npm ci
+
+      - name: Typecheck website
+        working-directory: website
+        run: npx tsc --noEmit
+
+      - name: Build website
+        working-directory: website
+        run: npm run build

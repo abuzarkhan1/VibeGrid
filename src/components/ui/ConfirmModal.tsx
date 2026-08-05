@@ -64,6 +64,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </div>
           <button
             onClick={onClose}
+            aria-label="Close confirmation dialog"
             className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
           >
             <X className="w-4 h-4" />

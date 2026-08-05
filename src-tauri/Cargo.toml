@@ -31,6 +31,10 @@ cpal = "0.18.1"
 
 [dev-dependencies]
 tempfile = "3.8"
+# Audit: the "test" feature ships tauri::test (mock runtime) — it must NOT
+# be in the main dependency, or the mock-runtime module compiles into release
+# builds. Features from dev-dependencies unify only for test/bench targets.
+tauri = { version = "2.0.0", features = ["test"] }
 
 [profile.release]
 # panic = "unwind" (default) — a panic in any thread must not take down the

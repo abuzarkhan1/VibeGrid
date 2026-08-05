@@ -1,25 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isVoiceShortcut, isTypingTarget, barHeights } from '@/lib/voice';
-
-describe('isVoiceShortcut', () => {
-  it('matches Cmd/Ctrl+Shift+V', () => {
-    expect(isVoiceShortcut({ metaKey: true, ctrlKey: false, shiftKey: true, code: 'KeyV' })).toBe(true);
-    expect(isVoiceShortcut({ metaKey: false, ctrlKey: true, shiftKey: true, code: 'KeyV' })).toBe(true);
-  });
-
-  it('rejects missing Shift', () => {
-    expect(isVoiceShortcut({ metaKey: true, ctrlKey: false, shiftKey: false, code: 'KeyV' })).toBe(false);
-  });
-
-  it('rejects other keys', () => {
-    expect(isVoiceShortcut({ metaKey: true, ctrlKey: false, shiftKey: true, code: 'KeyC' })).toBe(false);
-  });
-
-  it('rejects non-modifier presses', () => {
-    expect(isVoiceShortcut({ metaKey: false, ctrlKey: false, shiftKey: true, code: 'KeyV' })).toBe(false);
-  });
-});
-
+import { isTypingTarget, barHeights } from '@/lib/voice';
 
 describe('isTypingTarget', () => {
   it('returns false for non-elements and null', () => {

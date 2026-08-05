@@ -1,19 +1,36 @@
 import React, { useEffect, useState } from 'react';
 
-const SPLASH_DURATION = 900; // ms before fade-out starts
+const MIN_DISPLAY_MS = 700; // splash never flashes for less than this
 const FADE_DURATION = 350;
 
-export const SplashScreen: React.FC = () => {
+interface SplashScreenProps {
+  /** True once the app's real loading work (workspace restore) has finished.
+   *  The splash stays until BOTH this and the minimum display time elapse —
+   *  it is no longer a fixed timer that fakes progress (audit). */
+  ready: boolean;
+}
+
+export const SplashScreen: React.FC<SplashScreenProps> = ({ ready }) => {
+  const [minElapsed, setMinElapsed] = useState(false);
   const [phase, setPhase] = useState<'visible' | 'fading' | 'gone'>('visible');
 
   useEffect(() => {
-    const fadeTimer = setTimeout(() => setPhase('fading'), SPLASH_DURATION);
-    const removeTimer = setTimeout(() => setPhase('gone'), SPLASH_DURATION + FADE_DURATION);
+    const timer = setTimeout(() => setMinElapsed(true), MIN_DISPLAY_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Fade out only when the workspace restore actually finished AND the minimum
+  // display time passed. A slow disk keeps the splash until load resolves.
+  useEffect(() => {
+    if (phase !== 'visible') return;
+    if (!ready || !minElapsed) return;
+    const fadeTimer = setTimeout(() => setPhase('fading'), 80);
+    const removeTimer = setTimeout(() => setPhase('gone'), 80 + FADE_DURATION);
     return () => {
       clearTimeout(fadeTimer);
       clearTimeout(removeTimer);
     };
-  }, []);
+  }, [ready, minElapsed, phase]);
 
   if (phase === 'gone') return null;
 

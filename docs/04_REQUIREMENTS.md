@@ -720,6 +720,17 @@ access.
 - No telemetry or analytics are collected
 - No update checks are performed automatically (updates are manual)
 
+**Amendment (v0.1.0, audit):** Three explicitly user-initiated exceptions are
+allowed — (1) the on-demand Voice-to-Terminal Whisper model download
+(~142 MB, triggered only when the user first dictates, downloaded from
+HuggingFace into the app data dir; core terminal use never downloads it),
+(2) manual update checks from the About modal (never automatic), and (3) the
+loopback-only MCP HTTP endpoint (binds to 127.0.0.1). None of these run during
+normal terminal use and none are telemetry; the only data ever transmitted is
+the app version embedded in the manual update-check URL and the Whisper model
+file itself (a GET from HuggingFace). No user terminal content ever leaves the
+machine.
+
 ### NFR-025: Secure Settings Storage
 **Priority:** P1
 **Description:** User settings shall be stored securely.

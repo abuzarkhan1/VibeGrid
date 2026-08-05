@@ -26,13 +26,12 @@ export const ShortcutsModal: React.FC = () => {
     { title: 'Terminal', ids: ['search-terminal', 'clear-terminal'] },
     { title: 'Workspace', ids: ['new-workspace', 'switch-workspace-prev', 'switch-workspace-next'] },
     { title: 'View & Font', ids: ['font-increase', 'font-decrease', 'font-reset'] },
+    { title: 'Global', ids: ['global-summon'] },
+    { title: 'Voice', ids: ['voice-toggle'] },
   ];
 
   // UX audit P2 #10: everything shown here comes from the keybinding store, so
   // reassignments in Settings are reflected live and nothing hardcoded drifts.
-  const additional: { label: string; keys: string }[] = [
-    { label: 'Voice-to-Terminal', keys: 'Mod + Shift + V' },
-  ];
 
   return (
     <div
@@ -79,18 +78,6 @@ export const ShortcutsModal: React.FC = () => {
               </div>
             </div>
           ))}
-
-          <div>
-            <h3 className="text-[10px] font-semibold text-white/40 uppercase tracking-wider mb-2">Quick Reference</h3>
-            <div className="space-y-1.5">
-              {additional.map((item) => (
-                <div key={item.label} className="flex items-center justify-between text-xs">
-                  <span className="text-white/70">{item.label}</span>
-                  <kbd className="px-2 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-forest-light text-[11px]">{item.keys}</kbd>
-                </div>
-              ))}
-            </div>
-          </div>
 
           <p className="text-[11px] text-white/40 leading-relaxed pt-1 border-t border-white/[0.06]">
             Reassign any shortcut in <span className="text-forest-light">Settings → Keybindings</span>. Press <kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-[10px]">Esc</kbd> to close this panel.

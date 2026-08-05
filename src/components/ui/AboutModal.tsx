@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { X, Cpu, ShieldCheck, Github, ExternalLink, Download, BookOpen, FileText, HelpCircle } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { isTauri } from '@/lib/tauri';
+// Reviewer catch: window.open does not reliably launch an external browser
+// from the Tauri webview. Route external links through the shell plugin
+// (same pattern as TerminalPane's WebLinksAddon handler) with a web fallback.
+import { open as shellOpen } from '@tauri-apps/plugin-shell';
 // UX audit P3 #16: read the real version from package.json instead of a
 // hardcoded string that drifts out of sync with releases. Vite supports
 // dynamic JSON imports; load it once in an effect (no `require` in ESM).
@@ -15,7 +19,16 @@ const REPO_URL = 'https://github.com/abuzarkhan1/VibeGrid';
 const DOCS_URL = 'https://vibegrid.vercel.app/';
 const CHANGELOG_URL = 'https://github.com/abuzarkhan1/VibeGrid/blob/main/CHANGELOG.md';
 
-type UpdateState = 'idle' | 'checking' | 'available' | 'current' | 'unconfigured' | 'error' | 'downloading';
+/** Open an external URL in the system browser (Tauri shell plugin, web fallback). */
+const openExternal = (url: string) => {
+  if (isTauri()) {
+    shellOpen(url).catch(() => window.open(url, '_blank'));
+  } else {
+    window.open(url, '_blank');
+  }
+};
+
+type UpdateState = 'idle' | 'checking' | 'available' | 'current' | 'unconfigured' | 'downloading';
 
 export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
   const panelRef = useFocusTrap<HTMLDivElement>(true);
@@ -51,7 +64,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
   // releases page if the updater plugin isn't configured for this build.
   const handleDownloadUpdate = async () => {
     if (!isTauri() || updateState !== 'available') {
-      window.open(`${REPO_URL}/releases`, '_blank');
+      openExternal(`${REPO_URL}/releases`);
       return;
     }
     setUpdateState('downloading');
@@ -69,7 +82,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
     } catch (e) {
       console.warn('[VibeGrid] Download-and-install failed, opening releases:', e);
       setUpdateState('available');
-      window.open(`${REPO_URL}/releases`, '_blank');
+      openExternal(`${REPO_URL}/releases`);
     }
   };
 
@@ -126,6 +139,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
           </div>
           <button
             onClick={onClose}
+            aria-label="Close about dialog"
             className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -175,6 +189,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
               href={REPO_URL}
               target="_blank"
               rel="noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                openExternal(REPO_URL);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
             >
               <Github className="w-3.5 h-3.5 text-white/50" />
@@ -185,6 +203,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
               href={DOCS_URL}
               target="_blank"
               rel="noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                openExternal(DOCS_URL);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
             >
               <BookOpen className="w-3.5 h-3.5 text-white/50" />
@@ -195,6 +217,10 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
               href={CHANGELOG_URL}
               target="_blank"
               rel="noreferrer"
+              onClick={(e) => {
+                e.preventDefault();
+                openExternal(CHANGELOG_URL);
+              }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
             >
               <FileText className="w-3.5 h-3.5 text-white/50" />
@@ -207,40 +233,55 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
             Need help? Open an issue on GitHub or read the website docs.
           </p>
 
-          <button
-            onClick={handleCheckUpdates}
-            disabled={updateState === 'checking' || updateState === 'downloading'}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors w-full justify-center ${
-              updateState === 'available'
-                ? 'bg-forest/15 border-forest/40 text-forest-light hover:bg-forest/20'
-                : updateState === 'current'
-                  ? 'bg-white/[0.03] border-white/10 text-white/60'
-                  : 'bg-white/[0.03] hover:bg-forest/10 border-white/10 text-white/70 hover:border-forest/40'
-            }`}
+          {/* Audit: the Download & Install button was previously NESTED inside
+              the Check button (invalid HTML — browsers reparent it and break
+              focus/click semantics). They are now siblings inside a container.
+              aria-live lives on the status TEXT, not the container — a live
+              region wrapping interactive controls would make screen readers
+              re-announce the buttons on every state change. */}
+          <div className="flex w-full flex-col gap-2 rounded-lg border p-1.5 transition-colors ${
+              updateState === 'available' || updateState === 'downloading'
+                ? 'border-forest/40 bg-forest/10'
+                : 'border-transparent'
+            }"
           >
-            <Download className="w-3.5 h-3.5 text-forest-bright" />
-            {updateState === 'checking' && <span>Checking for updates…</span>}
-            {updateState === 'downloading' && <span>Downloading update…</span>}
-            {updateState === 'available' && (
-              <span className="flex items-center gap-2">
-                Update available: v{updateVersion}
-                {/* UX audit P3 #32: one-click download+install when the updater
-                    is configured; otherwise the label links to releases. */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDownloadUpdate();
-                  }}
-                  className="px-2 py-0.5 rounded-md bg-forest text-white hover:bg-forest-bright text-[10px] font-semibold transition-colors"
+            {updateState === 'available' || updateState === 'downloading' ? (
+              <div className="flex items-center justify-between gap-2 px-1.5 py-0.5">
+                <span
+                  aria-live="polite"
+                  className="flex items-center gap-1.5 text-xs text-forest-light"
                 >
-                  Download & Install
+                  <Download className="w-3.5 h-3.5 text-forest-bright" />
+                  {updateState === 'downloading'
+                    ? 'Downloading update…'
+                    : `Update available: v${updateVersion}`}
+                </span>
+                <button
+                  onClick={handleDownloadUpdate}
+                  disabled={updateState === 'downloading'}
+                  className="shrink-0 rounded-md bg-forest px-2.5 py-1 text-[10px] font-semibold text-white transition-colors hover:bg-forest-bright disabled:opacity-50"
+                >
+                  {updateState === 'downloading' ? 'Downloading…' : 'Download & Install'}
                 </button>
-              </span>
+              </div>
+            ) : (
+              <button
+                onClick={handleCheckUpdates}
+                disabled={updateState === 'checking'}
+                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors w-full ${
+                  updateState === 'current'
+                    ? 'bg-white/[0.03] border-white/10 text-white/60'
+                    : 'bg-white/[0.03] hover:bg-forest/10 border-white/10 text-white/70 hover:border-forest/40'
+                }`}
+              >
+                <Download className="w-3.5 h-3.5 text-forest-bright" />
+                {updateState === 'checking' && <span>Checking for updates…</span>}
+                {updateState === 'current' && <span>You're on the latest version</span>}
+                {updateState === 'unconfigured' && <span>Updates not configured — see GitHub releases</span>}
+                {updateState === 'idle' && <span>Check for Updates</span>}
+              </button>
             )}
-            {updateState === 'current' && <span>You're on the latest version</span>}
-            {updateState === 'unconfigured' && <span>Updates not configured — see GitHub releases</span>}
-            {updateState === 'idle' && <span>Check for Updates</span>}
-          </button>
+          </div>
         </div>
       </div>
     </div>

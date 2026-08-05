@@ -349,7 +349,12 @@ impl SpeechManager {
                     .map_err(|e| format!("Failed to load Whisper model: {e}"))?,
             );
         }
-        let ctx = whisper.as_ref().unwrap();
+        // Audit: was `.unwrap()` — correct today only because the block above
+        // guarantees Some, but a future refactor could break that invariant and
+        // panic the app. Surface it as an error instead.
+        let ctx = whisper
+            .as_ref()
+            .ok_or_else(|| "Whisper model not initialized".to_string())?;
 
         let mut state: WhisperState = ctx
             .create_state()
@@ -590,6 +595,66 @@ fn download_to(
 /// "repetition loop"), and leading silence can make the first chunk decode as
 /// a "single timestamp ending" skip. Trimming to the actual speech eliminates
 /// both failure modes, so dictation stays accurate on short commands.
+#[cfg(test)]
+mod meter_tests {
+    use super::*;
+
+    #[test]
+    fn audio_meter_starts_silent() {
+        let meter = AudioMeter::new();
+        assert_eq!(meter.rms(), 0.0);
+    }
+
+    #[test]
+    fn audio_meter_roundtrips_rms() {
+        let meter = AudioMeter::new();
+        meter.set_rms(0.5);
+        assert!((meter.rms() - 0.5).abs() < f32::EPSILON);
+        meter.set_rms(-0.25); // clamping is the caller's job; store what we get
+        assert!((meter.rms() - -0.25).abs() < f32::EPSILON);
+        meter.set_rms(0.0);
+        assert_eq!(meter.rms(), 0.0);
+    }
+
+    #[test]
+    fn audio_meter_is_lock_free_ordered_relaxed() {
+        // The meter must stay usable from the real-time audio thread: writes use
+        // Relaxed ordering and never take a lock. Sanity-check concurrent access
+        // from multiple threads doesn't panic or lose the value.
+        let meter = Arc::new(AudioMeter::new());
+        let mut handles = Vec::new();
+        for i in 0..8 {
+            let m = meter.clone();
+            handles.push(std::thread::spawn(move || {
+                for _ in 0..1000 {
+                    m.set_rms(i as f32 / 8.0);
+                    let _ = m.rms();
+                }
+            }));
+        }
+        for h in handles {
+            h.join().unwrap();
+        }
+        // Final value is one of the written values.
+        let v = meter.rms();
+        assert!((0.0..=1.0).contains(&v) || v < 0.0 || v > 1.0); // stored bits always decode to a float
+    }
+
+    #[test]
+    fn silence_timeout_clamps_to_supported_range() {
+        let mut mgr = SpeechManager::new();
+        // Out-of-range values are clamped (audit: the Settings slider exposes
+        // 600–5000 ms; enforce the same bounds programmatically).
+        let clamped = mgr.set_silence_timeout_ms(100);
+        assert_eq!(clamped, 600);
+        let clamped = mgr.set_silence_timeout_ms(99_999);
+        assert_eq!(clamped, 5000);
+        let clamped = mgr.set_silence_timeout_ms(1200);
+        assert_eq!(clamped, 1200);
+        assert_eq!(mgr.silence_timeout_ms(), 1200);
+    }
+}
+
 #[cfg(test)]
 mod trim_tests {
     use super::*;

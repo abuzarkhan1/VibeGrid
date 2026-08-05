@@ -280,6 +280,7 @@ export const SettingsModal: React.FC = () => {
           <h2 className="text-sm font-medium text-white/90 uppercase tracking-wider">VibeGrid Settings</h2>
           <button
             onClick={toggleSettings}
+            aria-label="Close settings"
             className="p-1.5 rounded-lg hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -667,6 +668,7 @@ export const SettingsModal: React.FC = () => {
                         onClick={() => setRenameWsId(ws.id)}
                         className="p-1.5 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
                         title="Rename"
+                        aria-label={`Rename workspace ${ws.name}`}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -676,6 +678,7 @@ export const SettingsModal: React.FC = () => {
                         onClick={() => duplicateWorkspace(ws.id)}
                         className="p-1.5 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
                         title="Duplicate Workspace"
+                        aria-label={`Duplicate workspace ${ws.name}`}
                       >
                         <Copy className="w-3.5 h-3.5" />
                       </button>
@@ -685,6 +688,7 @@ export const SettingsModal: React.FC = () => {
                           onClick={() => setDeleteWsId(ws.id)}
                           className="p-1.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
                           title="Delete Workspace"
+                          aria-label={`Delete workspace ${ws.name}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

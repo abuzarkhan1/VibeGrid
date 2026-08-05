@@ -50,4 +50,36 @@ describe('VibeGrid Keybindings Store', () => {
     const ev = new KeyboardEvent('keydown', { key: 'D', code: 'KeyD', shiftKey: true, metaKey: true });
     expect(useKeybindingsStore.getState().matchesKeybinding(ev, 'split-vertical')).toBe(true);
   });
+
+  // Audit: global-summon + voice-toggle are now reassignable store bindings.
+  it('defaults the global-summon binding to Mod+Shift+Space', () => {
+    expect(useKeybindingsStore.getState().keybindings['global-summon'].defaultKey).toBe('Mod+Shift+Space');
+    expect(useKeybindingsStore.getState().keybindings['global-summon'].category).toBe('Global');
+  });
+
+  it('matches the global-summon default', () => {
+    const ev = new KeyboardEvent('keydown', { key: ' ', code: 'Space', shiftKey: true, metaKey: true });
+    expect(useKeybindingsStore.getState().matchesKeybinding(ev, 'global-summon')).toBe(true);
+    const wrong = new KeyboardEvent('keydown', { key: ' ', code: 'Space', metaKey: true });
+    expect(useKeybindingsStore.getState().matchesKeybinding(wrong, 'global-summon')).toBe(false);
+  });
+
+  it('defaults the voice-toggle binding to Mod+Shift+V', () => {
+    expect(useKeybindingsStore.getState().keybindings['voice-toggle'].defaultKey).toBe('Mod+Shift+V');
+    expect(useKeybindingsStore.getState().keybindings['voice-toggle'].category).toBe('Voice');
+  });
+
+  it('matches the voice-toggle default', () => {
+    const ev = new KeyboardEvent('keydown', { key: 'V', code: 'KeyV', shiftKey: true, metaKey: true });
+    expect(useKeybindingsStore.getState().matchesKeybinding(ev, 'voice-toggle')).toBe(true);
+  });
+
+  it('reassigning the global-summon binding updates matchesKeybinding', () => {
+    const ok = useKeybindingsStore.getState().updateKeybinding('global-summon', 'Mod+Shift+G');
+    expect(ok).toBe(true);
+    const old = new KeyboardEvent('keydown', { key: ' ', code: 'Space', shiftKey: true, metaKey: true });
+    expect(useKeybindingsStore.getState().matchesKeybinding(old, 'global-summon')).toBe(false);
+    const fresh = new KeyboardEvent('keydown', { key: 'G', code: 'KeyG', shiftKey: true, metaKey: true });
+    expect(useKeybindingsStore.getState().matchesKeybinding(fresh, 'global-summon')).toBe(true);
+  });
 });

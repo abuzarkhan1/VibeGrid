@@ -69,7 +69,7 @@ export async function listenTerminalBatch(
 }
 
 /** Payload of the `terminal-exit` event emitted when a pane's process exits. */
-export interface TerminalExitPayload {
+interface TerminalExitPayload {
   paneId: string;
 }
 
@@ -95,13 +95,13 @@ export async function listenStartupWarning(
 
 // ── Whisper Voice-to-Terminal (native, replaces Web Speech API) ────────────
 
-export interface VoiceModelStatus {
+interface VoiceModelStatus {
   ready: boolean;
   path: string | null;
   sizeBytes: number | null;
 }
 
-export interface ModelProgress {
+interface ModelProgress {
   downloaded: number;
   total: number;
   percent: number;
@@ -143,11 +143,6 @@ export async function voiceCancelRecording(): Promise<void> {
   await invoke('voice_cancel_recording');
 }
 
-export async function voiceIsRecording(): Promise<boolean> {
-  if (!isTauri()) return false;
-  return await invoke<boolean>('voice_is_recording');
-}
-
 /** Configure the auto-stop silence timeout (ms) used by the Rust watcher (gap 10). */
 export async function voiceSetSilenceTimeout(ms: number): Promise<number> {
   if (!isTauri()) return ms;
@@ -169,13 +164,19 @@ export async function voiceSetInputDevice(name: string): Promise<void> {
   }
 }
 
+/** Reassign the system-wide summon shortcut (audit: was hardcoded in Rust). */
+export async function setGlobalSummon(accel: string): Promise<string> {
+  if (!isTauri()) return accel;
+  return await invoke<string>('set_global_summon', { accel });
+}
+
 /** Live mic level (0..1) for the real-time waveform while dictating. */
-export interface AudioLevelPayload {
+interface AudioLevelPayload {
   level: number;
 }
 
 /** Emitted by the Rust auto-stop watcher when dictation ends by silence. */
-export interface DictationResultPayload {
+interface DictationResultPayload {
   text: string;
   auto: boolean;
 }
