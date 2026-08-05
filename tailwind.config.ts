@@ -7,18 +7,23 @@ const config: Config = {
     extend: {
       colors: {
         background: 'var(--color-bg, #03060a)',
-        surface: 'var(--color-surface, #0a0c10)',
-        'surface-hover': 'var(--color-surface-hover, #11151a)',
+        surface: 'rgb(var(--color-surface-rgb, 10 12 16) / <alpha-value>)',
+        'surface-hover': 'rgb(var(--color-surface-hover-rgb, 17 21 26) / <alpha-value>)',
         border: 'var(--color-border, rgba(255,255,255,0.07))',
+        // IMPORTANT: colors use the `rgb(var(--channel) / <alpha-value>)`
+        // pattern so Tailwind can generate opacity modifiers (bg-forest/10,
+        // border-forest/30…). Plain `var(--color-accent)` CANNOT take /opacity
+        // — Tailwind silently drops those classes (found during the invisible-
+        // pane-boundary bug hunt; the website config already used this pattern).
         forest: {
-          DEFAULT: 'var(--color-accent, #056fc7)',
-          bright: 'var(--color-accent, #3c95f0)',
-          light: 'var(--color-accent, #64bcff)',
-          dark: 'var(--color-surface, #0051a6)',
+          DEFAULT: 'rgb(var(--color-accent-rgb, 60 149 240) / <alpha-value>)',
+          bright: 'rgb(var(--color-accent-rgb, 60 149 240) / <alpha-value>)',
+          light: 'rgb(var(--color-accent-rgb, 60 149 240) / <alpha-value>)',
+          dark: 'rgb(var(--color-accent-rgb, 28 80 140) / <alpha-value>)',
         },
+        surfaceCard: 'rgb(var(--color-surface-rgb, 15 18 22) / <alpha-value>)',
         neon: 'var(--color-accent, #5cc2ff)',
         bgDark: 'var(--color-bg, #03060a)',
-        surfaceCard: 'var(--color-surface, rgba(15, 18, 22, 0.96))',
         'accent-primary': 'var(--color-accent, #056fc7)',
         'accent-secondary': 'var(--color-accent, #3c95f0)',
         'accent-glow': 'transparent',

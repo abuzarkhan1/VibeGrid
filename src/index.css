@@ -10,6 +10,15 @@
     --color-border: rgba(255, 255, 255, 0.07);
     --color-accent: #056fc7;
     --color-accent-secondary: #3c95f0;
+    /* RGB channel triplets backing the alpha-capable Tailwind colors
+       (forest*, surface, surface-hover, surfaceCard). Kept in sync with
+       --color-accent/--color-surface by applyThemeVariables so opacity
+       modifiers work. Defaults match the tailwind.config.ts fallbacks. */
+    --color-accent-rgb: 60 149 240;
+    /* Comma-separated channels for legacy-safe rgba(var(--x), a) in plain CSS. */
+    --color-accent-rgba: 60, 149, 240;
+    --color-surface-rgb: 10 12 16;
+    --color-surface-hover-rgb: 17 21 26;
     --color-fg: #e2e8f0;
     --color-muted: #8b93a1;
     --color-selection: rgba(60, 149, 240, 0.3);
@@ -130,16 +139,20 @@
    hashed-class dependency): the 1px separator line, the sash hover
    highlight, the 8px drag hit-area and the 5px hover bar. */
 .vibegrid-allotment {
-  --separator-border: rgba(60, 149, 240, 0.22);
+  /* Separator line between split panes: clearly visible azure so the pane
+     boundary reads at a glance (was 0.22 — too faint to notice). */
+  --separator-border: rgba(60, 149, 240, 0.5);
   --focus-border: #3c95f0;
   --sash-size: 8px;
   --sash-hover-size: 5px;
 }
 
-.vibegrid-allotment,
-.vibegrid-allotment > div,
-[class*="splitView"],
-[class*="splitViewItem"] {
+/* CRITICAL: only the ALLOTMENT CONTAINER is sized here. Allotment's panes
+   (class split-view-view, position:absolute) carry their own inline
+   left/width/height — a broad [class*="splitView"] match would also hit
+   splitViewView__* and force every pane to 100% of the container, stacking
+   them on top of each other (the 'panes merging' bug for grids > 1 row). */
+.vibegrid-allotment {
   height: 100% !important;
   width: 100% !important;
   min-height: 0 !important;
@@ -222,6 +235,71 @@
 }
 
 /* ================================================================
+   PANE FRAME — explicit pane boundaries (independent of Tailwind)
+   ================================================================
+   These rules are written in plain CSS (no Tailwind class generation) so the
+   boundary between split panes ALWAYS renders — even if a utility class is
+   missing from the build, cached, or a color/NN opacity class fails to
+   compile. Applied to the TerminalContainer root via .vg-pane-frame.
+
+   Colors derive from the accent channel vars (--color-accent-rgb) so a
+   custom/accent theme change flows into the frame too; the fallbacks keep
+   the boundary visible even before JS runs.
+   ================================================================ */
+.vg-pane-frame {
+  /* Solid, constant border — PLAIN PAINT ONLY. No box-shadow, no transition,
+     no z-index promotion on this element: WKWebView has known compositing
+     bugs where box-shadow/transition/z-index on adjacent bordered elements
+     make a neighbour's border fail to paint. Focus/hover never touch it, so
+     selecting a pane can never change another pane's border. */
+  border: 2px solid rgba(var(--color-accent-rgba, 60, 149, 240), 0.9);
+  background-color: var(--color-bg, #0b0d12);
+}
+/* Permanent colored identity rail: a solid 4px strip in this pane's badge
+   color (--pane-accent set per pane index). Solid background paint only —
+   cannot be dropped by opacity-class generation or webview compositing. */
+.vg-pane-frame::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 7px 7px 0 0;
+  background-color: var(--pane-accent, #3c95f0);
+  z-index: 30;
+  pointer-events: none;
+}
+/* Focused pane: a blue-tinted frame background (solid paint — safe). The
+   border itself stays identical; focus also shifts the toolbar bg. */
+.vg-pane-frame.vg-pane-focused {
+  background-color: #0e1a2e;
+}
+/* Alternate pane tint: odd-indexed panes get a subtly different frame
+   background, so adjacent panes never look identical even where borders are
+   unseen (the 4px .xterm padding reveals this band around the terminal). */
+.vg-pane-frame.vg-pane-alt {
+  background-color: #12161d;
+}
+.vg-pane-frame.vg-pane-focused.vg-pane-alt {
+  background-color: #152238;
+}
+/* Light chrome: keep the frame visible on light surfaces (channel var already
+   flips to the light theme's accent via applyThemeVariables). */
+html.vibegrid-light .vg-pane-frame {
+  border-color: rgba(var(--color-accent-rgba, 9, 105, 218), 0.75);
+}
+html.vibegrid-light .vg-pane-frame.vg-pane-focused {
+  background-color: #eef3fb;
+}
+html.vibegrid-light .vg-pane-frame.vg-pane-alt {
+  background-color: #f4f6fa;
+}
+html.vibegrid-light .vg-pane-frame.vg-pane-focused.vg-pane-alt {
+  background-color: #e6eefb;
+}
+
+/* ================================================================
    LIGHT CHROME (customization audit C3): html.vibegrid-light is toggled by
    applyThemeVariables when themeMode resolves to 'light'. The Tailwind config
    maps the structural chrome colors (bg/surface/card/foreground/accent) to CSS
@@ -233,6 +311,7 @@ html.vibegrid-light .text-white { color: rgba(13, 17, 23, 0.92); }
 html.vibegrid-light .text-white\/90 { color: rgba(13, 17, 23, 0.9); }
 html.vibegrid-light .text-white\/85 { color: rgba(13, 17, 23, 0.85); }
 html.vibegrid-light .text-white\/80 { color: rgba(13, 17, 23, 0.8); }
+html.vibegrid-light .text-white\/75 { color: rgba(13, 17, 23, 0.75); }
 html.vibegrid-light .text-white\/70 { color: rgba(13, 17, 23, 0.7); }
 html.vibegrid-light .text-white\/65 { color: rgba(13, 17, 23, 0.65); }
 html.vibegrid-light .text-white\/60 { color: rgba(13, 17, 23, 0.6); }
@@ -252,7 +331,10 @@ html.vibegrid-light .bg-white\/10 { background-color: rgba(13, 17, 23, 0.1); }
 html.vibegrid-light .border-white\/\[0.04\] { border-color: rgba(13, 17, 23, 0.04); }
 html.vibegrid-light .border-white\/\[0.06\] { border-color: rgba(13, 17, 23, 0.06); }
 html.vibegrid-light .border-white\/10 { border-color: rgba(13, 17, 23, 0.14); }
+html.vibegrid-light .bg-black\/50 { background-color: rgba(255, 255, 255, 0.7); }
 html.vibegrid-light .bg-black\/40 { background-color: rgba(255, 255, 255, 0.65); }
+html.vibegrid-light .hover\:bg-black\/40:hover { background-color: rgba(255, 255, 255, 0.75); }
+html.vibegrid-light .hover\:text-white\/75:hover { color: rgba(13, 17, 23, 0.75); }
 html.vibegrid-light .bg-black\/30 { background-color: rgba(255, 255, 255, 0.6); }
 html.vibegrid-light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.55); }
 html.vibegrid-light .placeholder-white\/30 { color: rgba(13, 17, 23, 0.4); }

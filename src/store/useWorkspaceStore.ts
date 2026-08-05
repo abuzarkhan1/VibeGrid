@@ -232,6 +232,10 @@ function applyLayoutToPaneStore(layout: PaneNode, view?: Workspace['view']) {
       paneCount: 1,
       layoutMode: 'preset',
       presetCount: 1,
+      // gridVersion: structural change — the root GridRenderer remounts its
+      // Allotment tree so a restored deeper grid (9/12/16) can never inherit a
+      // stale collapsed layout (allotment v1 in-place restructure bug).
+      gridVersion: usePaneStore.getState().gridVersion + 1,
     });
     return;
   }
@@ -250,6 +254,8 @@ function applyLayoutToPaneStore(layout: PaneNode, view?: Workspace['view']) {
     paneCount: terminals.length,
     layoutMode,
     presetCount,
+    // gridVersion: structural change — remount the Allotment tree (see above).
+    gridVersion: usePaneStore.getState().gridVersion + 1,
   });
 }
 

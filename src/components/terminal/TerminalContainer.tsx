@@ -3,6 +3,7 @@ import { TerminalToolbar } from './TerminalToolbar';
 import { TerminalPane } from './TerminalPane';
 import { PaneErrorBoundary } from './PaneErrorBoundary';
 import { usePaneStore } from '@/store/usePaneStore';
+import { paneColorForIndex } from '@/lib/paneColors';
 
 interface TerminalContainerProps {
   id: string; // Node ID
@@ -19,7 +20,8 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = React.memo(({
   const focusedPaneId = usePaneStore((s) => s.focusedPaneId);
   const maximizedPaneId = usePaneStore((s) => s.maximizedPaneId);
   const setFocusedPane = usePaneStore((s) => s.setFocusedPane);
-  const [isHovered, setIsHovered] = useState(false);
+  // Tree-order index → alternating background tint + colored identity rail.
+  const paneIndex = usePaneStore((s) => s.getPaneIndex(id));
   const [hasActivity, setHasActivity] = useState(false);
 
   const isFocused = focusedPaneId === id;
@@ -33,13 +35,10 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = React.memo(({
   return (
     <div
       onClick={handleFocus}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`h-full w-full flex flex-col overflow-hidden transition-[border-color,box-shadow,opacity] duration-150 relative rounded-lg bg-pane-bg border ${
-        isFocused
-          ? 'border-forest-bright/60 shadow-[0_0_14px_rgba(60,149,240,0.14)] z-10'
-          : 'border-white/[0.07] hover:border-forest/35'
-      }`}
+      style={{ '--pane-accent': paneColorForIndex(paneIndex) } as React.CSSProperties}
+      className={`vg-pane-frame h-full w-full flex flex-col overflow-hidden relative rounded-lg ${
+        isFocused ? 'vg-pane-focused' : ''
+      } ${paneIndex % 2 === 1 ? 'vg-pane-alt' : ''}`}
     >
       {/* UX audit P1 #6/#7: the title bar is ALWAYS visible so every pane is
           identifiable at a glance (and background activity dots are visible);
@@ -55,9 +54,6 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = React.memo(({
           </PaneErrorBoundary>
         </div>
       </div>
-      {isHovered && !isFocused && (
-        <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-forest/25 z-10" />
-      )}
     </div>
   );
 });

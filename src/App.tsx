@@ -29,9 +29,16 @@ import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setB
 // not re-render on every divider drag / ratio change.
 const LayoutView: React.FC = () => {
   const root = usePaneStore((s) => s.root);
+  // Remount the ENTIRE Allotment tree on every structural layout change.
+  // Allotment v1 corrupts its internal sizes when the same component instance
+  // receives a different tree shape in place (e.g. preset 6→9 deepens the
+  // nesting) — panes collapse to zero and reset() cannot recover them. A fresh
+  // mount always measures correctly, and terminals re-attach to their live PTY
+  // paneIds (the workspace-switch path), so no running shell is lost.
+  const gridVersion = usePaneStore((s) => s.gridVersion);
   return (
     <div className="flex-1 h-full overflow-hidden relative">
-      <GridRenderer node={root} />
+      <GridRenderer key={gridVersion} node={root} />
     </div>
   );
 };
