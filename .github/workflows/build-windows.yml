@@ -21,6 +21,15 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      # whisper-rs compiles whisper.cpp, which needs CMake + a C++ compiler
+      # (audit: the Windows release build previously had no CMake step and
+      # would fail at the whisper-rs-sys build stage). windows-latest ships
+      # VS Build Tools, but CMake is not guaranteed — install it explicitly.
+      # (macOS runners ship CMake preinstalled, which is why this step is
+      # Windows-only in release.yml too.)
+      - name: Install CMake
+        uses: lukka/get-cmake@v0.6.0
+
       - name: Install frontend dependencies
         run: npm ci
 

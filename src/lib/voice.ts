@@ -6,11 +6,6 @@
  * browser feature detection needed. These helpers stay pure and unit-testable.
  */
 
-/** Pure matcher for the voice shortcut (Cmd/Ctrl+Shift+V). Exported for tests. */
-export function isVoiceShortcut(e: Pick<KeyboardEvent, 'metaKey' | 'ctrlKey' | 'shiftKey' | 'code'>): boolean {
-  return (e.metaKey || e.ctrlKey) && e.shiftKey && e.code === 'KeyV';
-}
-
 /**
  * True when the event target is a real text input the user is typing in.
  *

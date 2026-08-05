@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { fuzzyScore, eventToAccelerator, escapeShellPath } from './commandUtils';
+import { describe, it, expect, afterEach } from 'vitest';
+import { fuzzyScore, eventToAccelerator, escapeShellPath, bracketedPaste, isWindowsPlatform } from './commandUtils';
 
 describe('fuzzyScore', () => {
   it('returns 0 for an empty query', () => {
@@ -64,15 +64,55 @@ describe('eventToAccelerator', () => {
 });
 
 describe('escapeShellPath', () => {
-  it('wraps a simple path in single quotes', () => {
+  afterEach(() => {
+    // restore the real platform getter
+    Object.defineProperty(navigator, 'platform', { value: '', configurable: true });
+  });
+
+  it('wraps a simple path in single quotes (POSIX)', () => {
     expect(escapeShellPath('/Users/me/project')).toBe("'/Users/me/project'");
   });
 
-  it('preserves spaces inside the quotes', () => {
+  it('preserves spaces inside the quotes (POSIX)', () => {
     expect(escapeShellPath('/Users/me/My Project')).toBe("'/Users/me/My Project'");
   });
 
-  it('escapes embedded single quotes', () => {
+  it('escapes embedded single quotes (POSIX)', () => {
     expect(escapeShellPath("/Users/me/it's")).toBe("'/Users/me/it'\\''s'");
+  });
+
+  it('uses doubled single-quote escaping on Windows (PowerShell)', () => {
+    Object.defineProperty(navigator, 'platform', { value: 'Win32', configurable: true });
+    expect(isWindowsPlatform()).toBe(true);
+    expect(escapeShellPath("C:\\Users\\me\\it's")).toBe("'C:\\Users\\me\\it''s'");
+    // simple path: still single-quoted
+    expect(escapeShellPath('C:\\project')).toBe("'C:\\project'");
+  });
+
+  // Regression: the old /win/i check matched "darwin" (macOS), which would
+  // have POSIX paths PowerShell-quoted on Mac. MacIntel must stay POSIX.
+  it('treats macOS (MacIntel / darwin) as non-Windows', () => {
+    Object.defineProperty(navigator, 'platform', { value: 'MacIntel', configurable: true });
+    expect(isWindowsPlatform()).toBe(false);
+    expect(escapeShellPath("/Users/me/it's")).toBe("'/Users/me/it'\\''s'");
+
+    Object.defineProperty(navigator, 'platform', { value: 'darwin', configurable: true });
+    expect(isWindowsPlatform()).toBe(false);
+    expect(bracketedPaste('echo hi')).toBe('\x1b[200~echo hi\x1b[201~');
+  });
+});
+
+describe('bracketedPaste', () => {
+  afterEach(() => {
+    Object.defineProperty(navigator, 'platform', { value: '', configurable: true });
+  });
+
+  it('wraps text in bracketed-paste markers on POSIX', () => {
+    expect(bracketedPaste('echo hi')).toBe('\x1b[200~echo hi\x1b[201~');
+  });
+
+  it('emits raw text on Windows (cmd.exe has no bracketed paste)', () => {
+    Object.defineProperty(navigator, 'platform', { value: 'Win32', configurable: true });
+    expect(bracketedPaste('echo hi')).toBe('echo hi');
   });
 });

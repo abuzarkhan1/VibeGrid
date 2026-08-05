@@ -1,11 +1,3 @@
-export interface TerminalOptions {
-  fontSize: number;
-  fontFamily: string;
-  theme: TerminalTheme;
-  scrollback: number;
-  cursorBlink: boolean;
-}
-
 export interface TerminalTheme {
   name: string;
   background: string;

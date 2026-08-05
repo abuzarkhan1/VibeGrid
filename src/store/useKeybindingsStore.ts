@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export interface Keybinding {
+interface Keybinding {
   id: string;
   label: string;
   category: string;
@@ -168,6 +168,25 @@ const defaultBindings: Record<string, Keybinding> = {
     category: 'View & Font',
     defaultKey: 'Mod+0',
     currentKey: 'Mod+0',
+  },
+  // Audit: the system-wide summon and the voice toggle were HARDCODED (Rust
+  // setup + isVoiceShortcut) with no way to reassign. They now live in the
+  // store: 'global-summon' is pushed to the Rust backend via set_global_summon
+  // (App.tsx syncs it on boot and on change), 'voice-toggle' is read by the
+  // voice hook instead of a fixed shortcut check.
+  'global-summon': {
+    id: 'global-summon',
+    label: 'Summon VibeGrid Window (system-wide)',
+    category: 'Global',
+    defaultKey: 'Mod+Shift+Space',
+    currentKey: 'Mod+Shift+Space',
+  },
+  'voice-toggle': {
+    id: 'voice-toggle',
+    label: 'Toggle Voice-to-Terminal',
+    category: 'Voice',
+    defaultKey: 'Mod+Shift+V',
+    currentKey: 'Mod+Shift+V',
   },
 };
 

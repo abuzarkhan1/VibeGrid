@@ -1,5 +1,6 @@
 use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
+use std::time::Duration;
 
 /// Build the JSON-RPC response (or `None` when there is no response, e.g. a
 /// notification) for one incoming line. Extracted into a pure function so the
@@ -19,7 +20,7 @@ fn respond_to(line: &str) -> Option<Value> {
                 "result": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": { "tools": {} },
-                    "serverInfo": { "name": "vibegrid", "version": "0.1.0" }
+                    "serverInfo": { "name": "vibegrid", "version": env!("CARGO_PKG_VERSION") }
                 }
             }))
         }
@@ -56,19 +57,51 @@ fn respond_to(line: &str) -> Option<Value> {
                 // against VIBEGRID_HTTP_PORT / the default.
                 let port = crate::http_server::persisted_http_port()
                     .unwrap_or_else(crate::http_server::http_port);
+                // Authenticate with the running app's per-launch token
+                // (audit/security) and bound every request with a timeout so a
+                // hung app can't stall the whole MCP session.
+                let token = crate::http_server::persisted_token();
+                // Returns Ok((body, authorized)) — a 401 means the persisted
+                // port is stale (a previous app instance wrote it) while the
+                // token file already holds THIS launch's token, so the retry
+                // must also trigger on an unauthorized response, not just a
+                // transport error (audit follow-up).
                 let send = |port: u16| {
-                    let client = reqwest::blocking::Client::new();
-                    client
-                        .get(format!("http://127.0.0.1:{port}/panes"))
-                        .send()
-                        .and_then(|res| res.text())
+                    let client = reqwest::blocking::Client::builder()
+                        .timeout(Duration::from_secs(5))
+                        .build()
+                        .expect("blocking client builds");
+                    let mut req = client.get(format!("http://127.0.0.1:{port}/panes"));
+                    if let Some(tok) = &token {
+                        req = req.bearer_auth(tok);
+                    }
+                    match req.send() {
+                        Ok(res) => {
+                            let authorized = res.status().is_success();
+                            let text = res.text().unwrap_or_default();
+                            Ok((text, authorized))
+                        }
+                        Err(e) => Err(e),
+                    }
                 };
                 let text = match send(port) {
-                    Ok(t) => t,
+                    Ok((t, true)) => t,
+                    Ok((_, false)) => {
+                        // 401 — stale port/token mix; retry the fallback once.
+                        let fallback = crate::http_server::http_port();
+                        if port != fallback {
+                            send(fallback)
+                                .map(|(t, _)| t)
+                                .unwrap_or_else(|e| format!("Error connecting to VibeGrid: {e}"))
+                        } else {
+                            "Error connecting to VibeGrid: unauthorized".to_string()
+                        }
+                    }
                     Err(e) => {
                         let fallback = crate::http_server::http_port();
                         if port != fallback {
                             send(fallback)
+                                .map(|(t, _)| t)
                                 .unwrap_or_else(|_| format!("Error connecting to VibeGrid: {e}"))
                         } else {
                             format!("Error connecting to VibeGrid: {e}")
@@ -124,6 +157,8 @@ mod tests {
         assert_eq!(res["id"], 1);
         assert_eq!(res["result"]["serverInfo"]["name"], "vibegrid");
         assert_eq!(res["result"]["protocolVersion"], "2024-11-05");
+        // Audit: the version must come from the crate, not a hardcoded string.
+        assert_eq!(res["result"]["serverInfo"]["version"], env!("CARGO_PKG_VERSION"));
     }
 
     #[test]

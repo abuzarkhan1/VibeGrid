@@ -18,7 +18,7 @@ import { InputModal } from '../ui/InputModal';
 import { TerminalContextMenu, ContextMenuItem } from './TerminalContextMenu';
 import { Copy, ClipboardPaste, Search, Eraser, Columns, Rows, X, Terminal as TerminalIcon, Repeat } from 'lucide-react';
 import { PaneNode, TerminalNode } from '@/types/layout';
-import { escapeShellPath } from '@/lib/commandUtils';
+import { escapeShellPath, bracketedPaste } from '@/lib/commandUtils';
 
 interface TerminalPaneProps {
   id: string; // Layout node ID
@@ -121,8 +121,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                 const paths = (event.payload as { paths: string[] }).paths || [];
                 if (paths.length === 0 || !ptyPaneIdRef.current) return;
                 const text = paths.map(escapeShellPath).join(' ');
-                const bracketed = `\x1b[200~${text} \x1b[201~`;
-                writeToPty(ptyPaneIdRef.current, bracketed);
+                writeToPty(ptyPaneIdRef.current, bracketedPaste(`${text} `));
                 return;
               }
             }
@@ -305,8 +304,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         if (isMod && !ev.shiftKey && ev.code === 'KeyV') {
           navigator.clipboard.readText().then((text) => {
             if (text && ptyPaneIdRef.current) {
-              const bracketed = `\x1b[200~${text}\x1b[201~`;
-              writeToPty(ptyPaneIdRef.current, bracketed);
+              writeToPty(ptyPaneIdRef.current, bracketedPaste(text));
             }
           });
           return false;
@@ -585,7 +583,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       action: () => {
         navigator.clipboard.readText().then((text) => {
           if (text && ptyPaneIdRef.current) {
-            writeToPty(ptyPaneIdRef.current, `\x1b[200~${text}\x1b[201~`);
+            writeToPty(ptyPaneIdRef.current, bracketedPaste(text));
           }
         });
       },

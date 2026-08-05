@@ -210,7 +210,7 @@ export type CursorStyle = 'block' | 'underline' | 'bar';
 
 const STORAGE_KEY = 'vibegrid_settings_v1';
 
-export interface AppSettings {
+interface AppSettings {
   fontSize: number;
   fontFamily: string;
   themeName: string;

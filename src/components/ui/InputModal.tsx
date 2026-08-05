@@ -82,6 +82,7 @@ export const InputModal: React.FC<InputModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close dialog"
             className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
           >
             <X className="w-4 h-4" />
@@ -104,6 +105,7 @@ export const InputModal: React.FC<InputModalProps> = ({
                 type="button"
                 onClick={handleBrowse}
                 title="Browse folders…"
+                aria-label="Browse folders"
                 className="shrink-0 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white/55 hover:text-forest-light hover:border-forest/40 transition-colors"
               >
                 <FolderOpen className="w-3.5 h-3.5" />

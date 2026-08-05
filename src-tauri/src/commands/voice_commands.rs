@@ -69,11 +69,6 @@ pub async fn voice_stop_recording(
         .map_err(|e| format!("Transcription task failed: {e}"))?
 }
 
-#[tauri::command]
-pub fn voice_is_recording(state: State<'_, AppState>) -> bool {
-    state.speech.is_recording()
-}
-
 /// Configure the auto-stop silence timeout (ms) — gap 10.
 #[tauri::command]
 pub fn voice_set_silence_timeout(state: State<'_, AppState>, ms: u64) -> u64 {

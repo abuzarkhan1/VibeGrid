@@ -70,6 +70,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           <button
             onClick={onToggleSidebar}
             title={`${isSidebarOpen ? 'Collapse' : 'Expand'} Sidebar (Cmd/Ctrl+B)`}
+            aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             className={`p-1 rounded border transition-colors ${
               isSidebarOpen ? 'bg-forest/20 border-forest/40 text-forest-light' : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-white/50'
             }`}
@@ -154,6 +155,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                         setIsWsDropdownOpen(false);
                       }}
                       title="Rename Workspace"
+                      aria-label={`Rename workspace ${ws.name}`}
                       className="p-0.5 rounded hover:bg-white/10 text-white/45 hover:text-white/80"
                     >
                       <Edit2 className="w-3 h-3" />
@@ -167,6 +169,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                           setIsWsDropdownOpen(false);
                         }}
                         title="Delete Workspace"
+                        aria-label={`Delete workspace ${ws.name}`}
                         className="p-0.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400"
                       >
                         <Trash2 className="w-3 h-3" />

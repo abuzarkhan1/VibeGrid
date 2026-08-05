@@ -7,12 +7,13 @@ Welcome to VibeGrid! VibeGrid is a free, open-source, GPU-accelerated multi-pane
 ## 1. Installation
 
 ### macOS
-1. Download `VibeGrid_x64.dmg` or `VibeGrid_aarch64.dmg` (Apple Silicon M1/M2/M3/M4).
+1. Download the latest `VibeGrid_*_x64.dmg` (Intel) or `VibeGrid_*_aarch64.dmg`
+   (Apple Silicon M1/M2/M3/M4) from the GitHub Releases page.
 2. Drag VibeGrid into your `Applications` folder.
 3. Launch VibeGrid from Spotlight or Launchpad.
 
 ### Windows
-1. Download `VibeGrid-Setup.msi` or `.exe`.
+1. Download the latest `VibeGrid_*_x64-setup.exe` from the GitHub Releases page.
 2. Double-click the installer and follow the prompt.
 
 ---

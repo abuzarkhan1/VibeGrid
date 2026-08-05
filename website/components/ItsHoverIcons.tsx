@@ -11,7 +11,6 @@ import {
   Keyboard,
   Apple,
   AppWindow,
-  Heart,
 } from 'lucide-react';
 
 interface IconProps {
@@ -181,23 +180,4 @@ export const WindowHoverIcon: React.FC<IconProps> = ({ className = "w-8 h-8 text
   );
 };
 
-/** ❤️ (Footer built with love) → HeartHoverIcon */
-export const HeartHoverIcon: React.FC<IconProps> = ({ className = "w-4 h-4 text-red-500", size = 16 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  return (
-    <motion.span
-      className={`inline-flex items-center justify-center cursor-pointer align-middle mx-1 ${className}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      whileHover={{ scale: 1.4 }}
-      animate={{ scale: [1, 1.18, 1, 1.18, 1] }}
-      transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
-    >
-      <motion.span
-        animate={isHovered ? { filter: "drop-shadow(0 0 8px rgba(239, 68, 68, 0.9))" } : {}}
-      >
-        <Heart size={size} className="fill-red-500 stroke-red-500" />
-      </motion.span>
-    </motion.span>
-  );
-};
+

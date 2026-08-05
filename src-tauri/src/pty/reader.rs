@@ -3,11 +3,12 @@ use std::sync::atomic::Ordering;
 use std::thread;
 use std::time::Duration;
 use crate::ipc::IpcBatcher;
+use tauri::Runtime;
 
-pub fn spawn_pty_reader(
+pub fn spawn_pty_reader<R: Runtime>(
     pane_id: String,
     mut reader: Box<dyn Read + Send>,
-    batcher: IpcBatcher,
+    batcher: IpcBatcher<R>,
 ) {
     let bp_flag = batcher.get_backpressure_flag(&pane_id);
 

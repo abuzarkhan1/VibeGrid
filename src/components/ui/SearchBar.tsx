@@ -62,6 +62,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, onClose }) =>
       <button
         onClick={handlePrev}
         title="Previous Match (Shift+Enter)"
+        aria-label="Previous match"
         className="p-1 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
       >
         <ChevronUp className="w-3.5 h-3.5" />
@@ -70,6 +71,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, onClose }) =>
       <button
         onClick={handleNext}
         title="Next Match (Enter)"
+        aria-label="Next match"
         className="p-1 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
       >
         <ChevronDown className="w-3.5 h-3.5" />
@@ -78,6 +80,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, onClose }) =>
       <button
         onClick={onClose}
         title="Close Search (Escape)"
+        aria-label="Close search"
         className="p-1 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
       >
         <X className="w-3.5 h-3.5" />

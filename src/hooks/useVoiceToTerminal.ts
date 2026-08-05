@@ -3,8 +3,9 @@ import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useVoiceStore } from '@/store/useVoiceStore';
+import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { writeToPty } from '@/lib/tauri';
-import { isVoiceShortcut, isTypingTarget } from '@/lib/voice';
+import { isTypingTarget } from '@/lib/voice';
 import {
   voiceModelStatus,
   voiceEnsureModel,
@@ -471,7 +472,9 @@ export function useVoiceToTerminal() {
         }
       }
 
-      if (!isVoiceShortcut(e)) return;
+      // Audit: the voice toggle is now a REASSIGNABLE keybinding from the store
+      // instead of the hardcoded Cmd/Ctrl+Shift+V check.
+      if (!useKeybindingsStore.getState().matchesKeybinding(e, 'voice-toggle')) return;
       // Never steal the shortcut while typing in an input (e.g. Settings keybinding capture)
       if (isTypingTarget(e.target)) return;
 

@@ -4,7 +4,7 @@ import { PaneNode, TerminalNode } from '@/types/layout';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri } from '@/lib/tauri';
 
-export interface Workspace {
+interface Workspace {
   id: string;
   name: string;
   layout: PaneNode;
@@ -48,6 +48,14 @@ interface WorkspaceState {
 }
 
 const defaultWorkspaceId = 'default-workspace';
+
+// Collision-proof workspace id: two workspaces created in the same millisecond
+// used to collide on `ws-${Date.now()}` (audit: create+duplicate in the same
+// tick silently overwrote one file). Adds a random suffix. Charset stays
+// [a-zA-Z0-9_-] to match the Rust-side is_safe_id validation.
+function newWorkspaceId(): string {
+  return `ws-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 const ACTIVE_WS_STORAGE_KEY = 'vibegrid.active-workspace';
 
 function persistActiveWorkspaceId(id: string) {
@@ -191,7 +199,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   createWorkspace: (name: string, opts?: { activate?: boolean }): string => {
     const activate = opts?.activate !== false;
-    const id = `ws-${Date.now()}`;
+    const id = newWorkspaceId();
     const newWs: Workspace = {
       id,
       name,
@@ -284,7 +292,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const { workspaces, activeWorkspaceId } = get();
     const src = workspaces.find((w) => w.id === id);
     if (!src) return '';
-    const newId = `ws-${Date.now()}`;
+    const newId = newWorkspaceId();
     const copy: Workspace = {
       id: newId,
       name: `${src.name} Copy`,

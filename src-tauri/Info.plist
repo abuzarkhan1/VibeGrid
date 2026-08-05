@@ -6,5 +6,9 @@
   <string>VibeGrid needs microphone access for Voice-to-Terminal commands.</string>
   <key>NSSpeechRecognitionUsageDescription</key>
   <string>VibeGrid needs speech recognition to transcribe your voice commands.</string>
+  <key>NSHumanReadableCopyright</key>
+  <string>© 2026 VibeGrid Open Source Community. Released under the MIT License.</string>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.developer-tools</string>
 </dict>
 </plist>
