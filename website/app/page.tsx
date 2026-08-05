@@ -514,7 +514,7 @@ export default function Home() {
                 <p className="mb-6 text-[13px] text-white/40">Apple Silicon & Intel · macOS 12+</p>
                 <div className="flex flex-col gap-2">
                   <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v0.1.0/VibeGrid_0.1.0_aarch64.dmg"
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
                     target="_blank"
                     rel="noreferrer"
                     className="vg-install-glow flex items-center justify-center gap-2 rounded-xl bg-forest px-4 py-3 text-sm font-medium text-white transition-all hover:bg-forest-bright"
@@ -522,7 +522,7 @@ export default function Home() {
                     Download for Apple Silicon
                   </a>
                   <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v0.1.0/VibeGrid_0.1.0_x64.dmg"
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/tag/v1"
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60 transition-all hover:bg-white/10 hover:text-white"
@@ -541,7 +541,7 @@ export default function Home() {
                 <p className="mb-6 text-[13px] text-white/40">Windows 10/11 · x64</p>
                 <div className="flex flex-col gap-2">
                   <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v0.1.0/VibeGrid_0.1.0_x64-setup.exe"
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/tag/v1"
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/60 transition-all hover:bg-white/10 hover:text-white"
