@@ -2,10 +2,12 @@ import React, { useEffect } from 'react';
 import { X, BookOpen } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 export const ShortcutsModal: React.FC = () => {
   const { isCheatsheetOpen, setCheatsheetOpen } = useUIStore();
   const { keybindings } = useKeybindingsStore();
+  const panelRef = useFocusTrap<HTMLDivElement>(isCheatsheetOpen);
 
   useEffect(() => {
     if (!isCheatsheetOpen) return;
@@ -20,18 +22,16 @@ export const ShortcutsModal: React.FC = () => {
 
   const groups = [
     { title: 'Pane Operations', ids: ['split-horizontal', 'split-vertical', 'close-pane', 'toggle-maximize'] },
-    { title: 'Navigation', ids: ['command-palette', 'open-settings'] },
+    { title: 'Navigation', ids: ['command-palette', 'open-settings', 'toggle-sidebar', 'cycle-focus-next', 'cycle-focus-prev', 'focus-left', 'focus-right', 'focus-up', 'focus-down'] },
     { title: 'Terminal', ids: ['search-terminal', 'clear-terminal'] },
-    { title: 'Workspace', ids: ['new-workspace'] },
+    { title: 'Workspace', ids: ['new-workspace', 'switch-workspace-prev', 'switch-workspace-next'] },
+    { title: 'View & Font', ids: ['font-increase', 'font-decrease', 'font-reset'] },
   ];
 
+  // UX audit P2 #10: everything shown here comes from the keybinding store, so
+  // reassignments in Settings are reflected live and nothing hardcoded drifts.
   const additional: { label: string; keys: string }[] = [
-    { label: 'Move focus between panes', keys: 'Mod + Arrow keys' },
-    { label: 'Cycle focused pane', keys: 'Mod + Tab / Mod+Shift+Tab' },
-    { label: 'Switch workspace', keys: 'Mod + Shift + ← / →' },
-    { label: 'Zoom terminal font', keys: 'Mod + = / - / 0' },
     { label: 'Voice-to-Terminal', keys: 'Mod + Shift + V' },
-    { label: 'Maximize / Restore', keys: 'Mod + Shift + Enter' },
   ];
 
   return (
@@ -43,6 +43,7 @@ export const ShortcutsModal: React.FC = () => {
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
     >
       <div
+        ref={panelRef}
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col max-h-[80vh] backdrop-blur-md"
       >

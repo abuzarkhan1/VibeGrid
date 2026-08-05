@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Columns, Rows, Command, RotateCcw, Plus, Settings, ChevronDown, Trash2, Info, Edit2, PanelLeft, Grid } from 'lucide-react';
-import { usePaneStore } from '@/store/usePaneStore';
+import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { InputModal } from '@/components/ui/InputModal';
@@ -13,8 +13,8 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = true, onToggleSidebar }) => {
-  const { splitPane, focusedPaneId, resetLayout, paneCount, maxPanes, setLayoutPreset } = usePaneStore();
-  const { toggleCommandPalette, toggleSettings, addToast, requestSwitchWorkspace, requestCreateWorkspace } = useUIStore();
+  const { splitPane, focusedPaneId, paneCount, maxPanes } = usePaneStore();
+  const { toggleCommandPalette, toggleSettings, addToast, requestSwitchWorkspace, requestCreateWorkspace, requestSetLayoutPreset, requestResetLayout } = useUIStore();
   const { workspaces, activeWorkspaceId, renameWorkspace, deleteWorkspace } = useWorkspaceStore();
 
   const [isWsDropdownOpen, setIsWsDropdownOpen] = useState(false);
@@ -25,6 +25,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
   const activeWs = workspaces.find((w) => w.id === activeWorkspaceId) || workspaces[0];
   const renameTarget = workspaces.find((w) => w.id === renameWsId);
   const deleteTarget = workspaces.find((w) => w.id === deleteWsId);
+  // Workspace isolation: deleting a workspace terminates its still-running
+  // terminals — surface that in the confirmation instead of hiding it.
+  const deleteRunningCount = deleteTarget
+    ? (deleteTarget.id === activeWorkspaceId
+        ? getTerminalNodes(usePaneStore.getState().root)
+        : getTerminalNodes(deleteTarget.layout)
+      ).filter((t) => t.paneId).length
+    : 0;
 
   const handleSplitH = () => {
     if (focusedPaneId) {
@@ -55,7 +63,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
   const presets: (1 | 2 | 4 | 6 | 8 | 16)[] = [1, 2, 4, 6, 8, 16];
 
   return (
-    <header className="h-9 w-full bg-[#0a0c10]/95 backdrop-blur-md border-b border-white/[0.06] px-3 flex items-center justify-between select-none z-20">
+    <header className="h-9 w-full bg-surface/95 backdrop-blur-md border-b border-white/[0.06] px-3 flex items-center justify-between select-none z-20">
       {/* Left: Sidebar Toggle, Brand logo & Workspace selector */}
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
@@ -98,12 +106,25 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
               className="absolute top-8 left-0 z-50 w-56 bg-surfaceCard border border-white/10 rounded-lg shadow-xl py-1 text-xs animate-fade-in backdrop-blur-md"
             >
               <div className="px-3 py-1.5 text-[10px] font-semibold text-white/40 uppercase">Workspaces</div>
-              {workspaces.map((ws) => (
+              {workspaces.map((ws) => {
+                const running = ws.id === activeWorkspaceId
+                  ? getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length
+                  : getTerminalNodes(ws.layout).filter((t) => t.paneId).length;
+                return (
                 <div
                   key={ws.id}
+                  role="menuitem"
+                  tabIndex={0}
                   onClick={() => {
                     requestSwitchWorkspace(ws.id);
                     setIsWsDropdownOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      requestSwitchWorkspace(ws.id);
+                      setIsWsDropdownOpen(false);
+                    }
                   }}
                   onDoubleClick={() => {
                     // Gap 12: double-click a workspace in the dropdown to rename it inline.
@@ -111,11 +132,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                     setIsWsDropdownOpen(false);
                   }}
                   title={ws.id === activeWorkspaceId ? `${ws.name} (double-click to rename)` : `Switch to ${ws.name} (double-click to rename)`}
-                  className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors ${
+                  className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors focus:outline-none focus-visible:bg-white/10 ${
                     ws.id === activeWorkspaceId ? 'bg-forest/10 text-forest-light font-semibold' : 'text-white/65 hover:bg-white/5'
                   }`}
                 >
-                  <span className="truncate">{ws.name}</span>
+                  <span className="truncate flex items-center gap-1.5">
+                    {ws.name}
+                    {/* UX audit P1 #5: running indicator in the dropdown too. */}
+                    {running > 0 && (
+                      <span title={`${running} running terminal${running > 1 ? 's' : ''}`} className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-60" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-bright" />
+                      </span>
+                    )}
+                  </span>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => {
@@ -144,7 +174,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
               <div className="border-t border-white/[0.06] mt-1 pt-1">
                 <button
                   onClick={() => {
@@ -174,7 +205,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           return (
             <button
               key={p}
-              onClick={() => setLayoutPreset(p)}
+              // Guarded: rebuilding the grid kills all running panes, so when
+              // processes are running a confirmation is shown first.
+              onClick={() => requestSetLayoutPreset(p)}
               title={`Set Equal Grid to ${p} Pane${p > 1 ? 's' : ''}`}
               className={`px-2 py-0.5 text-xs font-mono font-bold rounded transition-all ${
                 isActive ? 'bg-forest text-white' : 'text-white/45 hover:text-white/90 hover:bg-white/5'
@@ -208,7 +241,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           </button>
 
           <button
-            onClick={resetLayout}
+            // Guarded: reset kills all running panes — confirm when processes
+            // are running (requestResetLayout handles that).
+            onClick={requestResetLayout}
             title="Reset to 1 Pane"
             aria-label="Reset layout to one pane"
             className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/45 hover:text-amber-400 transition-colors"
@@ -271,7 +306,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
       {deleteWsId && deleteTarget && (
         <ConfirmModal
           title="Delete Workspace"
-          message={`Are you sure you want to delete workspace "${deleteTarget.name}"? This action cannot be undone.`}
+          message={
+            deleteRunningCount > 0
+              ? `Delete workspace "${deleteTarget.name}"? This will terminate ${deleteRunningCount} running terminal${deleteRunningCount > 1 ? 's' : ''} in it. This action cannot be undone.`
+              : `Delete workspace "${deleteTarget.name}"? This action cannot be undone.`
+          }
           confirmLabel="Delete Workspace"
           isDanger={true}
           onConfirm={() => deleteWorkspace(deleteWsId)}

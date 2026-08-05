@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { setBatchInterval, voiceSetSilenceTimeout, voiceSetInputDevice } from '@/lib/tauri';
 import { TerminalTheme } from '@/types/terminal';
 
+// Lazy accessor for the UI store — dynamic import resolves at CALL time, so
+// there is no circular-import hazard at module load and it works in Vite and
+// Vitest alike. If the store isn't ready, the toast is dropped (non-fatal).
+const addToastLazy = (toast: { type: 'info' | 'warning' | 'error' | 'success'; title: string; description?: string }) => {
+  import('./useUIStore')
+    .then(({ useUIStore }) => useUIStore.getState().addToast(toast))
+    .catch(() => {});
+};
+
 export const THEMES: Record<string, TerminalTheme> = {
   vibeDark: {
     name: 'VibeDark',
@@ -27,128 +36,37 @@ export const THEMES: Record<string, TerminalTheme> = {
     brightCyan: '#22d3ee',
     brightWhite: '#f8fafc',
   },
-  vibeLight: {
-    name: 'VibeLight',
-    background: '#f8fafc',
-    foreground: '#0f172a',
-    cursor: '#4f46e5',
-    cursorAccent: '#ffffff',
-    selectionBackground: 'rgba(79, 70, 229, 0.2)',
-    black: '#0f172a',
-    red: '#e11d48',
-    green: '#059669',
-    yellow: '#d97706',
-    blue: '#2563eb',
-    magenta: '#9333ea',
-    cyan: '#0891b2',
-    white: '#cbd5e1',
-    brightBlack: '#64748b',
-    brightRed: '#f43f5e',
-    brightGreen: '#10b981',
-    brightYellow: '#f59e0b',
-    brightBlue: '#3b82f6',
-    brightMagenta: '#a855f7',
-    brightCyan: '#06b6d4',
-    brightWhite: '#f1f5f9',
-  },
-  midnightBlue: {
-    name: 'Midnight Blue',
-    background: '#0a1128',
-    foreground: '#d4e0ff',
-    cursor: '#3a86ff',
-    selectionBackground: 'rgba(58, 134, 255, 0.35)',
-    black: '#03081e',
-    red: '#ff0054',
-    green: '#38b000',
-    yellow: '#ffb703',
-    blue: '#3a86ff',
-    magenta: '#8338ec',
-    cyan: '#00b4d8',
-    white: '#d4e0ff',
-    brightBlack: '#1c2d5a',
-    brightRed: '#ff5400',
-    brightGreen: '#70e000',
-    brightYellow: '#ffd000',
-    brightBlue: '#4895ef',
-    brightMagenta: '#9d4edd',
-    brightCyan: '#48cae4',
+  oneDarkPro: {
+    name: 'One Dark Pro',
+    background: '#282c34',
+    foreground: '#abb2bf',
+    cursor: '#61afef',
+    cursorAccent: '#282c34',
+    selectionBackground: 'rgba(97, 175, 239, 0.3)',
+    black: '#282c34',
+    red: '#e06c75',
+    green: '#98c379',
+    yellow: '#e5c07b',
+    blue: '#61afef',
+    magenta: '#c678dd',
+    cyan: '#56b6c2',
+    white: '#abb2bf',
+    brightBlack: '#5c6370',
+    brightRed: '#e06c75',
+    brightGreen: '#98c379',
+    brightYellow: '#e5c07b',
+    brightBlue: '#61afef',
+    brightMagenta: '#c678dd',
+    brightCyan: '#56b6c2',
     brightWhite: '#ffffff',
-  },
-  dracula: {
-    name: 'Dracula',
-    background: '#282a36',
-    foreground: '#f8f8f2',
-    cursor: '#50fa7b',
-    selectionBackground: '#44475a',
-    black: '#21222c',
-    red: '#ff5555',
-    green: '#50fa7b',
-    yellow: '#f1fa8c',
-    blue: '#bd93f9',
-    magenta: '#ff79c6',
-    cyan: '#8be9fd',
-    white: '#f8f8f2',
-    brightBlack: '#6272a4',
-    brightRed: '#ff6e6e',
-    brightGreen: '#69ff94',
-    brightYellow: '#ffffa5',
-    brightBlue: '#d6acff',
-    brightMagenta: '#ff92df',
-    brightCyan: '#a4ffff',
-    brightWhite: '#ffffff',
-  },
-  solarizedDark: {
-    name: 'Solarized Dark',
-    background: '#002b36',
-    foreground: '#839496',
-    cursor: '#93a1a1',
-    selectionBackground: '#073642',
-    black: '#073642',
-    red: '#dc322f',
-    green: '#859900',
-    yellow: '#b58900',
-    blue: '#268bd2',
-    magenta: '#d33682',
-    cyan: '#2aa198',
-    white: '#eee8d5',
-    brightBlack: '#002b36',
-    brightRed: '#cb4b16',
-    brightGreen: '#586e75',
-    brightYellow: '#657b83',
-    brightBlue: '#839496',
-    brightMagenta: '#6c71c4',
-    brightCyan: '#93a1a1',
-    brightWhite: '#fdf6e3',
-  },
-  solarizedLight: {
-    name: 'Solarized Light',
-    background: '#fdf6e3',
-    foreground: '#657b83',
-    cursor: '#586e75',
-    selectionBackground: '#eee8d5',
-    black: '#073642',
-    red: '#dc322f',
-    green: '#859900',
-    yellow: '#b58900',
-    blue: '#268bd2',
-    magenta: '#d33682',
-    cyan: '#2aa198',
-    white: '#eee8d5',
-    brightBlack: '#002b36',
-    brightRed: '#cb4b16',
-    brightGreen: '#586e75',
-    brightYellow: '#657b83',
-    brightBlue: '#839496',
-    brightMagenta: '#6c71c4',
-    brightCyan: '#93a1a1',
-    brightWhite: '#fdf6e3',
   },
   nord: {
     name: 'Nord',
     background: '#2e3440',
     foreground: '#d8dee9',
     cursor: '#88c0d0',
-    selectionBackground: '#434c5e',
+    cursorAccent: '#2e3440',
+    selectionBackground: 'rgba(136, 192, 208, 0.3)',
     black: '#3b4252',
     red: '#bf616a',
     green: '#a3be8c',
@@ -165,6 +83,126 @@ export const THEMES: Record<string, TerminalTheme> = {
     brightMagenta: '#b48ead',
     brightCyan: '#8fbcbb',
     brightWhite: '#eceff4',
+  },
+  tokyoNight: {
+    name: 'Tokyo Night',
+    background: '#1a1b26',
+    foreground: '#c0caf5',
+    cursor: '#7aa2f7',
+    cursorAccent: '#1a1b26',
+    selectionBackground: 'rgba(122, 162, 247, 0.3)',
+    black: '#15161e',
+    red: '#f7768e',
+    green: '#9ece6a',
+    yellow: '#e0af68',
+    blue: '#7aa2f7',
+    magenta: '#bb9af7',
+    cyan: '#7dcfff',
+    white: '#a9b1d6',
+    brightBlack: '#414868',
+    brightRed: '#f7768e',
+    brightGreen: '#9ece6a',
+    brightYellow: '#e0af68',
+    brightBlue: '#7aa2f7',
+    brightMagenta: '#bb9af7',
+    brightCyan: '#7dcfff',
+    brightWhite: '#c0caf5',
+  },
+  catppuccin: {
+    name: 'Catppuccin Mocha',
+    background: '#1e1e2e',
+    foreground: '#cdd6f4',
+    cursor: '#cba6f7',
+    cursorAccent: '#1e1e2e',
+    selectionBackground: 'rgba(203, 166, 247, 0.3)',
+    black: '#45475a',
+    red: '#f38ba8',
+    green: '#a6e3a1',
+    yellow: '#f9e2af',
+    blue: '#89b4fa',
+    magenta: '#f5c2e7',
+    cyan: '#94e2d5',
+    white: '#bac2de',
+    brightBlack: '#585b70',
+    brightRed: '#f38ba8',
+    brightGreen: '#a6e3a1',
+    brightYellow: '#f9e2af',
+    brightBlue: '#89b4fa',
+    brightMagenta: '#f5c2e7',
+    brightCyan: '#94e2d5',
+    brightWhite: '#a6adc8',
+  },
+  gruvboxDark: {
+    name: 'Gruvbox Dark',
+    background: '#282828',
+    foreground: '#ebdbb2',
+    cursor: '#fabd2f',
+    cursorAccent: '#282828',
+    selectionBackground: 'rgba(250, 189, 47, 0.3)',
+    black: '#282828',
+    red: '#cc241d',
+    green: '#98971a',
+    yellow: '#d79921',
+    blue: '#458588',
+    magenta: '#b16286',
+    cyan: '#689d6a',
+    white: '#a89984',
+    brightBlack: '#928374',
+    brightRed: '#fb4934',
+    brightGreen: '#b8bb26',
+    brightYellow: '#fabd2f',
+    brightBlue: '#83a598',
+    brightMagenta: '#d3869b',
+    brightCyan: '#8ec07c',
+    brightWhite: '#ebdbb2',
+  },
+  solarizedDark: {
+    name: 'Solarized Dark',
+    background: '#002b36',
+    foreground: '#839496',
+    cursor: '#268bd2',
+    cursorAccent: '#002b36',
+    selectionBackground: 'rgba(38, 139, 210, 0.3)',
+    black: '#073642',
+    red: '#dc322f',
+    green: '#859900',
+    yellow: '#b58900',
+    blue: '#268bd2',
+    magenta: '#d33682',
+    cyan: '#2aa198',
+    white: '#eee8d5',
+    brightBlack: '#002b36',
+    brightRed: '#cb4b16',
+    brightGreen: '#586e75',
+    brightYellow: '#657b83',
+    brightBlue: '#839496',
+    brightMagenta: '#6c71c4',
+    brightCyan: '#93a1a1',
+    brightWhite: '#fdf6e3',
+  },
+  githubDark: {
+    name: 'GitHub Dark',
+    background: '#0d1117',
+    foreground: '#c9d1d9',
+    cursor: '#58a6ff',
+    cursorAccent: '#0d1117',
+    selectionBackground: 'rgba(88, 166, 255, 0.3)',
+    black: '#484f58',
+    red: '#ff7b72',
+    green: '#3fb950',
+    yellow: '#d29922',
+    blue: '#58a6ff',
+    magenta: '#bc8cff',
+    cyan: '#39c5cf',
+    white: '#b1bac4',
+    brightBlack: '#6e7681',
+    brightRed: '#ffa198',
+    brightGreen: '#56d364',
+    brightYellow: '#e3b341',
+    brightBlue: '#79c0ff',
+    brightMagenta: '#d2a8ff',
+    brightCyan: '#56d4dd',
+    brightWhite: '#f0f6fc',
   },
 };
 
@@ -183,6 +221,13 @@ export interface AppSettings {
   fontLigatures: boolean;
   lineHeight: number;
   terminalOpacity: number;
+  /** Auto-copy selection to clipboard when selecting text in a pane (audit: was MISSING). */
+  copyOnSelect: boolean;
+  /** Close button hides to the tray instead of quitting (audit: was MISSING). */
+  minimizeToTray: boolean;
+  /** Global default shell for new panes ('' = system default). Per-pane
+   * overrides win (UX audit: only per-pane existed before). */
+  defaultShell: string;
   voiceToTerminal: boolean;
   /** Auto-stop silence timeout in ms (gap 10). */
   voiceSilenceTimeoutMs: number;
@@ -201,17 +246,30 @@ const defaultSettings: AppSettings = {
   fontLigatures: true,
   lineHeight: 1.2,
   terminalOpacity: 1,
+  copyOnSelect: false,
+  minimizeToTray: false,
+  defaultShell: '',
   voiceToTerminal: false,
   voiceSilenceTimeoutMs: 1600,
   voiceInputDevice: '',
 };
+
+/**
+ * Coerce a persisted/imported theme key to a value that actually exists in
+ * THEMES. Unknown keys (e.g. a theme removed in a newer build, or a hand-edited
+ * settings file) fall back to the default instead of leaving `themeName`
+ * pointing at a theme whose palette is undefined everywhere.
+ */
+function resolveThemeKey(key: string): string {
+  return key in THEMES ? key : defaultSettings.themeName;
+}
 
 function loadSettings(): AppSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      return { ...defaultSettings, ...parsed };
+      return { ...defaultSettings, ...parsed, themeName: resolveThemeKey(parsed.themeName) };
     }
   } catch (e) {
     // ignore corrupt storage
@@ -233,8 +291,11 @@ function applyThemeVariables(themeKey: string) {
     const root = document.documentElement;
     root.style.setProperty('--color-bg', theme.background);
     root.style.setProperty('--color-surface', theme.black);
+    // Rough heuristic for a surface-hover (we just use a slightly different terminal color)
+    root.style.setProperty('--color-surface-hover', theme.brightBlack);
     root.style.setProperty('--color-accent', theme.cursor);
     root.style.setProperty('--color-fg', theme.foreground);
+    root.style.setProperty('--color-selection', theme.selectionBackground);
   }
 }
 
@@ -253,6 +314,9 @@ interface SettingsState extends AppSettings {
   setFontLigatures: (enabled: boolean) => void;
   setLineHeight: (height: number) => void;
   setTerminalOpacity: (opacity: number) => void;
+  setCopyOnSelect: (enabled: boolean) => void;
+  setMinimizeToTray: (enabled: boolean) => void;
+  setDefaultShell: (shell: string) => void;
   setVoiceToTerminal: (enabled: boolean) => void;
   setVoiceSilenceTimeoutMs: (ms: number) => void;
   setVoiceInputDevice: (name: string) => void;
@@ -274,11 +338,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     persist(get());
   },
   increaseFontSize: () => {
+    // UX audit P2 #21: surface when the font hits its limit instead of
+    // silently doing nothing (deduped toast — the same toast replaces itself).
+    if (get().fontSize >= 32) {
+      addToastLazy({ type: 'info', title: 'Maximum font size reached', description: 'Terminal font is capped at 32px.' });
+      return;
+    }
     const fontSize = Math.min(32, get().fontSize + 1);
     set({ fontSize });
     persist(get());
   },
   decreaseFontSize: () => {
+    if (get().fontSize <= 8) {
+      addToastLazy({ type: 'info', title: 'Minimum font size reached', description: 'Terminal font is capped at 8px.' });
+      return;
+    }
     const fontSize = Math.max(8, get().fontSize - 1);
     set({ fontSize });
     persist(get());
@@ -288,8 +362,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     persist(get());
   },
   setThemeName: (name: string) => {
-    applyThemeVariables(name);
-    set({ themeName: name });
+    const resolved = resolveThemeKey(name);
+    applyThemeVariables(resolved);
+    set({ themeName: resolved });
     persist(get());
   },
   setScrollback: (lines: number) => {
@@ -325,6 +400,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     set({ terminalOpacity: clamped });
     persist(get());
   },
+  setCopyOnSelect: (copyOnSelect: boolean) => {
+    set({ copyOnSelect });
+    persist(get());
+  },
+  setMinimizeToTray: (minimizeToTray: boolean) => {
+    set({ minimizeToTray });
+    persist(get());
+  },
+  setDefaultShell: (defaultShell: string) => {
+    set({ defaultShell });
+    persist(get());
+  },
   setVoiceToTerminal: (voiceToTerminal: boolean) => {
     set({ voiceToTerminal });
     persist(get());
@@ -357,8 +444,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   },
 
   exportSettings: () => {
-    const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal, voiceSilenceTimeoutMs, voiceInputDevice } = get();
-    return JSON.stringify({ fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, voiceToTerminal, voiceSilenceTimeoutMs, voiceInputDevice }, null, 2);
+    const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, copyOnSelect, minimizeToTray, defaultShell, voiceToTerminal, voiceSilenceTimeoutMs, voiceInputDevice } = get();
+    return JSON.stringify({ fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, ipcBatchIntervalMs, fontLigatures, lineHeight, terminalOpacity, copyOnSelect, minimizeToTray, defaultShell, voiceToTerminal, voiceSilenceTimeoutMs, voiceInputDevice }, null, 2);
   },
 
   importSettings: (json: string) => {
@@ -368,6 +455,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         ...defaultSettings,
         ...Object.fromEntries(Object.entries(parsed).filter(([key]) => key in defaultSettings)),
       };
+      next.copyOnSelect = typeof next.copyOnSelect === 'boolean' ? next.copyOnSelect : defaultSettings.copyOnSelect;
+      // Audit fix: never import an invalid theme key — fall back to the default.
+      next.themeName = resolveThemeKey(next.themeName);
       applyThemeVariables(next.themeName);
       set(next);
       persist(next);

@@ -6,12 +6,12 @@ export const isTauri = (): boolean => {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 };
 
-export async function spawnPty(cols: number, rows: number, cwd?: string): Promise<string> {
+export async function spawnPty(cols: number, rows: number, cwd?: string, shell?: string): Promise<string> {
   if (!isTauri()) {
     console.warn('[VibeGrid] Not running in Tauri; returning mock PTY pane ID');
     return `mock-pty-${Date.now()}`;
   }
-  return await invoke<string>('spawn_pty', { cols, rows, cwd });
+  return await invoke<string>('spawn_pty', { cols, rows, cwd, shell });
 }
 
 export async function writeToPty(paneId: string, data: string): Promise<void> {
@@ -40,6 +40,24 @@ export async function setBatchInterval(intervalMs: number): Promise<number> {
   return await invoke<number>('set_batch_interval', { intervalMs });
 }
 
+/**
+ * Fetch the recent output history of a pane (last ~256 KB) plus whether its
+ * process already exited. Used when switching back to a workspace: the pane's
+ * terminal was unmounted while hidden, so its live events (including
+ * terminal-exit) were dropped — this repaints what the process printed
+ * meanwhile and surfaces the exited state so the banner can show immediately.
+ */
+export async function paneSnapshot(paneId: string): Promise<{ output: string; exited: boolean }> {
+  if (!isTauri()) return { output: '', exited: false };
+  try {
+    const [output, exited] = await invoke<[string, boolean]>('pane_snapshot', { paneId });
+    return { output, exited };
+  } catch (e) {
+    console.warn('[VibeGrid] pane_snapshot failed:', e);
+    return { output: '', exited: false };
+  }
+}
+
 export async function listenTerminalBatch(
   handler: EventCallback<Record<string, string>>
 ): Promise<UnlistenFn> {
@@ -48,6 +66,22 @@ export async function listenTerminalBatch(
     return () => {};
   }
   return await listen<Record<string, string>>('terminal-batch', handler);
+}
+
+/** Payload of the `terminal-exit` event emitted when a pane's process exits. */
+export interface TerminalExitPayload {
+  paneId: string;
+}
+
+/**
+ * Subscribe to PTY exit events (audit fix): the Rust reader emits this on EOF
+ * so the frontend can show a "process exited" banner instead of a frozen pane.
+ */
+export async function listenTerminalExit(
+  handler: EventCallback<TerminalExitPayload>
+): Promise<UnlistenFn> {
+  if (!isTauri()) return () => {};
+  return await listen<TerminalExitPayload>('terminal-exit', handler);
 }
 
 // Listen for non-fatal startup warnings emitted by the Rust side

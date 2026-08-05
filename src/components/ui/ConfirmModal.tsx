@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
@@ -20,14 +20,29 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   onClose,
 }) => {
   const panelRef = useFocusTrap<HTMLDivElement>(true);
+  const confirmRef = useRef<HTMLButtonElement>(null);
 
+  // UX audit P2 #7: Enter confirms, Escape cancels — standard dialog behavior.
+  // The confirm button is also autofocused so keyboard users land on it.
+  // preventDefault() stops the button's NATIVE click activation (Enter on a
+  // focused <button> fires click), which would double-fire onConfirm.
   useEffect(() => {
+    confirmRef.current?.focus();
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        onConfirm();
+        onClose();
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [onClose]);
+  }, [onConfirm, onClose]);
 
   return (
     <div
@@ -66,11 +81,12 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               Cancel
             </button>
             <button
+              ref={confirmRef}
               onClick={() => {
                 onConfirm();
                 onClose();
               }}
-              className={`px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-colors ${
+              className={`px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-bright/70 ${
                 isDanger ? 'bg-rose-600 hover:bg-rose-500' : 'bg-forest hover:bg-forest-bright'
               }`}
             >

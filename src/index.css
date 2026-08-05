@@ -12,6 +12,7 @@
     --color-accent-secondary: #54a967;
     --color-fg: #e2e8f0;
     --color-muted: #8b93a1;
+    --color-selection: rgba(84, 169, 103, 0.3);
     color-scheme: dark;
   }
 
@@ -29,9 +30,8 @@
     overflow: hidden;
   }
 
-  /* Green selection everywhere (matches the site's emerald selection) */
   ::selection {
-    background: rgba(84, 169, 103, 0.3);
+    background: var(--color-selection, rgba(97, 175, 239, 0.3));
     color: #ffffff;
   }
 
@@ -40,9 +40,8 @@
     writing-mode: vertical-rl;
   }
 
-  /* Visible keyboard focus everywhere (accessibility) */
   :focus-visible {
-    outline: 2px solid rgba(84, 169, 103, 0.7);
+    outline: 2px solid var(--color-accent);
     outline-offset: 1px;
     border-radius: 3px;
   }
@@ -108,8 +107,7 @@
 .vibegrid-allotment .sash-module_sash__2-19e:hover,
 .vibegrid-allotment [class*="sash"]:hover,
 .vibegrid-allotment [class*="sash-active"] {
-  background-color: #54a967 !important;
-  box-shadow: 0 0 8px rgba(84, 169, 103, 0.4);
+  background-color: var(--color-accent) !important;
 }
 
 /* Custom thin dark scrollbars (neutral, professional) */
@@ -149,9 +147,9 @@
   background: rgba(255, 255, 255, 0.28);
 }
 
-/* xterm selection glows forest green */
+/* xterm selection is now handled dynamically by xterm.js theme options */
 .xterm .xterm-selection div {
-  background: rgba(84, 169, 103, 0.28) !important;
+  /* removed !important override */
 }
 
 /* Font ligatures for monospace fonts that support them (Fira Code, JetBrains Mono) */

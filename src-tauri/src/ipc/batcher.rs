@@ -10,6 +10,10 @@ const MIN_BATCH_INTERVAL_MS: u64 = 4;
 const MAX_BATCH_INTERVAL_MS: u64 = 2000;
 const HIGH_WATERMARK_BYTES: usize = 10 * 1024 * 1024; // 10MB backpressure high watermark
 const LOW_WATERMARK_BYTES: usize = 1024 * 1024; // 1MB low watermark
+// Per-pane output history kept for MCP + `pane_snapshot` (workspace isolation:
+// a hidden workspace's pane is unmounted, so this is what gets repainted when
+// the user switches back — 256KB ≈ a healthy scrollback of build/server logs).
+const HISTORY_CAP_BYTES: usize = 256 * 1024;
 
 /// Clamps a requested IPC batching interval to the supported range 4..=2000.
 fn clamp_interval_ms(interval_ms: u64) -> u64 {
@@ -21,6 +25,7 @@ pub struct IpcBatcher {
     buffers: Arc<Mutex<HashMap<String, Vec<u8>>>>,
     backpressure_flags: Arc<Mutex<HashMap<String, Arc<AtomicBool>>>>,
     pub mcp_history: Arc<Mutex<HashMap<String, String>>>,
+    exited_panes: Arc<Mutex<HashMap<String, bool>>>,
     interval_ms: Arc<AtomicU64>,
     app_handle: AppHandle,
 }
@@ -31,6 +36,7 @@ impl IpcBatcher {
             buffers: Arc::new(Mutex::new(HashMap::new())),
             backpressure_flags: Arc::new(Mutex::new(HashMap::new())),
             mcp_history: Arc::new(Mutex::new(HashMap::new())),
+            exited_panes: Arc::new(Mutex::new(HashMap::new())),
             interval_ms: Arc::new(AtomicU64::new(BATCH_INTERVAL_MS)),
             app_handle,
         };
@@ -43,7 +49,7 @@ impl IpcBatcher {
     /// and returns the clamped value that is now in effect.
     pub fn set_interval(&self, interval_ms: u64) -> u64 {
         let clamped = clamp_interval_ms(interval_ms);
-        self.interval_ms.store(clamped, Ordering::SeqCst);
+        self.interval_ms.store(clamped, Ordering::Relaxed);
         clamped
     }
 
@@ -65,8 +71,53 @@ impl IpcBatcher {
         buf.extend_from_slice(data);
 
         if buf.len() > HIGH_WATERMARK_BYTES {
-            flag.store(true, Ordering::SeqCst);
+            flag.store(true, Ordering::Relaxed);
         }
+    }
+
+    /// Return the recent output history kept for a pane (last ~256 KB) and
+    /// whether its process already exited. Used by the frontend when a
+    /// workspace is switched back to: the pane's terminal was unmounted while
+    /// hidden, so its live events (incl. terminal-exit) were dropped — this
+    /// restores what the process printed while the user was elsewhere and lets
+    /// the pane show its "process exited" banner immediately
+    /// (workspace isolation/persistence).
+    pub fn pane_snapshot(&self, pane_id: &str) -> (String, bool) {
+        let output = self
+            .mcp_history
+            .lock()
+            .get(pane_id)
+            .cloned()
+            .unwrap_or_default();
+        let exited = self.exited_panes.lock().get(pane_id).copied().unwrap_or(false);
+        (output, exited)
+    }
+
+    /// Called by the PTY reader when a pane's process exits (EOF). Emits a
+    /// `terminal-exit` event to the frontend (which shows a "process exited"
+    /// banner) and releases all per-pane resources — the output buffer, the
+    /// backpressure flag and the MCP history entry — so long sessions with
+    /// many short-lived panes never leak memory.
+    pub fn pane_exited(&self, pane_id: &str) {
+        {
+            let mut buffers = self.buffers.lock();
+            buffers.remove(pane_id);
+        }
+        {
+            let mut flags = self.backpressure_flags.lock();
+            flags.remove(pane_id);
+        }
+        {
+            let mut history = self.mcp_history.lock();
+            history.remove(pane_id);
+        }
+        // Remember the exit so a re-attached pane (workspace switch-back) can
+        // show the "process exited" banner even though it missed the live
+        // terminal-exit event while unmounted.
+        self.exited_panes.lock().insert(pane_id.to_string(), true);
+        let _ = self
+            .app_handle
+            .emit("terminal-exit", serde_json::json!({ "paneId": pane_id }));
     }
 
     /// Flushes collected output on a configurable interval to the frontend via a single Tauri event
@@ -78,13 +129,13 @@ impl IpcBatcher {
         let app_handle = self.app_handle.clone();
 
         async_runtime::spawn(async move {
-            let mut current_interval_ms = interval_ms.load(Ordering::SeqCst);
+            let mut current_interval_ms = interval_ms.load(Ordering::Relaxed);
             let mut interval = time::interval(Duration::from_millis(current_interval_ms));
             loop {
                 interval.tick().await;
 
                 // Pick up live changes to the batching interval (set_batch_interval)
-                let live_interval_ms = interval_ms.load(Ordering::SeqCst);
+                let live_interval_ms = interval_ms.load(Ordering::Relaxed);
                 if live_interval_ms != current_interval_ms {
                     current_interval_ms = live_interval_ms;
                     interval = time::interval(Duration::from_millis(current_interval_ms));
@@ -112,10 +163,10 @@ impl IpcBatcher {
                                     
                                     // Track history for MCP
                                     let mut history = mcp_history.lock();
-                                    let h = history.entry(pane_id.clone()).or_insert_with(String::new);
+                                    let h = history.entry(pane_id.clone()).or_default();
                                     h.push_str(valid_str);
-                                    if h.len() > 16384 {
-                                        let mut keep = h.len() - 16384;
+                                    if h.len() > HISTORY_CAP_BYTES {
+                                        let mut keep = h.len() - HISTORY_CAP_BYTES;
                                         while keep < h.len() && !h.is_char_boundary(keep) {
                                             keep += 1;
                                         }
@@ -130,8 +181,8 @@ impl IpcBatcher {
 
                             // Clear backpressure flag if buffer drops below low watermark
                             if let Some(flag) = bp_flags.get(pane_id) {
-                                if flag.load(Ordering::SeqCst) && buf.len() < LOW_WATERMARK_BYTES {
-                                    flag.store(false, Ordering::SeqCst);
+                                if flag.load(Ordering::Relaxed) && buf.len() < LOW_WATERMARK_BYTES {
+                                    flag.store(false, Ordering::Relaxed);
                                 }
                             }
                         }

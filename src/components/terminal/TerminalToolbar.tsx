@@ -63,7 +63,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
       onDoubleClick={handleToggleMaximize}
       className={`h-7 w-full px-2.5 flex items-center justify-between transition-colors border-b select-none cursor-pointer ${
         isFocused
-          ? 'bg-[#0d0f12] border-forest/30 text-white/80'
+          ? 'bg-surface border-forest/30 text-white/80'
           : 'bg-black/60 border-white/[0.06] text-white/45 opacity-70 hover:opacity-100'
       }`}
     >

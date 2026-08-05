@@ -15,15 +15,17 @@ pub fn spawn_pty_reader(
         let mut buffer = [0u8; 8192];
         loop {
             // Check backpressure flag; pause reading if buffer limit reached
-            if bp_flag.load(Ordering::SeqCst) {
+            if bp_flag.load(Ordering::Relaxed) {
                 thread::sleep(Duration::from_millis(10));
                 continue;
             }
 
             match reader.read(&mut buffer) {
                 Ok(0) => {
-                    // EOF - process terminated
+                    // EOF - process terminated. Notify the frontend so it can
+                    // show a "process exited" banner instead of a frozen pane.
                     eprintln!("[PtyReader] PTY reader EOF for pane {}", pane_id);
+                    batcher.pane_exited(&pane_id);
                     break;
                 }
                 Ok(n) => {
@@ -31,6 +33,7 @@ pub fn spawn_pty_reader(
                 }
                 Err(err) => {
                     eprintln!("[PtyReader] Error reading from pane {}: {}", pane_id, err);
+                    batcher.pane_exited(&pane_id);
                     break;
                 }
             }

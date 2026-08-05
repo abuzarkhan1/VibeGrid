@@ -1,15 +1,77 @@
-import React, { useEffect } from 'react';
-import { X, Cpu, ShieldCheck, Github, ExternalLink } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X, Cpu, ShieldCheck, Github, ExternalLink, Download, BookOpen, FileText, HelpCircle } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { isTauri } from '@/lib/tauri';
+// UX audit P3 #16: read the real version from package.json instead of a
+// hardcoded string that drifts out of sync with releases. Vite supports
+// dynamic JSON imports; load it once in an effect (no `require` in ESM).
+const DEFAULT_VERSION = '0.1.0';
 
 interface AboutModalProps {
   onClose: () => void;
 }
 
 const REPO_URL = 'https://github.com/abuzarkhan1/VibeGrid';
+const DOCS_URL = 'https://vibegrid.vercel.app/';
+const CHANGELOG_URL = 'https://github.com/abuzarkhan1/VibeGrid/blob/main/CHANGELOG.md';
+
+type UpdateState = 'idle' | 'checking' | 'available' | 'current' | 'unconfigured' | 'error' | 'downloading';
 
 export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
   const panelRef = useFocusTrap<HTMLDivElement>(true);
+  const [updateState, setUpdateState] = useState<UpdateState>('idle');
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null);
+  const [appVersion, setAppVersion] = useState<string>(DEFAULT_VERSION);
+
+  // In-app update check (audit: auto-updater was MISSING). Requires the
+  // `plugins.updater` endpoint + pubkey configured in tauri.conf.json and a
+  // signed release; degrades gracefully when not configured.
+  const handleCheckUpdates = async () => {
+    if (!isTauri()) {
+      setUpdateState('unconfigured');
+      return;
+    }
+    setUpdateState('checking');
+    try {
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      if (update) {
+        setUpdateVersion(update.version);
+        setUpdateState('available');
+      } else {
+        setUpdateState('current');
+      }
+    } catch (e) {
+      console.warn('[VibeGrid] Update check failed:', e);
+      setUpdateState('unconfigured');
+    }
+  };
+
+  // UX audit P3 #32: one-click download+install. Falls back to opening the
+  // releases page if the updater plugin isn't configured for this build.
+  const handleDownloadUpdate = async () => {
+    if (!isTauri() || updateState !== 'available') {
+      window.open(`${REPO_URL}/releases`, '_blank');
+      return;
+    }
+    setUpdateState('downloading');
+    try {
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      if (!update) {
+        setUpdateState('current');
+        return;
+      }
+      await update.downloadAndInstall?.();
+      // If we reach this point the plugin installed (or the call was a no-op);
+      // prompt the user to relaunch.
+      setUpdateState('current');
+    } catch (e) {
+      console.warn('[VibeGrid] Download-and-install failed, opening releases:', e);
+      setUpdateState('available');
+      window.open(`${REPO_URL}/releases`, '_blank');
+    }
+  };
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -18,6 +80,23 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [onClose]);
+
+  // UX audit P3 #16: real version from package.json (dynamic import — Vite
+  // supports JSON modules; no `require` in an ESM webview). Guarded against
+  // setState-after-unmount (the modal can close while the import resolves).
+  useEffect(() => {
+    let cancelled = false;
+    import('../../../package.json')
+      .then((pkg) => {
+        if (!cancelled && typeof pkg.default?.version === 'string') setAppVersion(pkg.default.version);
+      })
+      .catch(() => {
+        // keep the fallback version
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div
@@ -66,7 +145,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
 
           <div>
             <h3 className="lp-serif hover-glow-flare text-[34px] leading-none text-white lp-text-glow-green">VibeGrid</h3>
-            <p className="text-xs text-forest-bright font-mono mt-1">Version 0.1.0 (Beta)</p>
+            <p className="text-xs text-forest-bright font-mono mt-1">Version {appVersion}</p>
             <p className="text-xs text-white/50 mt-2 max-w-xs mx-auto leading-relaxed">
               The free, open-source GPU-accelerated multi-pane terminal workspace built for vibe coding.
             </p>
@@ -99,10 +178,69 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
             >
               <Github className="w-3.5 h-3.5 text-white/50" />
-              <span>GitHub Repository</span>
+              <span>GitHub</span>
+              <ExternalLink className="w-3 h-3 text-white/35" />
+            </a>
+            <a
+              href={DOCS_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-white/50" />
+              <span>Website</span>
+              <ExternalLink className="w-3 h-3 text-white/35" />
+            </a>
+            <a
+              href={CHANGELOG_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
+            >
+              <FileText className="w-3.5 h-3.5 text-white/50" />
+              <span>Changelog</span>
               <ExternalLink className="w-3 h-3 text-white/35" />
             </a>
           </div>
+          <p className="flex items-center justify-center gap-1 text-[10px] text-white/30">
+            <HelpCircle className="w-3 h-3" />
+            Need help? Open an issue on GitHub or read the website docs.
+          </p>
+
+          <button
+            onClick={handleCheckUpdates}
+            disabled={updateState === 'checking' || updateState === 'downloading'}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors w-full justify-center ${
+              updateState === 'available'
+                ? 'bg-forest/15 border-forest/40 text-forest-light hover:bg-forest/20'
+                : updateState === 'current'
+                  ? 'bg-white/[0.03] border-white/10 text-white/60'
+                  : 'bg-white/[0.03] hover:bg-forest/10 border-white/10 text-white/70 hover:border-forest/40'
+            }`}
+          >
+            <Download className="w-3.5 h-3.5 text-forest-bright" />
+            {updateState === 'checking' && <span>Checking for updates…</span>}
+            {updateState === 'downloading' && <span>Downloading update…</span>}
+            {updateState === 'available' && (
+              <span className="flex items-center gap-2">
+                Update available: v{updateVersion}
+                {/* UX audit P3 #32: one-click download+install when the updater
+                    is configured; otherwise the label links to releases. */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDownloadUpdate();
+                  }}
+                  className="px-2 py-0.5 rounded-md bg-forest text-white hover:bg-forest-bright text-[10px] font-semibold transition-colors"
+                >
+                  Download & Install
+                </button>
+              </span>
+            )}
+            {updateState === 'current' && <span>You're on the latest version</span>}
+            {updateState === 'unconfigured' && <span>Updates not configured — see GitHub releases</span>}
+            {updateState === 'idle' && <span>Check for Updates</span>}
+          </button>
         </div>
       </div>
     </div>

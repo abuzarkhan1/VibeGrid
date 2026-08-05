@@ -14,6 +14,10 @@ use libc;
 use crate::ipc::IpcBatcher;
 use crate::pty::reader::spawn_pty_reader;
 
+/// Shared error message for unknown pane ids (audit: error consts — the three
+/// call sites used to hand-roll the same string, risking drift).
+pub const ERR_PANE_NOT_FOUND: &str = "Pane ID not found";
+
 pub struct PaneSession {
     pub id: String,
     pub master: Box<dyn MasterPty + Send>,
@@ -24,6 +28,7 @@ pub struct PaneSession {
 #[derive(Clone)]
 pub struct PtyManager {
     sessions: Arc<Mutex<HashMap<String, PaneSession>>>,
+    batcher: Arc<parking_lot::Mutex<Option<IpcBatcher>>>,
 }
 
 impl Default for PtyManager {
@@ -36,15 +41,26 @@ impl PtyManager {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
+            batcher: Arc::new(parking_lot::Mutex::new(None)),
         }
     }
 
-    /// Spawns a new PTY session with default shell and returns the assigned pane_id (UUID)
+    /// The batcher is created in `setup` (needs the AppHandle); stash it so
+    /// `kill_pane` can release per-pane buffers/history when a session is torn
+    /// down before the reader thread observes EOF (audit: memory leak fix).
+    pub fn set_batcher(&self, batcher: IpcBatcher) {
+        *self.batcher.lock() = Some(batcher);
+    }
+
+    /// Spawns a new PTY session and returns the assigned pane_id (UUID).
+    /// `shell` optionally overrides the user's default shell per-pane
+    /// (audit: the dead `TerminalNode.shell` field is now wired end-to-end).
     pub fn spawn_pane(
         &self,
         cols: u16,
         rows: u16,
         cwd: Option<String>,
+        shell: Option<String>,
         batcher: IpcBatcher,
     ) -> Result<String, String> {
         let pane_id = Uuid::new_v4().to_string();
@@ -65,7 +81,7 @@ impl PtyManager {
             .openpty(size)
             .map_err(|e| format!("Failed to open PTY: {}", e))?;
 
-        let shell = get_default_shell();
+        let shell = shell.unwrap_or_else(get_default_shell);
         let mut cmd = CommandBuilder::new(&shell);
 
         // Configure Environment Variables
@@ -124,7 +140,7 @@ impl PtyManager {
                 .map_err(|e| format!("Failed to flush PTY writer: {}", e))?;
             Ok(())
         } else {
-            Err(format!("Pane ID {} not found", pane_id))
+            Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"))
         }
     }
 
@@ -147,7 +163,7 @@ impl PtyManager {
                 .map_err(|e| format!("Failed to resize PTY: {}", e))?;
             Ok(())
         } else {
-            Err(format!("Pane ID {} not found", pane_id))
+            Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"))
         }
     }
 
@@ -162,6 +178,11 @@ impl PtyManager {
     pub fn kill_pane(&self, pane_id: &str) -> Result<(), String> {
         let mut sessions = self.sessions.lock();
         if let Some(mut session) = sessions.remove(pane_id) {
+            // Release the pane's buffers/history immediately (audit: memory
+            // leak fix) — the reader thread may be blocked or already gone.
+            if let Some(batcher) = self.batcher.lock().as_ref() {
+                batcher.pane_exited(pane_id);
+            }
             #[cfg(unix)]
             {
                 if let Some(pid) = session.child.process_id() {
@@ -203,7 +224,7 @@ impl PtyManager {
             }
             Ok(())
         } else {
-            Err(format!("Pane ID {} not found", pane_id))
+            Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"))
         }
     }
 

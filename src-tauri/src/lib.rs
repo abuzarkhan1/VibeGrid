@@ -52,12 +52,20 @@ pub fn run() {
         // Native open (links/files) + native dialogs (folder picker)
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        // In-app updates from GitHub releases (audit: MISSING auto-updater).
+        // Endpoint + pubkey live in tauri.conf.json; the frontend triggers
+        // `check_for_updates` from the About modal.
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let handle = app.handle().clone();
             let batcher = IpcBatcher::new(handle);
             let workspace_manager = WorkspaceManager::new();
 
             http_server::start_server(batcher.mcp_history.clone());
+
+            // Give the PTY manager a handle to the batcher so kill_pane can
+            // release per-pane buffers/history on teardown (audit fix).
+            pty_manager.set_batcher(batcher.clone());
 
             app.manage(AppState {
                 pty_manager,
@@ -134,6 +142,7 @@ pub fn run() {
             commands::resize_pty,
             commands::kill_pty,
             commands::set_batch_interval,
+            commands::pane_snapshot,
             commands::save_workspace,
             commands::load_workspace,
             commands::list_workspaces,

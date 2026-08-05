@@ -17,17 +17,14 @@ libc = "0.2"
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 parking_lot = "0.12"
-lazy_static = "1.4"
 dirs = "5.0"
 tauri-plugin-global-shortcut = "2.3.2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-window-state = "2"
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
-sysinfo = "0.39.6"
+tauri-plugin-updater = "2"
 axum = "0.8.9"
-tower = "0.5.3"
-tower-http = { version = "0.7.0", features = ["cors"] }
 reqwest = { version = "0.13.4", features = ["blocking"] }
 whisper-rs = "0.16.0"
 cpal = "0.18.1"
@@ -36,7 +33,9 @@ cpal = "0.18.1"
 tempfile = "3.8"
 
 [profile.release]
-panic = "abort"
+# panic = "unwind" (default) — a panic in any thread must not take down the
+# whole app. With `abort` (previous value), a single poisoned mutex unwrap
+# would hard-kill VibeGrid instead of letting the error surface.
 codegen-units = 1
 lto = true
 opt-level = "z"
