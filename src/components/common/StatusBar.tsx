@@ -27,7 +27,7 @@ export const StatusBar: React.FC = () => {
   const isWebglActive = focusedPaneId ? activeWebglPanes.includes(focusedPaneId) : true;
 
   return (
-    <footer className="h-6 w-full bg-[#0a0c10]/90 backdrop-blur-md border-t border-white/[0.06] px-3 flex items-center justify-between text-[11px] text-white/50 select-none z-20">
+    <footer className="h-6 w-full bg-surface/90 backdrop-blur-md border-t border-white/[0.06] px-3 flex items-center justify-between text-[11px] text-white/50 select-none z-20">
       {/* Left info: Workspace Name & Focused Pane ID */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5 text-white/65">

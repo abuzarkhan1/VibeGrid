@@ -32,6 +32,13 @@
   "plugins": {
     "shell": {
       "open": true
+    },
+    "updater": {
+      "active": false,
+      "endpoints": [
+        "https://github.com/abuzarkhan1/VibeGrid/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
     }
   },
   "bundle": {

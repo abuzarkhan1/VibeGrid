@@ -1,19 +1,62 @@
 use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 use serde::{Deserialize, Serialize};
 
+/// Current on-disk schema version. Bump when the layout/field shape changes so
+/// `migrate_workspace` can upgrade old files instead of failing to parse them.
+const WORKSPACE_SCHEMA_VERSION: u32 = 1;
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(default)]
 pub struct WorkspaceData {
     pub id: String,
     pub name: String,
     pub layout: serde_json::Value,
     pub created_at: u64,
     pub updated_at: u64,
+    /// Schema version for forward/backward compatibility (audit improvement:
+    /// old files without the field default to 1 and are migrated in place).
+    pub version: u32,
+}
+
+impl Default for WorkspaceData {
+    fn default() -> Self {
+        Self {
+            id: String::new(),
+            name: String::new(),
+            layout: serde_json::Value::Null,
+            created_at: 0,
+            updated_at: 0,
+            version: WORKSPACE_SCHEMA_VERSION,
+        }
+    }
+}
+
+impl WorkspaceData {
+    /// Upgrade an older workspace file to the current schema. Today the layout
+    /// shape is unchanged since v1, so this only stamps the version — the hook
+    /// is where future migrations (e.g. v1 → v2 field renames) will live.
+    pub fn migrate(&mut self) {
+        if self.version < WORKSPACE_SCHEMA_VERSION {
+            // v1 → current: no layout changes needed yet.
+            self.version = WORKSPACE_SCHEMA_VERSION;
+        }
+    }
 }
 
 pub struct WorkspaceManager {
     storage_dir: PathBuf,
+    /// Serializes concurrent saves so a fire-and-forget switch save can never
+    /// interleave with the debounced autosave of the same workspace (rapid
+    /// workspace switching writes from multiple code paths).
+    write_lock: Mutex<()>,
+    /// Uniqueness for temp file names — two saves of the SAME workspace must
+    /// never share a `.tmp` path or the second `File::create` truncates the
+    /// first before its rename.
+    temp_counter: AtomicU64,
 }
 
 impl Default for WorkspaceManager {
@@ -33,13 +76,32 @@ impl WorkspaceManager {
             let _ = fs::create_dir_all(&storage_dir);
         }
 
-        Self { storage_dir }
+        Self::with_storage_dir(storage_dir)
     }
 
-    /// Atomically save workspace to JSON using temp file and rename (NFR-014)
+    /// Construct a manager rooted at an explicit directory (used by tests).
+    pub fn with_storage_dir(storage_dir: PathBuf) -> Self {
+        Self {
+            storage_dir,
+            write_lock: Mutex::new(()),
+            temp_counter: AtomicU64::new(0),
+        }
+    }
+
+    /// Atomically save workspace to JSON using temp file + rename (NFR-014).
+    /// Serialized per-manager and given a UNIQUE temp name per write so
+    /// concurrent saves of the same workspace (rapid switching + autosave)
+    /// can't clobber each other's temp file; `sync_all` flushes to disk before
+    /// the rename so a crash mid-save never leaves a truncated workspace file.
     pub fn save_workspace(&self, workspace: &WorkspaceData) -> Result<(), String> {
+        let _guard = self
+            .write_lock
+            .lock()
+            .map_err(|e| format!("Failed to lock workspace save: {}", e))?;
+
         let file_path = self.storage_dir.join(format!("{}.json", workspace.id));
-        let temp_path = self.storage_dir.join(format!("{}.tmp", workspace.id));
+        let unique = self.temp_counter.fetch_add(1, Ordering::Relaxed);
+        let temp_path = self.storage_dir.join(format!("{}.tmp.{}", workspace.id, unique));
 
         let json_data = serde_json::to_string_pretty(workspace)
             .map_err(|e| format!("Failed to serialize workspace: {}", e))?;
@@ -51,7 +113,13 @@ impl WorkspaceManager {
             .write_all(json_data.as_bytes())
             .map_err(|e| format!("Failed to write workspace data: {}", e))?;
 
-        temp_file.flush().map_err(|e| format!("Failed to flush temp file: {}", e))?;
+        temp_file
+            .flush()
+            .map_err(|e| format!("Failed to flush temp file: {}", e))?;
+        temp_file
+            .sync_all()
+            .map_err(|e| format!("Failed to sync temp file: {}", e))?;
+        drop(temp_file); // Windows requires the file closed before rename
 
         fs::rename(&temp_path, &file_path)
             .map_err(|e| format!("Failed to rename temp workspace file: {}", e))?;
@@ -69,8 +137,11 @@ impl WorkspaceManager {
         let content = fs::read_to_string(&file_path)
             .map_err(|e| format!("Failed to read workspace file: {}", e))?;
 
-        let workspace: WorkspaceData = serde_json::from_str(&content)
+        let mut workspace: WorkspaceData = serde_json::from_str(&content)
             .map_err(|e| format!("Failed to parse workspace JSON: {}", e))?;
+
+        // Audit improvement: upgrade older files to the current schema.
+        workspace.migrate();
 
         Ok(workspace)
     }
@@ -89,7 +160,9 @@ impl WorkspaceManager {
             let path = entry.path();
             if path.extension().and_then(|s| s.to_str()) == Some("json") {
                 if let Ok(content) = fs::read_to_string(&path) {
-                    if let Ok(ws) = serde_json::from_str::<WorkspaceData>(&content) {
+                    if let Ok(mut ws) = serde_json::from_str::<WorkspaceData>(&content) {
+                        // Audit improvement: migrate old files before returning.
+                        ws.migrate();
                         result.push(ws);
                     }
                 }
@@ -119,9 +192,7 @@ mod tests {
     #[test]
     fn test_workspace_atomic_save_load_delete() {
         let dir = tempdir().unwrap();
-        let manager = WorkspaceManager {
-            storage_dir: dir.path().to_path_buf(),
-        };
+        let manager = WorkspaceManager::with_storage_dir(dir.path().to_path_buf());
 
         let ws = WorkspaceData {
             id: "ws-test-1".to_string(),
@@ -129,17 +200,92 @@ mod tests {
             layout: serde_json::json!({"type": "terminal"}),
             created_at: 1000,
             updated_at: 1000,
+            version: 1,
         };
 
         assert!(manager.save_workspace(&ws).is_ok());
 
         let loaded = manager.load_workspace("ws-test-1").unwrap();
         assert_eq!(loaded.name, "Test Workspace");
+        assert_eq!(loaded.version, 1);
 
         let list = manager.list_workspaces().unwrap();
         assert_eq!(list.len(), 1);
 
         assert!(manager.delete_workspace("ws-test-1").is_ok());
         assert!(manager.load_workspace("ws-test-1").is_err());
+    }
+
+    #[test]
+    fn test_concurrent_saves_never_clobber_each_other() {
+        let dir = tempdir().unwrap();
+        let manager = WorkspaceManager::with_storage_dir(dir.path().to_path_buf());
+
+        // Fire many saves of the SAME workspace in parallel (mimics rapid
+        // workspace switching + debounced autosave racing). Every save uses a
+        // unique temp name + the write lock, so none can truncate another's
+        // temp file and the final file must be one complete, valid JSON.
+        let manager = std::sync::Arc::new(manager);
+        let handles: Vec<_> = (0..32)
+            .map(|i| {
+                let manager = std::sync::Arc::clone(&manager);
+                std::thread::spawn(move || {
+                    let ws = WorkspaceData {
+                        id: "ws-race".to_string(),
+                        name: format!("Race {i}"),
+                        layout: serde_json::json!({ "type": "terminal", "id": format!("term-{i}") }),
+                        created_at: 0,
+                        updated_at: i as u64,
+                        version: 1,
+                    };
+                    manager.save_workspace(&ws).unwrap();
+                })
+            })
+            .collect();
+        for h in handles {
+            h.join().unwrap();
+        }
+
+        // No temp files may be left behind, and the final workspace file must
+        // parse as complete JSON (no torn/truncated writes). Temp names are
+        // `{id}.tmp.{N}` — check by FILE NAME (the extension is the counter,
+        // so extension == "tmp" would never match and the check would be
+        // vacuous).
+        let leftovers: Vec<_> = fs::read_dir(dir.path())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_name().to_string_lossy().contains(".tmp."))
+            .collect();
+        assert!(leftovers.is_empty(), "temp files left behind: {:?}", leftovers.len());
+
+        let loaded = manager.load_workspace("ws-race").unwrap();
+        assert!(loaded.name.starts_with("Race "));
+        assert!(loaded.layout.is_object());
+    }
+
+    #[test]
+    fn test_save_leaves_no_temp_files() {
+        let dir = tempdir().unwrap();
+        let manager = WorkspaceManager::with_storage_dir(dir.path().to_path_buf());
+
+        let ws = WorkspaceData {
+            id: "ws-clean".to_string(),
+            name: "Clean".to_string(),
+            layout: serde_json::json!({ "type": "terminal" }),
+            created_at: 0,
+            updated_at: 0,
+            version: 1,
+        };
+        manager.save_workspace(&ws).unwrap();
+
+        // Only the real workspace file exists — no stray temp files. Filter to
+        // *.json so platform artifacts (e.g. .DS_Store) can't flake the test.
+        let files: Vec<String> = fs::read_dir(dir.path())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .filter(|n| n.ends_with(".json"))
+            .collect();
+        assert_eq!(files, vec!["ws-clean.json"]);
     }
 }

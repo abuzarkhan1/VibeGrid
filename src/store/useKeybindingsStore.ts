@@ -82,6 +82,93 @@ const defaultBindings: Record<string, Keybinding> = {
     defaultKey: 'Mod+Shift+N',
     currentKey: 'Mod+Shift+N',
   },
+  // UX audit P2 #10: the previously HARDCODED shortcuts now live in the store
+  // so users can reassign them, the Shortcuts modal shows them, and the
+  // conflict detector covers them.
+  'toggle-sidebar': {
+    id: 'toggle-sidebar',
+    label: 'Toggle Workspace Sidebar',
+    category: 'Navigation',
+    defaultKey: 'Mod+B',
+    currentKey: 'Mod+B',
+  },
+  'cycle-focus-next': {
+    id: 'cycle-focus-next',
+    label: 'Cycle Focus to Next Pane',
+    category: 'Navigation',
+    defaultKey: 'Mod+Tab',
+    currentKey: 'Mod+Tab',
+  },
+  'cycle-focus-prev': {
+    id: 'cycle-focus-prev',
+    label: 'Cycle Focus to Previous Pane',
+    category: 'Navigation',
+    defaultKey: 'Mod+Shift+Tab',
+    currentKey: 'Mod+Shift+Tab',
+  },
+  'focus-left': {
+    id: 'focus-left',
+    label: 'Move Focus Left',
+    category: 'Navigation',
+    defaultKey: 'Mod+ArrowLeft',
+    currentKey: 'Mod+ArrowLeft',
+  },
+  'focus-right': {
+    id: 'focus-right',
+    label: 'Move Focus Right',
+    category: 'Navigation',
+    defaultKey: 'Mod+ArrowRight',
+    currentKey: 'Mod+ArrowRight',
+  },
+  'focus-up': {
+    id: 'focus-up',
+    label: 'Move Focus Up',
+    category: 'Navigation',
+    defaultKey: 'Mod+ArrowUp',
+    currentKey: 'Mod+ArrowUp',
+  },
+  'focus-down': {
+    id: 'focus-down',
+    label: 'Move Focus Down',
+    category: 'Navigation',
+    defaultKey: 'Mod+ArrowDown',
+    currentKey: 'Mod+ArrowDown',
+  },
+  'switch-workspace-prev': {
+    id: 'switch-workspace-prev',
+    label: 'Switch to Previous Workspace',
+    category: 'Workspace',
+    defaultKey: 'Mod+Shift+ArrowLeft',
+    currentKey: 'Mod+Shift+ArrowLeft',
+  },
+  'switch-workspace-next': {
+    id: 'switch-workspace-next',
+    label: 'Switch to Next Workspace',
+    category: 'Workspace',
+    defaultKey: 'Mod+Shift+ArrowRight',
+    currentKey: 'Mod+Shift+ArrowRight',
+  },
+  'font-increase': {
+    id: 'font-increase',
+    label: 'Increase Terminal Font Size',
+    category: 'View & Font',
+    defaultKey: 'Mod+=',
+    currentKey: 'Mod+=',
+  },
+  'font-decrease': {
+    id: 'font-decrease',
+    label: 'Decrease Terminal Font Size',
+    category: 'View & Font',
+    defaultKey: 'Mod+-',
+    currentKey: 'Mod+-',
+  },
+  'font-reset': {
+    id: 'font-reset',
+    label: 'Reset Terminal Font Size',
+    category: 'View & Font',
+    defaultKey: 'Mod+0',
+    currentKey: 'Mod+0',
+  },
 };
 
 const STORAGE_KEY = 'vibegrid_keybindings_v1';
@@ -188,6 +275,12 @@ export const useKeybindingsStore = create<KeybindingsState>((set, get) => ({
     if (keyReq === 'comma' || keyReq === ',') return e.key === ',';
     if (keyReq.length === 1) {
       return e.key.toLowerCase() === keyReq || e.code.toLowerCase() === `key${keyReq}`;
+    }
+
+    // Arrow keys / Tab: match on the physical key (e.code) so Mod+Tab,
+    // Mod+ArrowLeft, Mod+Shift+Tab etc. work regardless of keyboard layout.
+    if (keyReq === 'arrowleft' || keyReq === 'arrowright' || keyReq === 'arrowup' || keyReq === 'arrowdown' || keyReq === 'tab') {
+      return e.code.toLowerCase() === keyReq;
     }
 
     return e.code.toLowerCase() === keyReq;

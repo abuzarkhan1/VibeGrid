@@ -8,14 +8,15 @@ import { SearchAddon } from '@xterm/addon-search';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import '@xterm/xterm/css/xterm.css';
 
-import { spawnPty, writeToPty, resizePty, killPty, listenTerminalBatch, isTauri } from '@/lib/tauri';
+import { spawnPty, writeToPty, resizePty, killPty, listenTerminalBatch, listenTerminalExit, paneSnapshot, isTauri } from '@/lib/tauri';
 import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
-import { usePaneStore } from '@/store/usePaneStore';
+import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { SearchBar } from '../ui/SearchBar';
+import { InputModal } from '../ui/InputModal';
 import { TerminalContextMenu, ContextMenuItem } from './TerminalContextMenu';
-import { Copy, ClipboardPaste, Search, Eraser, Columns, Rows, X } from 'lucide-react';
+import { Copy, ClipboardPaste, Search, Eraser, Columns, Rows, X, Terminal as TerminalIcon, Repeat } from 'lucide-react';
 import { PaneNode, TerminalNode } from '@/types/layout';
 import { escapeShellPath } from '@/lib/commandUtils';
 
@@ -23,6 +24,20 @@ interface TerminalPaneProps {
   id: string; // Layout node ID
   isFocused: boolean;
   onActivity?: () => void;
+}
+
+/**
+ * Length of the overlap between `snapshot` (older, already-written output) and
+ * `pending` (newer, buffered live output): the longest suffix of `snapshot`
+ * that is also a prefix of `pending`. Used on workspace switch-back to replay
+ * buffered output without duplicating the bytes the snapshot already contains.
+ */
+function overlapSuffix(snapshot: string, pending: string): number {
+  const max = Math.min(snapshot.length, pending.length);
+  for (let len = max; len > 0; len--) {
+    if (snapshot.slice(-len) === pending.slice(0, len)) return len;
+  }
+  return 0;
 }
 
 interface MenuState {
@@ -40,9 +55,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [isDragOver, setIsDragOver] = useState(false); // visual feedback while dragging paths over the pane (gap 8)
+  const [hasExited, setHasExited] = useState(false); // PTY process exited (audit fix)
+  const [session, setSession] = useState(0); // bumped to relaunch a dead shell (UX audit P2 #9)
+  const exitToastShownRef = useRef(false);
 
-  const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, fontLigatures, lineHeight, terminalOpacity } = useSettingsStore();
-  const { root, setPanePtyId, setFocusedPane, splitPane } = usePaneStore();
+  const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, fontLigatures, lineHeight, terminalOpacity, copyOnSelect, defaultShell } = useSettingsStore();
+  const { root, setPanePtyId, setFocusedPane, splitPane, setPaneShell, swapPanes } = usePaneStore();
   const { acquireWebglSlot, releaseWebglSlot, requestClosePane } = useUIStore();
 
   // Retrieve existing PTY ID & CWD if already spawned
@@ -58,6 +76,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
   const currentNode = findTerminalNode(root, id);
   const existingPtyId = currentNode?.paneId;
   const parentCwd = currentNode?.cwd;
+  const parentShell = currentNode?.shell;
 
   // Close the context menu on outside interaction
   useEffect(() => {
@@ -93,7 +112,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                 return;
               case 'drop': {
                 setIsDragOver(false);
-                if (!isFocused) return;
+                // UX audit P1 #12: dropping on a non-focused pane now FOCUSES
+                // that pane first and inserts there — no more silent no-op.
+                if (!isFocused) {
+                  setFocusedPane(id);
+                  terminalRef.current?.focus();
+                }
                 const paths = (event.payload as { paths: string[] }).paths || [];
                 if (paths.length === 0 || !ptyPaneIdRef.current) return;
                 const text = paths.map(escapeShellPath).join(' ');
@@ -115,7 +139,19 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       setIsDragOver(false);
       if (unlisten) unlisten();
     };
-  }, [isFocused]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused, id, setFocusedPane]);
+
+  // Keep the live PTY handle in sync with the store (audit fix for swapPanes):
+  // a swap moves a pane's PTY to a different layout slot, so this pane's
+  // ptyPaneIdRef must track the store's paneId — otherwise batch output would
+  // keep flowing to the old slot and teardown could kill the neighbor's shell.
+  useEffect(() => {
+    if (currentNode?.paneId) {
+      ptyPaneIdRef.current = currentNode.paneId;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNode?.paneId]);
 
   // Focus requests from the voice hook (gap 4): after inserting dictation the
   // focused terminal re-focuses so the user can keep typing immediately.
@@ -130,6 +166,20 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     window.addEventListener('vibegrid:focus-pane', onFocusPane as EventListener);
     return () => window.removeEventListener('vibegrid:focus-pane', onFocusPane as EventListener);
   }, [id, setFocusedPane]);
+
+  // Relaunch a dead shell in this pane (UX audit P2 #9): clears the stale
+  // paneId so the next session spawns fresh, then re-runs the init effect.
+  const relaunch = () => {
+    setHasExited(false);
+    exitToastShownRef.current = false;
+    if (ptyPaneIdRef.current) {
+      const oldPtyId = ptyPaneIdRef.current;
+      ptyPaneIdRef.current = null;
+      killPty(oldPtyId).catch(() => {});
+    }
+    usePaneStore.getState().setPanePtyId(id, '');
+    setSession((s) => s + 1);
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -248,6 +298,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
         }
 
+        // Copy-on-select (audit: MISSING feature) — handled via onSelectionChange below.
+
         // Bracketed Paste Mode (FR-017). Plain Cmd/Ctrl+V only — Cmd/Ctrl+Shift+V
         // is reserved for Voice-to-Terminal and must NOT paste into the shell.
         if (isMod && !ev.shiftKey && ev.code === 'KeyV') {
@@ -264,6 +316,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     });
 
     let unlistenBatch: (() => void) | null = null;
+    let unlistenExit: (() => void) | null = null;
+    let copyTimer: ReturnType<typeof setTimeout> | undefined;
     // Audit find 2: guards against the async-spawn race — if the pane unmounts
     // while `spawnPty`/`listenTerminalBatch` are in flight, the shell used to
     // leak forever and the batch listener was never unregistered (duplicate
@@ -277,8 +331,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
       try {
         let ptyId = existingPtyId;
+        const isReattach = Boolean(ptyId); // switching back to a live workspace
         if (!ptyId) {
-          ptyId = await spawnPty(cols, rows, parentCwd);
+          // UX audit P3 #28: per-pane shell override wins, else the global
+          // default shell setting, else the system default.
+          const effectiveShell = parentShell || defaultShell || undefined;
+          ptyId = await spawnPty(cols, rows, parentCwd, effectiveShell);
           if (disposed) {
             // Unmounted mid-spawn — kill the orphan shell immediately instead of
             // leaking a process with no handle.
@@ -306,10 +364,38 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           return;
         }
 
-        // On Data from xterm -> write to PTY
+        // On Data from xterm -> write to PTY. If the process already exited,
+        // writes fail — surface a one-time toast so the user knows why input
+        // is no longer reaching the shell (audit: error surfacing).
+        // Copy-on-select (audit: was MISSING). onSelectionChange fires on every
+        // drag increment, so debounce: after the selection settles (~300 ms) we
+        // copy once — no clipboard churn and no toast spam mid-drag.
+        term.onSelectionChange(() => {
+          if (!copyOnSelect) return;
+          const sel = term.getSelection();
+          if (!sel) return;
+          if (copyTimer) clearTimeout(copyTimer);
+          copyTimer = setTimeout(() => {
+            // UX audit P1 #8: copy silently — no toast per selection (toasts
+            // now also dedupe/cap, but select-copy is high-frequency noise).
+            navigator.clipboard.writeText(sel).catch(() => {});
+          }, 300);
+        });
+
         term.onData((data) => {
           if (ptyPaneIdRef.current) {
-            writeToPty(ptyPaneIdRef.current, data);
+            writeToPty(ptyPaneIdRef.current, data).catch((e) => {
+              if (!exitToastShownRef.current && ptyPaneIdRef.current) {
+                exitToastShownRef.current = true;
+                setHasExited(true);
+                useUIStore.getState().addToast({
+                  type: 'warning',
+                  title: 'Terminal exited',
+                  description: 'The process in this pane has ended. Close it or start a new session.',
+                });
+                console.warn('[VibeGrid] Write to exited PTY failed:', e);
+              }
+            });
           }
         });
 
@@ -322,26 +408,84 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
         });
 
-        // Listen for IPC batched output
+        // Workspace isolation: switching back re-attaches to a still-running
+        // PTY whose terminal was unmounted while hidden. Subscribe to the live
+        // batch stream FIRST (buffering while the snapshot loads) so no output
+        // is dropped in the gap between reading history and attaching the
+        // listener; then write the snapshot and replay only the buffered part
+        // it does NOT already cover (no duplicates at the seam). If the process
+        // exited while hidden, the exit event was missed — surface the banner
+        // right away.
+        let restoring = true;
+        let restoreBuffer: string[] = [];
         unlistenBatch = await listenTerminalBatch((event) => {
           const currentPtyId = ptyPaneIdRef.current;
-          if (currentPtyId && event.payload[currentPtyId]) {
-            term.write(event.payload[currentPtyId]);
-            // Surface activity in unfocused panes so users can monitor agents at a glance
-            if (!isFocused) {
-              onActivity?.();
-            }
+          if (!currentPtyId || !event.payload[currentPtyId]) return;
+          if (restoring) {
+            restoreBuffer.push(event.payload[currentPtyId]);
+            return;
+          }
+          term.write(event.payload[currentPtyId]);
+          // Surface activity in unfocused panes so users can monitor agents at a glance
+          if (!isFocused) {
+            onActivity?.();
+          }
+        });
+        if (disposed) return;
+
+        let snapshotOutput = '';
+        if (isReattach && isTauri()) {
+          const { output, exited } = await paneSnapshot(ptyId);
+          if (disposed) return;
+          snapshotOutput = output;
+          if (output) {
+            term.write(output);
+            term.scrollToBottom();
+          }
+          if (exited) {
+            setHasExited(true);
+          }
+        }
+
+        // Replay output that arrived while the snapshot was being fetched,
+        // skipping the part the snapshot already covers (the batcher's history
+        // and the live batches carry the same bytes, so any suffix overlap is
+        // a duplicate — never drop, never double-write).
+        if (restoreBuffer.length > 0) {
+          const pending = restoreBuffer.join('');
+          restoreBuffer = [];
+          restoring = false;
+          const skip = overlapSuffix(snapshotOutput, pending);
+          const rest = pending.slice(skip);
+          if (rest) {
+            term.write(rest);
+            if (!isFocused) onActivity?.();
+          }
+        } else {
+          restoring = false;
+        }
+
+        // PTY exit detection (audit fix): when the Rust reader hits EOF it
+        // emits terminal-exit — show a banner instead of a frozen terminal.
+        listenTerminalExit(({ payload }) => {
+          if (payload.paneId === ptyPaneIdRef.current && !disposed) {
+            setHasExited(true);
+          }
+        }).then((fn) => {
+          if (disposed) {
+            fn();
+          } else {
+            unlistenExit = fn;
           }
         });
         if (disposed) {
-          // Unmounted while the listener was registering — drop it and the shell
-          // right away so no duplicate listeners / orphan processes accumulate.
+          // Unmounted while the listener was registering. Drop the listeners
+          // but NEVER kill the PTY: by now setPanePtyId already registered it
+          // into the pane store, so the workspace store owns its lifecycle
+          // (workspace isolation — this is usually a mid-switch unmount).
           if (unlistenBatch) {
             unlistenBatch();
             unlistenBatch = null;
-          }
-          if (ptyPaneIdRef.current) {
-            killPty(ptyPaneIdRef.current).catch(() => {});
           }
           return;
         }
@@ -371,20 +515,22 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     return () => {
       disposed = true; // audit find 2: stop any in-flight initPty continuation
       resizeObserver.disconnect();
+      if (copyTimer) clearTimeout(copyTimer);
       if (unlistenBatch) unlistenBatch();
+      if (unlistenExit) unlistenExit();
 
       releaseWebglSlot(id);
 
-      const latestRoot = usePaneStore.getState().root;
-      const nodeStillExists = findTerminalNode(latestRoot, id);
-      if (!nodeStillExists && ptyPaneIdRef.current) {
-        killPty(ptyPaneIdRef.current);
-      }
-
+      // Workspace isolation: NEVER kill the PTY on unmount. Unmounting here
+      // means either (a) a workspace switch — the process must keep running in
+      // the background for when the user switches back, or (b) an explicit
+      // close/reset/delete, in which case the STORE already killed the PTY
+      // (closePane / killPanesInLayout). Killing again would destroy a hidden
+      // workspace's terminals.
       term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, session]);
 
   // Update theme & font settings dynamically
   useEffect(() => {
@@ -445,6 +591,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       },
     },
     {
+      id: 'set-shell',
+      label: 'Set Shell for This Pane…',
+      icon: <TerminalIcon className="w-3.5 h-3.5" />,
+      action: () => setShowShellModal(true),
+    },
+    {
       id: 'find',
       label: 'Find in Terminal',
       icon: <Search className="w-3.5 h-3.5" />,
@@ -471,6 +623,27 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     },
     { divider: true },
     {
+      id: 'swap-next',
+      label: 'Swap with Next Pane',
+      icon: <Repeat className="w-3.5 h-3.5" />,
+      action: () => {
+        const terminals = getTerminalNodes(usePaneStore.getState().root);
+        const idx = terminals.findIndex((t) => t.id === id);
+        if (idx !== -1 && terminals[idx + 1]) swapPanes(id, terminals[idx + 1].id);
+      },
+    },
+    {
+      id: 'swap-prev',
+      label: 'Swap with Previous Pane',
+      icon: <Repeat className="w-3.5 h-3.5" />,
+      action: () => {
+        const terminals = getTerminalNodes(usePaneStore.getState().root);
+        const idx = terminals.findIndex((t) => t.id === id);
+        if (idx > 0 && terminals[idx - 1]) swapPanes(id, terminals[idx - 1].id);
+      },
+    },
+    { divider: true },
+    {
       id: 'close',
       label: 'Close Pane',
       icon: <X className="w-3.5 h-3.5 text-rose-400" />,
@@ -478,9 +651,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     },
   ];
 
+  // Per-pane shell override (audit: the field was dead — wire it to a prompt).
+  const [showShellModal, setShowShellModal] = useState(false);
+
   return (
     <div
-      className={`relative h-full w-full bg-[#0b0d12] p-1.5 overflow-hidden ${fontLigatures ? 'font-ligatures' : ''}`}
+      className={`relative h-full w-full bg-pane-bg p-1.5 overflow-hidden ${fontLigatures ? 'font-ligatures' : ''}`}
       style={{ opacity: terminalOpacity }}
       onContextMenu={handleContextMenu}
     >
@@ -498,7 +674,51 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         </div>
       )}
 
+      {/* UX audit P1 #11: explain that a shell override only applies to the
+          NEXT spawn — a running shell won't restart just because you changed it. */}
+      {showShellModal && Boolean(ptyPaneIdRef.current) && (
+        <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-lg border border-forest/30 bg-surfaceCard/95 px-3 py-2 text-[10px] text-white/60 shadow-lg backdrop-blur-md">
+          This pane is already running a shell — the new shell applies to the
+          next session (Relaunch after the process exits, or reopen the pane).
+        </div>
+      )}
+
+      {/* Process exited banner (audit fix) — relaunch or close */}
+      {hasExited && (
+        <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-[#1a1408]/95 px-3 py-1.5 text-[11px] text-amber-300 shadow-lg backdrop-blur-md animate-fade-in-up">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+          </span>
+          <span className="truncate">Process exited</span>
+          <button
+            onClick={relaunch}
+            title="Start a new shell in this pane"
+            className="shrink-0 px-2 py-0.5 rounded-md bg-forest/20 border border-forest/40 text-forest-light hover:bg-forest/30 transition-colors"
+          >
+            Relaunch
+          </button>
+          <button
+            onClick={() => requestClosePane(id)}
+            title="Close this terminal"
+            className="shrink-0 px-2 py-0.5 rounded-md bg-rose-950/50 border border-rose-500/30 text-rose-300 hover:bg-rose-950/80 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      )}
+
       {menu && <TerminalContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
+
+      {showShellModal && (
+        <InputModal
+          title="Set Shell for This Pane"
+          placeholder="/bin/zsh"
+          initialValue={currentNode?.shell || ''}
+          onSave={(shell) => setPaneShell(id, shell.trim())}
+          onClose={() => setShowShellModal(false)}
+        />
+      )}
     </div>
   );
 };

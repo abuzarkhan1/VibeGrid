@@ -110,8 +110,14 @@ describe('VibeGrid Settings Store', () => {
     });
 
     it('setThemeName resolves valid theme keys', () => {
+      useSettingsStore.getState().setThemeName('nord');
+      expect(useSettingsStore.getState().themeName).toBe('nord');
+      expect(THEMES[useSettingsStore.getState().themeName]).toBeDefined();
+    });
+
+    it('setThemeName falls back to the default for unknown keys', () => {
       useSettingsStore.getState().setThemeName('dracula');
-      expect(useSettingsStore.getState().themeName).toBe('dracula');
+      expect(useSettingsStore.getState().themeName).toBe(DEFAULT_THEME);
       expect(THEMES[useSettingsStore.getState().themeName]).toBeDefined();
     });
 
@@ -173,14 +179,21 @@ describe('VibeGrid Settings Store', () => {
     });
 
     it('imports valid JSON and applies it', () => {
-      const json = JSON.stringify({ fontSize: 24, themeName: 'midnightBlue', scrollback: 999 });
+      const json = JSON.stringify({ fontSize: 24, themeName: 'nord', scrollback: 999 });
       const ok = useSettingsStore.getState().importSettings(json);
       expect(ok).toBe(true);
       expect(useSettingsStore.getState().fontSize).toBe(24);
-      expect(useSettingsStore.getState().themeName).toBe('midnightBlue');
+      expect(useSettingsStore.getState().themeName).toBe('nord');
       expect(useSettingsStore.getState().scrollback).toBe(999);
       // Clamped after import
       expect(setBatchInterval).toHaveBeenCalledWith(useSettingsStore.getState().ipcBatchIntervalMs);
+    });
+
+    it('imports fall back to the default theme for unknown theme keys', () => {
+      const json = JSON.stringify({ themeName: 'midnightBlue' });
+      const ok = useSettingsStore.getState().importSettings(json);
+      expect(ok).toBe(true);
+      expect(useSettingsStore.getState().themeName).toBe(DEFAULT_THEME);
     });
 
     it('import pushes imported voice settings to the Rust backend (audit find 3)', () => {
@@ -218,7 +231,7 @@ describe('VibeGrid Settings Store', () => {
 
     it('resetSettings restores defaults and clears storage', () => {
       useSettingsStore.getState().setFontSize(30);
-      useSettingsStore.getState().setThemeName('dracula');
+      useSettingsStore.getState().setThemeName('nord');
       useSettingsStore.getState().resetSettings();
       expect(useSettingsStore.getState().fontSize).toBe(14);
       expect(useSettingsStore.getState().themeName).toBe(DEFAULT_THEME);

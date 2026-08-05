@@ -1,5 +1,17 @@
 import { create } from 'zustand';
 import { PaneNode, SplitDirection, TerminalNode, SplitNode } from '@/types/layout';
+import { killPty } from '@/lib/tauri';
+
+// Workspace isolation: PTYs are killed ONLY by explicit destructive actions
+// (closePane / shrinking a layout preset / resetLayout / deleteWorkspace).
+// Switching workspaces never kills, and EXPANDING a preset grid never kills —
+// existing terminals (with their live paneIds) are kept and only the missing
+// panes are added alongside them.
+function killPanesInLayout(layout: PaneNode) {
+  for (const t of getTerminalNodes(layout)) {
+    if (t.paneId) killPty(t.paneId).catch(() => {});
+  }
+}
 
 interface Rect {
   x: number;
@@ -30,6 +42,10 @@ interface PaneState {
   setPanePtyId: (nodeId: string, ptyPaneId: string) => void;
   setPaneTitle: (nodeId: string, title: string) => void;
   setPaneCwd: (nodeId: string, cwd: string) => void;
+  /** Per-pane shell override (audit: `shell` field was dead — now wired). */
+  setPaneShell: (nodeId: string, shell: string) => void;
+  /** Swap the content of two terminal panes (audit: pane swap was MISSING). */
+  swapPanes: (idA: string, idB: string) => void;
   toggleMaximize: (id?: string) => void;
   navigateFocus: (direction: 'left' | 'right' | 'up' | 'down' | 'next' | 'prev') => void;
   setLayoutPreset: (count: 1 | 2 | 4 | 6 | 8 | 16) => void;
@@ -205,9 +221,11 @@ function combineRows(rows: PaneNode[]): PaneNode {
   };
 }
 
-// Helper: Generate preset layout tree (1, 2, 4, 6, 8, 16)
-function buildPresetTree(count: 1 | 2 | 4 | 6 | 8 | 16): { root: PaneNode; firstPaneId: string } {
-  const terms = Array.from({ length: count }, (_, i) => createTerm(i + 1));
+// Helper: Generate preset layout tree (1, 2, 4, 6, 8, 16) from an explicit
+// list of terminal nodes — lets expansion keep existing terminals (with live
+// paneIds) instead of always creating fresh ones.
+function buildPresetTreeFromNodes(terms: TerminalNode[]): { root: PaneNode; firstPaneId: string } {
+  const count = terms.length;
   const firstPaneId = terms[0].id;
 
   if (count === 1) return { root: terms[0], firstPaneId };
@@ -224,6 +242,79 @@ function buildPresetTree(count: 1 | 2 | 4 | 6 | 8 | 16): { root: PaneNode; first
   }
 
   return { root: combineRows(rows), firstPaneId };
+}
+
+/**
+ * Decide which terminals survive a preset-grid shrink (and reset-to-1): the
+ * focused pane is always kept, then the next (count-1) in tree order. Used by
+ * BOTH the store (to kill the removed ones) and the guard (to know whether any
+ * removed pane has a running process — the only case that needs confirming).
+ */
+/**
+ * Is the tree an EQUAL preset grid of `count` cells (every split at ratio
+ * ~0.5)? Used to decide whether clicking the already-active grid button should
+ * no-op (nothing to change) or re-equalize a grid the user dragged (UX audit
+ * P3 #11: preset grids are resizable now, so the active button re-equalizes).
+ *
+ * REVIEWER FIX: the old terminal-leaf case returned `count === 1`, which is
+ * false for every leaf in a multi-pane grid — so the no-op never fired and the
+ * active button always rebuilt. Now the leaf returns true and the terminal
+ * count is checked once at the root.
+ *
+ * VERIFY FIX: a 3-terminal ROW (as in the 6-pane preset) splits at ratio 1/3,
+ * not 0.5 — the previous check only accepted 0.5, so a pristine 6-pane grid
+ * was never "equal" and clicking the active "6" button rebuilt it on every
+ * click. Each split now compares against the ratio its subtree shape would
+ * produce: 1/3 for a 3-terminal node, 0.5 otherwise (1/2/4/8/16 presets are
+ * all 0.5 splits).
+ */
+export function isEqualPresetTree(node: PaneNode, count: number): boolean {
+  if (countTerminals(node) !== count) return false;
+  return isEqualPresetShape(node);
+}
+
+/**
+ * Pure shape check (no count): every split must sit at the ratio its subtree
+ * shape would produce in the pristine preset — 1/3 for a 3-terminal row,
+ * 0.5 otherwise. The count comparison lives ONLY in isEqualPresetTree (at the
+ * root); re-checking it here would fail every child split below the root
+ * (e.g. a 3-terminal row inside a 6-pane grid), making multi-pane grids
+ * never "equal" — the exact bug this fixes.
+ */
+function isEqualPresetShape(node: PaneNode): boolean {
+  if (node.type === 'terminal') return true;
+  if (node.type === 'split') {
+    const targetRatio = countTerminals(node) === 3 ? 1 / 3 : 0.5;
+    if (Math.abs(node.ratio - targetRatio) > 0.01) return false;
+    return isEqualPresetShape(node.children[0]) && isEqualPresetShape(node.children[1]);
+  }
+  return false;
+}
+
+/**
+ * The ratio a split node would have in its pristine equal preset grid: 1/3 for
+ * a 3-terminal row (6-pane preset), 0.5 everywhere else. Mirrors
+ * isEqualPresetTree so GridRenderer can tell "equal" splits apart from
+ * user-dragged ones.
+ */
+export function equalPresetRatio(node: PaneNode): number {
+  return countTerminals(node) === 3 ? 1 / 3 : 0.5;
+}
+
+export function planPresetKeep(
+  terminals: TerminalNode[],
+  focusedPaneId: string | null,
+  count: number
+): { kept: TerminalNode[]; removed: TerminalNode[] } {
+  const focused = terminals.find((t) => t.id === focusedPaneId) ?? terminals[0];
+  const kept: TerminalNode[] = focused ? [focused] : [];
+  for (const t of terminals) {
+    if (kept.length >= count) break;
+    if (t.id !== focused?.id) kept.push(t);
+  }
+  const keptIds = new Set(kept.map((t) => t.id));
+  const removed = terminals.filter((t) => !keptIds.has(t.id));
+  return { kept, removed };
 }
 
 export const usePaneStore = create<PaneState>((set, get) => ({
@@ -279,6 +370,11 @@ export const usePaneStore = create<PaneState>((set, get) => ({
   closePane: (targetId: string) => {
     const { root, paneCount, focusedPaneId, maximizedPaneId } = get();
 
+    // Explicit close = kill this pane's process (the ONLY path that kills on
+    // close — switching workspaces must never terminate a pane's PTY).
+    const closingNode = getTerminalNodes(root).find((t) => t.id === targetId);
+    if (closingNode?.paneId) killPty(closingNode.paneId).catch(() => {});
+
     if (paneCount <= 1) {
       const resetTermId = `term-${Date.now()}`;
       set({
@@ -324,7 +420,11 @@ export const usePaneStore = create<PaneState>((set, get) => ({
       }
       return node;
     });
-    set({ root: newRoot, layoutMode: 'custom' });
+    // UX audit P3 #11: dragging a divider in a PRESET grid now resizes it but
+    // keeps its preset identity (Header button stays highlighted, view state
+    // restored on switch-back). Only a real split/close demotes to 'custom'.
+    const keepPreset = get().layoutMode === 'preset';
+    set({ root: newRoot, layoutMode: keepPreset ? 'preset' : 'custom' });
   },
 
   setFocusedPane: (id: string) => {
@@ -359,6 +459,40 @@ export const usePaneStore = create<PaneState>((set, get) => ({
       return node;
     });
     set({ root: newRoot });
+  },
+
+  setPaneShell: (nodeId: string, shell: string) => {
+    const newRoot = replaceNode(get().root, nodeId, (node) => {
+      if (node.type === 'terminal') {
+        return { ...node, shell: shell || undefined };
+      }
+      return node;
+    });
+    set({ root: newRoot });
+  },
+
+  // Swap the contents (title/cwd/shell/paneId) of two terminal nodes so the
+  // panes physically swap places. Identities (layout ids) stay put, so React
+  // keeps each xterm mounted and the PTYs move with their shells.
+  swapPanes: (idA: string, idB: string) => {
+    if (idA === idB) return;
+    const terminals = getTerminalNodes(get().root);
+    const a = terminals.find((t) => t.id === idA);
+    const b = terminals.find((t) => t.id === idB);
+    if (!a || !b) return;
+
+    const swap = (tree: PaneNode): PaneNode => {
+      if (tree.type === 'terminal') {
+        if (tree.id === idA) return { ...tree, title: b.title, cwd: b.cwd, shell: b.shell, paneId: b.paneId };
+        if (tree.id === idB) return { ...tree, title: a.title, cwd: a.cwd, shell: a.shell, paneId: a.paneId };
+        return tree;
+      }
+      return {
+        ...tree,
+        children: [swap(tree.children[0]), swap(tree.children[1])],
+      };
+    };
+    set({ root: swap(get().root) });
   },
 
   toggleMaximize: (id?: string) => {
@@ -428,12 +562,63 @@ export const usePaneStore = create<PaneState>((set, get) => ({
     set({ focusedPaneId: closestNodeId });
   },
 
-  // Set Preset Equal Grid Layout (1, 2, 4, 6, 8, 16)
+  // Set Preset Equal Grid Layout (1, 2, 4, 6, 8, 16).
+  //   count > current → NON-DESTRUCTIVE EXPANSION: every existing terminal
+  //     keeps its live paneId; only the missing panes are added fresh.
+  //   count < current → SHRINK: the focused pane stays; the extras are closed
+  //     (explicit destructive action — the UI guard confirms when any of them
+  //     has a running process).
+  //   count == current → nothing to change (guard short-circuits too).
   setLayoutPreset: (count) => {
-    const { root, firstPaneId } = buildPresetTree(count);
+    const { root, paneCount, focusedPaneId, layoutMode, presetCount } = get();
+    const terminals = getTerminalNodes(root);
+
+    if (paneCount === count) {
+      // Already an EQUAL preset grid of this size → nothing to change. But a
+      // CUSTOM layout with the same pane count, or a preset grid the user
+      // dragged (unequal ratios), gets re-gridded to an equal preset —
+      // NON-destructively: the same terminal nodes (with live paneIds) are
+      // re-laid out, nothing is killed.
+      if (layoutMode === 'preset' && presetCount === count && isEqualPresetTree(root, count)) return;
+      const { root: newRoot, firstPaneId } = buildPresetTreeFromNodes(terminals);
+      set({
+        root: newRoot,
+        focusedPaneId: focusedPaneId ?? firstPaneId,
+        maximizedPaneId: null,
+        paneCount: count,
+        layoutMode: 'preset',
+        presetCount: count,
+      });
+      return;
+    }
+
+    if (count > paneCount) {
+      // Expansion: keep every existing terminal node (paneIds intact!) and
+      // create only (count - paneCount) new ones.
+      const existing = terminals;
+      const added: TerminalNode[] = [];
+      for (let i = existing.length + 1; i <= count; i++) added.push(createTerm(i));
+      const { root: newRoot, firstPaneId } = buildPresetTreeFromNodes([...existing, ...added]);
+      set({
+        root: newRoot,
+        focusedPaneId: focusedPaneId ?? firstPaneId,
+        maximizedPaneId: null,
+        paneCount: count,
+        layoutMode: 'preset',
+        presetCount: count,
+      });
+      return;
+    }
+
+    // Shrink: keep the focused pane + first (count-1) others, close the rest.
+    const { kept, removed } = planPresetKeep(terminals, focusedPaneId, count);
+    for (const t of removed) {
+      if (t.paneId) killPty(t.paneId).catch(() => {});
+    }
+    const { root: newRoot, firstPaneId } = buildPresetTreeFromNodes(kept);
     set({
-      root,
-      focusedPaneId: firstPaneId,
+      root: newRoot,
+      focusedPaneId: kept[0]?.id ?? firstPaneId,
       maximizedPaneId: null,
       paneCount: count,
       layoutMode: 'preset',
@@ -441,15 +626,19 @@ export const usePaneStore = create<PaneState>((set, get) => ({
     });
   },
 
+  // Reset to a single pane: keep the FOCUSED terminal (and its process) and
+  // close every other pane. No longer nukes the whole grid — the pane you are
+  // working in survives.
   resetLayout: () => {
-    const newId = `term-${Date.now()}`;
+    const { root, focusedPaneId } = get();
+    const terminals = getTerminalNodes(root);
+    const focused = terminals.find((t) => t.id === focusedPaneId) ?? terminals[0];
+    for (const t of terminals) {
+      if (t.id !== focused?.id && t.paneId) killPty(t.paneId).catch(() => {});
+    }
     set({
-      root: {
-        type: 'terminal',
-        id: newId,
-        title: 'Terminal 1',
-      },
-      focusedPaneId: newId,
+      root: focused ?? { type: 'terminal', id: `term-${Date.now()}`, title: 'Terminal 1' },
+      focusedPaneId: focused?.id ?? `term-${Date.now()}`,
       maximizedPaneId: null,
       paneCount: 1,
       layoutMode: 'preset',
@@ -457,3 +646,5 @@ export const usePaneStore = create<PaneState>((set, get) => ({
     });
   },
 }));
+
+export { killPanesInLayout };

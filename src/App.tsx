@@ -22,6 +22,10 @@ import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { useVoiceToTerminal } from '@/hooks/useVoiceToTerminal';
 import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setBatchInterval, isTauri } from '@/lib/tauri';
 
+// Set when the user explicitly confirms the quit dialog: the subsequent
+// win.close() re-enters onCloseRequested, which must not ask again.
+let quitApproved = false;
+
 export const App: React.FC = () => {
   useVoiceToTerminal();
   const {
@@ -40,26 +44,23 @@ export const App: React.FC = () => {
     addToast,
     pendingClosePaneId,
     cancelPendingClose,
-    pendingSwitchWsId,
-    cancelPendingSwitch,
-    pendingCreateWsId,
+    pendingLayoutAction,
+    confirmPendingLayoutAction,
+    cancelPendingLayoutAction,
+    pendingQuit,
+    cancelQuit,
     isCreateWsModalOpen,
     openCreateWsModal,
     closeCreateWsModal,
     requestCreateWorkspace,
   } = useUIStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore();
-  const { workspaces, activeWorkspaceId, switchWorkspace, loadWorkspaces, saveCurrentWorkspace, deleteWorkspace } = useWorkspaceStore();
+  const { workspaces, activeWorkspaceId, loadWorkspaces, saveCurrentWorkspace } = useWorkspaceStore();
   const { matchesKeybinding } = useKeybindingsStore();
 
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Does the current workspace have spawned PTYs? (used for confirmation copy)
-  const runningNodes = getTerminalNodes(root).filter((t) => t.paneId);
-  const runningCount = runningNodes.length;
-  // Gap 11: surface which panes/processes are running in the switch dialog.
-  const runningTitles = runningNodes.map((t) => t.title || 'Untitled pane').slice(0, 6);
   // Does the specific pane being closed have a live PTY? (accurate copy for the close dialog)
   const closingPaneHasPty = pendingClosePaneId
     ? getTerminalNodes(root).some((t) => t.id === pendingClosePaneId && Boolean(t.paneId))
@@ -112,30 +113,62 @@ export const App: React.FC = () => {
   // Reliable close-time flush (Tauri): onCloseRequested fires before the window
   // is destroyed, unlike beforeunload which can be cut short. We preventDefault,
   // await the save, then destroy the window ourselves so the write completes.
+  //
+  // UX audit P0 #1: if terminals are still running (and the user hasn't opted
+  // into minimize-to-tray), quitting is destructive — intercept and ask first.
   useEffect(() => {
     if (!isTauri()) return;
     let unlisten: (() => void) | undefined;
+    let isMounted = true;
+
+    const finalizeClose = async () => {
+      try {
+        await saveCurrentWorkspace();
+      } catch (e) {
+        console.error('[App] Final save before close failed:', e);
+      } finally {
+        if (unlisten) unlisten();
+        const win = (await import('@tauri-apps/api/window')).getCurrentWindow();
+        if (useSettingsStore.getState().minimizeToTray) {
+          await win.hide();
+        } else {
+          await win.close();
+        }
+      }
+    };
+
     import('@tauri-apps/api/window')
       .then(({ getCurrentWindow }) =>
         getCurrentWindow().onCloseRequested(async (event) => {
           event.preventDefault();
-          try {
-            await saveCurrentWorkspace();
-          } catch (e) {
-            console.error('[App] Final save before close failed:', e);
-          } finally {
-            // destroy() bypasses the close-requested event (no infinite loop)
-            await getCurrentWindow().destroy();
+          // REVIEWER FIX: a stale approval from a previously rejected close
+          // must never let the NEXT close bypass the running-processes guard.
+          if (quitApproved) {
+            quitApproved = false;
+            await finalizeClose();
+            return;
           }
+          const running = getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length;
+          if (running > 0 && !useSettingsStore.getState().minimizeToTray) {
+            useUIStore.getState().requestQuit();
+            return;
+          }
+          await finalizeClose();
         })
       )
       .then((fn) => {
-        unlisten = fn;
+        if (!isMounted) {
+          fn();
+        } else {
+          unlisten = fn;
+        }
       })
       .catch(() => {
         // window API unavailable — beforeunload fallback still applies
       });
+
     return () => {
+      isMounted = false;
       unlisten?.();
     };
   }, [saveCurrentWorkspace]);
@@ -158,6 +191,21 @@ export const App: React.FC = () => {
     };
   }, [saveCurrentWorkspace]);
 
+  // UX audit P3 #12: when a preset grid is demoted to a custom layout by a
+  // split/close, say so — otherwise the Header highlight silently disappears.
+  // (A preset grid the user merely RESIZES keeps its preset identity now.)
+  useEffect(() => {
+    return usePaneStore.subscribe((state, prev) => {
+      if (state.layoutMode === 'custom' && prev.layoutMode === 'preset' && prev.presetCount > 1) {
+        addToast({
+          type: 'info',
+          title: 'Custom layout',
+          description: 'Splitting or closing a pane switched this workspace to a custom layout. Click a grid button to re-equalize.',
+        });
+      }
+    });
+  }, [addToast]);
+
   // Re-apply persisted backend settings on boot (gap 10/14 + audit find 1):
   // localStorage restores the UI values, but the Rust side only learns about
   // them through their setters — push them all once on startup. Without the
@@ -173,8 +221,6 @@ export const App: React.FC = () => {
   // Dynamic Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isMod = e.metaKey || e.ctrlKey;
-
       // Re-assignable keybindings win over hardcoded shortcuts (audit find 5):
       // these checks run FIRST so a user-reassigned combo (e.g. settings bound
       // to Cmd+B) is never silently shadowed by a hardcoded shortcut below.
@@ -201,11 +247,7 @@ export const App: React.FC = () => {
         if (focusedPaneId) {
           const ok = usePaneStore.getState().splitPane(focusedPaneId, 'vertical');
           if (!ok && paneCount >= maxPanes) {
-            addToast({
-              type: 'warning',
-              title: 'Maximum Pane Limit Reached',
-              description: `VibeGrid enforces a limit of ${maxPanes} active panes for peak GPU performance.`,
-            });
+            useUIStore.getState().notifyMaxPanes();
           }
         }
         return;
@@ -216,11 +258,7 @@ export const App: React.FC = () => {
         if (focusedPaneId) {
           const ok = usePaneStore.getState().splitPane(focusedPaneId, 'horizontal');
           if (!ok && paneCount >= maxPanes) {
-            addToast({
-              type: 'warning',
-              title: 'Maximum Pane Limit Reached',
-              description: `VibeGrid enforces a limit of ${maxPanes} active panes for peak GPU performance.`,
-            });
+            useUIStore.getState().notifyMaxPanes();
           }
         }
         return;
@@ -244,67 +282,81 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Cmd/Ctrl + B -> Toggle Workspace Sidebar (not reassignable)
-      if (isMod && e.code === 'KeyB') {
+      // UX audit P2 #10: these were hardcoded; they now live in the keybinding
+      // store so users can reassign them (and conflicts are detected).
+      if (matchesKeybinding(e, 'toggle-sidebar')) {
         e.preventDefault();
         setIsSidebarOpen((prev) => !prev);
         return;
       }
 
-      // Cmd/Ctrl + Shift + Left / Right -> Switch Workspaces (guarded: processes are terminated)
-      if (isMod && e.shiftKey && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) {
+      // Switch Workspaces (non-destructive: workspace isolation keeps the other
+      // workspace's terminals running in the background)
+      if (matchesKeybinding(e, 'switch-workspace-prev')) {
         e.preventDefault();
         const currentIndex = workspaces.findIndex((w) => w.id === activeWorkspaceId);
         if (currentIndex !== -1 && workspaces.length > 1) {
-          const delta = e.code === 'ArrowRight' ? 1 : -1;
-          const nextIndex = (currentIndex + delta + workspaces.length) % workspaces.length;
-          // Guard: warn when the current workspace has running terminals (audit 3.6)
+          const nextIndex = (currentIndex - 1 + workspaces.length) % workspaces.length;
+          useUIStore.getState().requestSwitchWorkspace(workspaces[nextIndex].id);
+        }
+        return;
+      }
+      if (matchesKeybinding(e, 'switch-workspace-next')) {
+        e.preventDefault();
+        const currentIndex = workspaces.findIndex((w) => w.id === activeWorkspaceId);
+        if (currentIndex !== -1 && workspaces.length > 1) {
+          const nextIndex = (currentIndex + 1) % workspaces.length;
           useUIStore.getState().requestSwitchWorkspace(workspaces[nextIndex].id);
         }
         return;
       }
 
-      // Cmd/Ctrl + Tab / Shift+Tab -> Cycle Focus
-      if (isMod && e.code === 'Tab') {
+      // Cycle Focus
+      if (matchesKeybinding(e, 'cycle-focus-next')) {
         e.preventDefault();
-        navigateFocus(e.shiftKey ? 'prev' : 'next');
+        navigateFocus('next');
+        return;
+      }
+      if (matchesKeybinding(e, 'cycle-focus-prev')) {
+        e.preventDefault();
+        navigateFocus('prev');
         return;
       }
 
-      // Cmd/Ctrl + Arrow keys -> Navigate Focus
-      if (isMod && !e.shiftKey && e.code === 'ArrowLeft') {
+      // Navigate Focus
+      if (matchesKeybinding(e, 'focus-left')) {
         e.preventDefault();
         navigateFocus('left');
         return;
       }
-      if (isMod && !e.shiftKey && e.code === 'ArrowRight') {
+      if (matchesKeybinding(e, 'focus-right')) {
         e.preventDefault();
         navigateFocus('right');
         return;
       }
-      if (isMod && !e.shiftKey && e.code === 'ArrowUp') {
+      if (matchesKeybinding(e, 'focus-up')) {
         e.preventDefault();
         navigateFocus('up');
         return;
       }
-      if (isMod && !e.shiftKey && e.code === 'ArrowDown') {
+      if (matchesKeybinding(e, 'focus-down')) {
         e.preventDefault();
         navigateFocus('down');
         return;
       }
 
       // Font size shortcuts
-      if (isMod && (e.key === '=' || e.key === '+')) {
+      if (matchesKeybinding(e, 'font-increase')) {
         e.preventDefault();
         increaseFontSize();
         return;
       }
-      if (isMod && e.key === '-') {
+      if (matchesKeybinding(e, 'font-decrease')) {
         e.preventDefault();
         decreaseFontSize();
         return;
       }
-      if (isMod && e.key === '0') {
+      if (matchesKeybinding(e, 'font-reset')) {
         e.preventDefault();
         resetFontSize();
         return;
@@ -326,15 +378,30 @@ export const App: React.FC = () => {
     toggleCommandPalette,
     toggleSettings,
     openCreateWsModal,
-    switchWorkspace,
     increaseFontSize,
     decreaseFontSize,
     resetFontSize,
     addToast,
   ]);
 
+  // Quit guard (UX audit P0 #1): the window close was intercepted because
+  // terminals are still running — ask the user before terminating them.
+  const handleConfirmQuit = async () => {
+    useUIStore.getState().cancelQuit();
+    try {
+      await saveCurrentWorkspace();
+    } catch (e) {
+      console.error('[App] Final save before quit failed:', e);
+    }
+    quitApproved = true;
+    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+    await getCurrentWindow().close();
+  };
+
+  const quittingRunningCount = getTerminalNodes(root).filter((t) => t.paneId).length;
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-bgDark text-[#e2e8f0] overflow-hidden select-none">
+    <div className="h-screen w-screen flex flex-col bg-bgDark text-foreground overflow-hidden select-none">
       <Header
         onOpenAbout={() => setIsAboutOpen(true)}
         isSidebarOpen={isSidebarOpen}
@@ -356,6 +423,22 @@ export const App: React.FC = () => {
       <SplashScreen />
       <FirstRunHint />
 
+      {/* Guarded: quit with running processes (UX audit P0 #1) */}
+      {pendingQuit && (
+        <ConfirmModal
+          title="Quit VibeGrid?"
+          message={`${quittingRunningCount} terminal${quittingRunningCount === 1 ? '' : 's'} ${quittingRunningCount === 1 ? 'is' : 'are'} still running. Quitting will terminate their processes. Any active servers, agents, or long-running commands will be killed.`}
+          confirmLabel="Quit & Terminate"
+          isDanger={true}
+          onConfirm={handleConfirmQuit}
+          onClose={() => {
+            // REVIEWER FIX: cancelling clears any stale approval flag.
+            quitApproved = false;
+            cancelQuit();
+          }}
+        />
+      )}
+
       {/* Guarded: close pane (kills processes) */}
       {pendingClosePaneId && (
         <ConfirmModal
@@ -368,32 +451,23 @@ export const App: React.FC = () => {
         />
       )}
 
-      {/* Guarded: switch workspace (terminates current workspace processes) */}
-      {pendingSwitchWsId && (
+      {/* Guarded: preset shrink / reset — these CLOSE the removed panes (the
+          focused pane always survives; expanding a grid never confirms). Only
+          shown when at least one removed pane has a running process. */}
+      {pendingLayoutAction && (
         <ConfirmModal
-          title="Switch Workspace"
-          message={
-            runningCount > 0
-              ? `The current workspace has ${runningCount} running terminal${runningCount > 1 ? 's' : ''}: ${runningTitles.join(', ')}. Switching workspaces will terminate those processes. Continue?`
-              : `Switch to this workspace?`
-          }
-          confirmLabel="Switch Workspace"
-          onConfirm={() => {
-            switchWorkspace(pendingSwitchWsId);
-          }}
-          onClose={cancelPendingSwitch}
+          title={pendingLayoutAction.type === 'reset' ? 'Reset Layout' : `Shrink to ${pendingLayoutAction.count}-Pane Grid`}
+          message={`This will close ${pendingLayoutAction.closingCount} terminal${pendingLayoutAction.closingCount === 1 ? '' : 's'} and terminate their running processes. The focused terminal stays open. Any active servers, agents, or long-running commands in the closed panes will be killed. Continue?`}
+          confirmLabel="Close Terminals"
+          isDanger={true}
+          onConfirm={() => confirmPendingLayoutAction()}
+          onClose={cancelPendingLayoutAction}
         />
       )}
 
-      {/* Guarded: create workspace also switches to it (audit fix — same
-          process-termination risk as switching). When the current workspace has
-          running terminals the new workspace is created deferred and this
-          confirmation decides whether to finish the switch. ConfirmModal calls
-          onConfirm then onClose, so onConfirm clears the pending id first and
-          onClose only cleans up the un-activated workspace when it was never
-          confirmed (read from the store, not the closure, to avoid staleness). */}
-      {/* Audit find 4: global create-workspace modal — the 'new-workspace'
-          keybinding opens this; Header/Sidebar/Settings/Palette keep their own. */}
+      {/* Workspace creation modal (non-destructive: creating + switching to a
+          new workspace keeps the current workspace's terminals running in the
+          background — workspace isolation). */}
       {isCreateWsModalOpen && (
         <InputModal
           title="Create New Workspace"
@@ -403,26 +477,6 @@ export const App: React.FC = () => {
             requestCreateWorkspace(name.slice(0, 50));
           }}
           onClose={closeCreateWsModal}
-        />
-      )}
-
-      {pendingCreateWsId && (
-        <ConfirmModal
-          title="Create Workspace"
-          message={`Creating a new workspace will terminate ${runningCount} running terminal${runningCount > 1 ? 's' : ''}: ${runningTitles.join(', ')}. Continue?`}
-          confirmLabel="Create Workspace"
-          onConfirm={() => {
-            const id = useUIStore.getState().pendingCreateWsId;
-            useUIStore.getState().cancelPendingCreate();
-            if (id) switchWorkspace(id);
-          }}
-          onClose={() => {
-            const id = useUIStore.getState().pendingCreateWsId;
-            useUIStore.getState().cancelPendingCreate();
-            // The workspace was created deferred but never activated — remove it
-            // so a cancelled create doesn't leave an empty ghost workspace.
-            if (id) deleteWorkspace(id);
-          }}
         />
       )}
     </div>

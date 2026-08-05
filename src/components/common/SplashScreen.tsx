@@ -20,7 +20,7 @@ export const SplashScreen: React.FC = () => {
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#03060a] transition-opacity duration-300 ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background transition-opacity duration-300 ${
         phase === 'fading' ? 'opacity-0' : 'opacity-100'
       }`}
     >

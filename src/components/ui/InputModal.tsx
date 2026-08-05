@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, FolderOpen } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+import { isTauri } from '@/lib/tauri';
 
 interface InputModalProps {
   title: string;
   placeholder?: string;
   initialValue?: string;
   maxLength?: number;
+  /** Optional native folder-picker button (audit: folder picker was a text field only). */
+  onBrowse?: (path: string) => void;
   onSave: (value: string) => void;
   onClose: () => void;
 }
@@ -16,12 +19,29 @@ export const InputModal: React.FC<InputModalProps> = ({
   placeholder = '',
   initialValue = '',
   maxLength = 50,
+  onBrowse,
   onSave,
   onClose,
 }) => {
   const [value, setValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useFocusTrap<HTMLFormElement>(true);
+
+  // Native folder picker (Tauri dialog plugin). Falls back to the text field in
+  // web preview mode.
+  const handleBrowse = async () => {
+    if (!onBrowse || !isTauri()) return;
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({ directory: true, multiple: false, title: 'Choose Folder' });
+      if (typeof selected === 'string' && selected) {
+        setValue(selected);
+        onBrowse(selected);
+      }
+    } catch (e) {
+      console.warn('[VibeGrid] Native folder picker failed:', e);
+    }
+  };
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -69,15 +89,27 @@ export const InputModal: React.FC<InputModalProps> = ({
         </div>
 
         <div className="p-5 space-y-4">
-          <input
-            ref={inputRef}
-            type="text"
-            maxLength={maxLength}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={placeholder}
-            className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright/70"
-          />
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              maxLength={maxLength}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={placeholder}
+              className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright/70"
+            />
+            {onBrowse && (
+              <button
+                type="button"
+                onClick={handleBrowse}
+                title="Browse folders…"
+                className="shrink-0 px-3 py-2 rounded-lg bg-white/[0.04] border border-white/10 text-white/55 hover:text-forest-light hover:border-forest/40 transition-colors"
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
           <div className="flex justify-end gap-2 pt-2">
             <button

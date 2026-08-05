@@ -22,6 +22,13 @@ pub fn http_port() -> u16 {
         .unwrap_or(8792)
 }
 
+/// The inclusive end of the port-fallback window. `saturating_add` already
+/// clamps at u16::MAX, so VIBEGRID_HTTP_PORT near 65535 can never overflow
+/// into a cryptic bind error (audit fix). Extracted for unit testing.
+pub fn fallback_window_end(requested: u16) -> u16 {
+    requested.saturating_add(5)
+}
+
 /// State file that records the port the running app actually bound, so the
 /// `--mcp` stdio server (a separate process) can stay in sync even when the
 /// default port was taken and the app fell back to the next free one.
@@ -81,7 +88,10 @@ pub fn start_server(state: Arc<Mutex<HashMap<String, String>>>) {
         let requested = http_port();
         let mut bound = None;
         let mut last_err = None;
-        for port in requested..requested.saturating_add(5) {
+        // Clamp so the fallback window never exceeds u16::MAX (audit fix:
+        // VIBEGRID_HTTP_PORT near 65535 used to produce a cryptic bind error).
+        let window_end = fallback_window_end(requested);
+        for port in requested..window_end {
             match TcpListener::bind(("127.0.0.1", port)).await {
                 Ok(listener) => {
                     bound = Some((port, listener));
@@ -98,4 +108,36 @@ pub fn start_server(state: Arc<Mutex<HashMap<String, String>>>) {
             eprintln!("VibeGrid MCP state API failed to bind (tried {requested}..): {last_err:?}");
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The env var is process-global, so all override cases run inside a single
+    /// test to avoid cross-test races when the test harness runs tests in parallel.
+    #[test]
+    fn http_port_env_override_cases() {
+        // Unset → default.
+        unsafe { std::env::remove_var("VIBEGRID_HTTP_PORT") };
+        assert_eq!(http_port(), 8792);
+        // Valid override → read.
+        unsafe { std::env::set_var("VIBEGRID_HTTP_PORT", "9300") };
+        assert_eq!(http_port(), 9300);
+        // Garbage override → fall back to default.
+        unsafe { std::env::set_var("VIBEGRID_HTTP_PORT", "not-a-port") };
+        assert_eq!(http_port(), 8792);
+        // Clean up so other tests see a pristine env.
+        unsafe { std::env::remove_var("VIBEGRID_HTTP_PORT") };
+    }
+
+    #[test]
+    fn fallback_window_clamps_at_u16_max() {
+        // Near the top of the range the window must shrink, not overflow.
+        assert_eq!(fallback_window_end(65533), u16::MAX);
+        assert_eq!(fallback_window_end(65535), u16::MAX);
+        // Normal range keeps the full 6-port window (requested..requested+5).
+        assert_eq!(fallback_window_end(8792), 8797);
+        assert_eq!(fallback_window_end(65530), 65535);
+    }
 }

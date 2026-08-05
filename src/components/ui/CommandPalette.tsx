@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid, FolderOpen, BookOpen, Mic, Download, Upload } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
-import { usePaneStore } from '@/store/usePaneStore';
+import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
@@ -9,6 +9,7 @@ import { useVoiceStore } from '@/store/useVoiceStore';
 import { fuzzyScore } from '@/lib/commandUtils';
 import { writeToPty } from '@/lib/tauri';
 import { InputModal } from './InputModal';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface CommandItem {
   id: string;
@@ -58,8 +59,8 @@ function saveRecents(recents: string[]) {
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) => {
-  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace, requestCreateWorkspace } = useUIStore();
-  const { splitPane, toggleMaximize, resetLayout, setPaneTitle, setPaneCwd, focusedPaneId, paneCount, maxPanes, setLayoutPreset } = usePaneStore();
+  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace, requestCreateWorkspace, requestSetLayoutPreset, requestResetLayout, notifyMaxPanes } = useUIStore();
+  const { splitPane, toggleMaximize, setPaneTitle, setPaneCwd, focusedPaneId, paneCount, maxPanes } = usePaneStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings } = useSettingsStore();
   const { workspaces } = useWorkspaceStore();
   const { keybindings } = useKeybindingsStore();
@@ -75,6 +76,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
   const [recents, setRecents] = useState<string[]>(loadRecents);
   const importInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useFocusTrap<HTMLDivElement>(isCommandPaletteOpen);
 
   useEffect(() => {
     if (isCommandPaletteOpen) {
@@ -111,7 +113,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: `Set Equal Grid Layout to ${p} Pane${p > 1 ? 's' : ''}`,
       category: 'Layout Presets',
       icon: <Grid className="w-4 h-4 text-forest-bright" />,
-      action: () => setLayoutPreset(p),
+      // Guarded: a grid rebuild kills all running panes — confirm when running.
+      action: () => requestSetLayoutPreset(p),
     })),
     {
       id: 'split-folder',
@@ -130,7 +133,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'horizontal');
           if (!success && paneCount >= maxPanes) {
-            addToast({ type: 'warning', title: 'Maximum Pane Limit Reached', description: `VibeGrid limits total active panes to ${maxPanes}.` });
+            notifyMaxPanes();
           }
         }
       },
@@ -145,7 +148,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'vertical');
           if (!success && paneCount >= maxPanes) {
-            addToast({ type: 'warning', title: 'Maximum Pane Limit Reached', description: `VibeGrid limits total active panes to ${maxPanes}.` });
+            notifyMaxPanes();
           }
         }
       },
@@ -176,12 +179,26 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       icon: <Plus className="w-4 h-4 text-forest-bright" />,
       action: () => setShowWsModal(true),
     },
+    ...workspaces.map((ws) => {
+      const running = ws.id === useWorkspaceStore.getState().activeWorkspaceId
+        ? getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length
+        : getTerminalNodes(ws.layout).filter((t) => t.paneId).length;
+      return {
+        id: `ws-switch-${ws.id}`,
+        label: `Switch to Workspace: ${ws.name}${running > 0 ? `  ●${running} running` : ''}`,
+        category: 'Workspace',
+        icon: <Info className="w-4 h-4 text-forest-bright" />,
+        action: () => requestSwitchWorkspace(ws.id),
+      };
+    }),
     ...workspaces.map((ws) => ({
-      id: `ws-switch-${ws.id}`,
-      label: `Switch to Workspace: ${ws.name}`,
+      id: `ws-duplicate-${ws.id}`,
+      label: `Duplicate Workspace: ${ws.name}`,
       category: 'Workspace',
-      icon: <Info className="w-4 h-4 text-forest-bright" />,
-      action: () => requestSwitchWorkspace(ws.id),
+      icon: <Plus className="w-4 h-4 text-forest-light" />,
+      action: () => {
+        useWorkspaceStore.getState().duplicateWorkspace(ws.id);
+      },
     })),
     {
       id: 'open-settings',
@@ -276,7 +293,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Reset Grid to Single Terminal Pane',
       category: 'Workspace',
       icon: <RotateCcw className="w-4 h-4 text-amber-400" />,
-      action: () => resetLayout(),
+      // Guarded: reset kills all running panes — confirm when running.
+      action: () => requestResetLayout(),
     },
   ];
 
@@ -360,6 +378,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 animate-fade-in"
         >
           <div
+            ref={panelRef}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-xl bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col max-h-[70vh] backdrop-blur-md"
           >
@@ -463,6 +482,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           title="Open New Pane in Folder"
           placeholder="/path/to/project"
           initialValue=""
+          onBrowse={(path) => {
+            // Native picker selected a folder — open the pane immediately.
+            const trimmed = path.trim();
+            if (trimmed && focusedPaneId) {
+              const ok = splitPane(focusedPaneId, 'horizontal');
+              if (ok) {
+                const newId = usePaneStore.getState().focusedPaneId;
+                if (newId) setPaneCwd(newId, trimmed);
+                addToast({ type: 'success', title: 'Pane opened', description: `New pane cwd: ${trimmed}` });
+                setShowFolderModal(false);
+              } else {
+                notifyMaxPanes();
+              }
+            }
+          }}
           onSave={(path) => {
             const trimmed = path.trim();
             if (trimmed && focusedPaneId) {
@@ -472,7 +506,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                 if (newId) setPaneCwd(newId, trimmed);
                 addToast({ type: 'success', title: 'Pane opened', description: `New pane cwd: ${trimmed}` });
               } else {
-                addToast({ type: 'warning', title: 'Maximum Pane Limit Reached', description: `VibeGrid limits total active panes to ${maxPanes}.` });
+                notifyMaxPanes();
               }
             }
           }}

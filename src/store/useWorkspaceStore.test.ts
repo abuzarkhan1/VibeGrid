@@ -58,6 +58,7 @@ describe('VibeGrid Workspace Persistence', () => {
           layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' },
           createdAt: Date.now(),
           updatedAt: Date.now(),
+          version: 1,
         },
       ],
       activeWorkspaceId: 'default-workspace',
@@ -153,11 +154,87 @@ describe('VibeGrid Workspace Persistence', () => {
     expect(mockedInvoke).not.toHaveBeenCalledWith('save_workspace', expect.anything());
   });
 
+  it('renaming a NON-active workspace persists it to disk (not just the active one)', async () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2, version: 1 },
+      ],
+      activeWorkspaceId: 'default-workspace',
+      isLoading: false,
+    });
+
+    // Rename the INACTIVE workspace
+    useWorkspaceStore.getState().renameWorkspace('ws-second', 'Renamed Second');
+
+    expect(useWorkspaceStore.getState().workspaces.find((w) => w.id === 'ws-second')?.name).toBe('Renamed Second');
+    // The renamed workspace itself was written to disk (its id in the payload)
+    expect(mockedInvoke).toHaveBeenCalledWith(
+      'save_workspace',
+      expect.objectContaining({ workspace: expect.objectContaining({ id: 'ws-second', name: 'Renamed Second' }) })
+    );
+  });
+
+  it('captures and restores per-workspace view state on switch-back', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2, version: 1 },
+      ],
+      activeWorkspaceId: 'default-workspace',
+      isLoading: false,
+    });
+    // 4-pane workspace with a maximized pane and preset-grid identity
+    usePaneStore.setState({
+      root: fourPaneLayout() as never,
+      paneCount: 4,
+      layoutMode: 'preset' as const,
+      presetCount: 4,
+      focusedPaneId: 'term-2',
+      maximizedPaneId: 'term-3',
+    });
+
+    // Switch away → view captured on the leaving workspace
+    useWorkspaceStore.getState().switchWorkspace('ws-second');
+    const leaving = useWorkspaceStore.getState().workspaces.find((w) => w.id === 'default-workspace');
+    expect(leaving?.view).toEqual({
+      focusedPaneId: 'term-2',
+      maximizedPaneId: 'term-3',
+      layoutMode: 'preset',
+      presetCount: 4,
+    });
+
+    // Switch back → view restored (focused + maximized + preset identity)
+    useWorkspaceStore.getState().switchWorkspace('default-workspace');
+    const ps = usePaneStore.getState();
+    expect(ps.focusedPaneId).toBe('term-2');
+    expect(ps.maximizedPaneId).toBe('term-3');
+    expect(ps.layoutMode).toBe('preset');
+    expect(ps.presetCount).toBe(4);
+  });
+
+  it('falls back gracefully when a restored focused pane no longer exists', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: fourPaneLayout() as never, createdAt: 1, updatedAt: 1, version: 1, view: { focusedPaneId: 'term-gone', maximizedPaneId: null, layoutMode: 'custom' as const, presetCount: 1 } },
+        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2, version: 1 },
+      ],
+      activeWorkspaceId: 'ws-second',
+      isLoading: false,
+    });
+
+    useWorkspaceStore.getState().switchWorkspace('default-workspace');
+
+    // Stale focused id (term-gone not in the tree) → falls back to first pane
+    expect(usePaneStore.getState().focusedPaneId).toBe('term-1');
+    expect(usePaneStore.getState().paneCount).toBe(4);
+  });
+
   it('deletes a workspace from the backend too', async () => {
     useWorkspaceStore.setState((s) => ({
       workspaces: [
         ...s.workspaces,
-        { id: 'ws-2', name: 'Second', layout: { type: 'terminal', id: 't2', title: 'T2' }, createdAt: 1, updatedAt: 1 },
+        { id: 'ws-2', name: 'Second', layout: { type: 'terminal', id: 't2', title: 'T2' }, createdAt: 1, updatedAt: 1, version: 1 },
       ],
       activeWorkspaceId: 'default-workspace',
     }));
@@ -166,11 +243,11 @@ describe('VibeGrid Workspace Persistence', () => {
     expect(useWorkspaceStore.getState().workspaces).toHaveLength(1);
   });
 
-  it('switchWorkspace saves the old live layout and restores the target', async () => {
+  it('switchWorkspace saves the old live layout (sanitized to disk) and restores the target', async () => {
     useWorkspaceStore.setState({
       workspaces: [
-        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1 },
-        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2 },
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2, version: 1 },
       ],
       activeWorkspaceId: 'default-workspace',
       isLoading: false,
@@ -186,6 +263,8 @@ describe('VibeGrid Workspace Persistence', () => {
     };
     expect(payload.workspace.name).toBe('Default Workspace');
     expect(JSON.stringify(payload.workspace.layout)).toContain('term-1');
+    // The DISK copy is sanitized — runtime paneIds never leave the process
+    expect(JSON.stringify(payload.workspace.layout)).not.toContain('pty-');
 
     // Target workspace restored, active switched + persisted
     expect(useWorkspaceStore.getState().activeWorkspaceId).toBe('ws-second');
@@ -194,13 +273,56 @@ describe('VibeGrid Workspace Persistence', () => {
     expect(localStorage.getItem('vibegrid.active-workspace')).toBe('ws-second');
   });
 
+  it('keeps live paneIds in the in-memory leaving workspace (isolation: terminals survive the switch)', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2, version: 1 },
+      ],
+      activeWorkspaceId: 'default-workspace',
+      isLoading: false,
+    });
+    usePaneStore.setState({ root: fourPaneLayout() as never, paneCount: 4, layoutMode: 'custom', focusedPaneId: 'term-1' });
+
+    useWorkspaceStore.getState().switchWorkspace('ws-second');
+
+    // The leaving workspace's in-memory layout STILL carries the live paneIds
+    // (the kill-on-switch bug would have stripped them), so switching back
+    // re-attaches to the still-running PTYs instead of spawning fresh shells.
+    const leaving = useWorkspaceStore.getState().workspaces.find((w) => w.id === 'default-workspace');
+    expect(JSON.stringify(leaving?.layout)).toContain('pty-111');
+    expect(JSON.stringify(leaving?.layout)).toContain('pty-444');
+  });
+
+  it('round-trips back to a workspace and re-attaches its live panes', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: fourPaneLayout() as never, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2, version: 1 },
+      ],
+      activeWorkspaceId: 'ws-second',
+      isLoading: false,
+    });
+    usePaneStore.setState({ root: { type: 'terminal', id: 'term-s', title: 'Terminal 2' } as never, paneCount: 1, layoutMode: 'preset', focusedPaneId: 'term-s' });
+
+    // Switch back to the 4-pane workspace — its LIVE layout (with paneIds)
+    // must be applied to the pane store so TerminalPane re-attaches.
+    useWorkspaceStore.getState().switchWorkspace('default-workspace');
+
+    expect(usePaneStore.getState().paneCount).toBe(4);
+    const json = JSON.stringify(usePaneStore.getState().root);
+    expect(json).toContain('term-1');
+    expect(json).toContain('pty-333'); // live PTY handles preserved for re-attach
+    expect(useWorkspaceStore.getState().activeWorkspaceId).toBe('default-workspace');
+  });
+
   it('restores the last active workspace from localStorage on load (not just recency)', async () => {
     localStorage.setItem('vibegrid.active-workspace', 'ws-second');
     // default-workspace is the most recently updated on disk, but the user was
     // last working in ws-second — recency alone would pick the wrong one.
     mockedInvoke.mockResolvedValueOnce([
-      { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-1', title: 'Terminal 1' }, created_at: 1000, updated_at: 5000 },
-      { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-2', title: 'Terminal 2' }, created_at: 1000, updated_at: 1000 },
+      { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-1', title: 'Terminal 1' }, created_at: 1000, updated_at: 5000, version: 1 },
+      { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-2', title: 'Terminal 2' }, created_at: 1000, updated_at: 1000, version: 1 },
     ]);
 
     await useWorkspaceStore.getState().loadWorkspaces();
@@ -234,8 +356,8 @@ describe('VibeGrid Workspace Persistence', () => {
   it('deleting the active workspace falls back to the first remaining one and persists it', async () => {
     useWorkspaceStore.setState({
       workspaces: [
-        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1 },
-        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2 },
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-s', title: 'Terminal 2' }, createdAt: 2, updatedAt: 2, version: 1 },
       ],
       activeWorkspaceId: 'ws-second',
       isLoading: false,
@@ -259,5 +381,53 @@ describe('VibeGrid Workspace Persistence', () => {
     expect(useWorkspaceStore.getState().workspaces[0].name).toBe('Broken');
     expect(usePaneStore.getState().paneCount).toBe(1);
     expect(usePaneStore.getState().focusedPaneId).not.toBeNull();
+  });
+
+  it('duplicateWorkspace copies a workspace with a sanitized layout (no shared paneIds)', async () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-x', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'ws-src', name: 'Source', layout: fourPaneLayout() as never, createdAt: 2, updatedAt: 2, version: 1 },
+      ],
+      activeWorkspaceId: 'default-workspace',
+      isLoading: false,
+    });
+
+    const id = useWorkspaceStore.getState().duplicateWorkspace('ws-src');
+
+    const copy = useWorkspaceStore.getState().workspaces.find((w) => w.id === id);
+    expect(copy).toBeDefined();
+    expect(copy?.name).toBe('Source Copy');
+    // The copy is sanitized: fresh shells, never sharing the original's PTYs.
+    expect(JSON.stringify(copy?.layout)).not.toContain('pty-');
+    // Structure preserved (4 terminals, titles survive).
+    expect(JSON.stringify(copy?.layout)).toContain('Web Server');
+    expect(usePaneStore.getState().paneCount).toBe(1); // did NOT switch
+    // Persisted to disk with the new id.
+    expect(mockedInvoke).toHaveBeenCalledWith(
+      'save_workspace',
+      expect.objectContaining({ workspace: expect.objectContaining({ id }) })
+    );
+  });
+
+  it('moveWorkspace reorders the list (with bounds guards)', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'a', name: 'A', layout: { type: 'terminal', id: 't1', title: 'T1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'b', name: 'B', layout: { type: 'terminal', id: 't2', title: 'T2' }, createdAt: 2, updatedAt: 2, version: 1 },
+        { id: 'c', name: 'C', layout: { type: 'terminal', id: 't3', title: 'T3' }, createdAt: 3, updatedAt: 3, version: 1 },
+      ],
+      activeWorkspaceId: 'a',
+      isLoading: false,
+    });
+
+    useWorkspaceStore.getState().moveWorkspace('b', 1);
+    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['a', 'c', 'b']);
+
+    useWorkspaceStore.getState().moveWorkspace('a', -1); // at top — no-op
+    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['a', 'c', 'b']);
+
+    useWorkspaceStore.getState().moveWorkspace('a', 1);
+    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'a', 'b']);
   });
 });

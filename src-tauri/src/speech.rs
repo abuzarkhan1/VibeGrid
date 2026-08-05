@@ -8,9 +8,10 @@
 
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use parking_lot::Mutex;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use tauri::{AppHandle, Emitter, Manager};
 use whisper_rs::{
@@ -118,7 +119,7 @@ impl SpeechManager {
     }
 
     pub fn is_recording(&self) -> bool {
-        self.recorder.lock().unwrap().is_some()
+        self.recorder.lock().is_some()
     }
 
     /// Set the auto-stop silence timeout (ms), clamped to [600, 5000] — the
@@ -136,7 +137,7 @@ impl SpeechManager {
 
     /// Prefer a specific input device by name ('' = system default).
     pub fn set_input_device(&self, name: String) {
-        *self.preferred_input.lock().unwrap() = if name.is_empty() {
+        *self.preferred_input.lock() = if name.is_empty() {
             None
         } else {
             Some(name)
@@ -161,7 +162,7 @@ impl SpeechManager {
     /// otherwise the system default.
     fn resolve_input_device(&self) -> Result<cpal::Device, String> {
         let host = cpal::default_host();
-        let preferred = self.preferred_input.lock().unwrap().clone();
+        let preferred = self.preferred_input.lock().clone();
         if let Some(name) = preferred {
             if let Ok(devices) = host.input_devices() {
                 for device in devices {
@@ -245,7 +246,7 @@ impl SpeechManager {
             .play()
             .map_err(|e| format!("Failed to start microphone: {e}"))?;
 
-        *self.recorder.lock().unwrap() = Some(ActiveRecording {
+        *self.recorder.lock() = Some(ActiveRecording {
             _stream: stream,
             samples,
             sample_rate,
@@ -266,7 +267,7 @@ impl SpeechManager {
         T: cpal::SizedSample + cpal::Sample<Float = f32>,
     {
         let data_fn = move |data: &[T], _: &cpal::InputCallbackInfo| {
-            let mut buf = samples.lock().unwrap();
+            let mut buf = samples.lock();
             // Downmix to mono by averaging frames across channels, tracking the
             // live RMS for the waveform UI (lock-free atomic, audio-thread safe).
             let mut sum_sq: f32 = 0.0;
@@ -283,7 +284,7 @@ impl SpeechManager {
             }
         };
         device
-            .build_input_stream(config.clone(), data_fn, err_fn, None)
+            .build_input_stream(*config, data_fn, err_fn, None)
             .map_err(|e| format!("Failed to build input stream: {e}"))
     }
 
@@ -296,15 +297,12 @@ impl SpeechManager {
 
     /// Access the live meter shared with the recording, if any.
     fn meter(&self) -> Option<Arc<AudioMeter>> {
-        self.recorder
-            .lock()
-            .ok()
-            .and_then(|r| r.as_ref().map(|a| a.meter.clone()))
+        self.recorder.lock().as_ref().map(|a| a.meter.clone())
     }
 
     /// Stop capture and discard the audio without transcribing (Esc / cancel).
     pub fn cancel_recording(&self) {
-        let mut guard = self.recorder.lock().unwrap();
+        let mut guard = self.recorder.lock();
         let _ = guard.take();
     }
 
@@ -312,10 +310,10 @@ impl SpeechManager {
     /// return the captured audio. Returns `None` only when there was no active
     /// recording (e.g. already consumed by Enter/Esc) — NOT when it was silent.
     fn take_audio(&self) -> Option<Vec<f32>> {
-        let recording = self.recorder.lock().unwrap().take()?;
+        let recording = self.recorder.lock().take()?;
         drop(recording._stream); // stop capture
         let raw = {
-            let mut buf = recording.samples.lock().unwrap();
+            let mut buf = recording.samples.lock();
             std::mem::take(&mut *buf)
         };
         if raw.is_empty() {
@@ -343,11 +341,11 @@ impl SpeechManager {
             return Err("No speech detected".into());
         }
 
-        let mut whisper = self.whisper.lock().unwrap();
+        let mut whisper = self.whisper.lock();
         if whisper.is_none() {
             let params = WhisperContextParameters::default();
             *whisper = Some(
-                WhisperContext::new_with_params(&model, params)
+                WhisperContext::new_with_params(model, params)
                     .map_err(|e| format!("Failed to load Whisper model: {e}"))?,
             );
         }
@@ -714,7 +712,7 @@ fn resample(src: &[f32], src_rate: u32, dst_rate: u32) -> Vec<f32> {
         let frac = pos - idx as f64;
         let a = src.get(idx).copied().unwrap_or(0.0);
         let b = src.get(idx + 1).copied().unwrap_or(a);
-        out.push((a + (b - a) * frac as f32) as f32);
+        out.push(a + (b - a) * frac as f32);
     }
     out
 }
