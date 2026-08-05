@@ -21,8 +21,15 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ ready }) => {
 
   // Fade out only when the workspace restore actually finished AND the minimum
   // display time passed. A slow disk keeps the splash until load resolves.
+  //
+  // BUGFIX (delete-workspace root cause): the fade and removal timers were
+  // BOTH cleaned up whenever `phase` changed — so when the 80ms fade timer
+  // flipped phase to 'fading', its cleanup cancelled the 430ms removal timer
+  // and the splash was stuck as an invisible full-screen z-[100] layer that
+  // swallowed every click in the app (you could never press Delete Workspace
+  // — or anything else). Timers are now keyed off [ready, minElapsed] only,
+  // so flipping phase never cancels the unmount timer.
   useEffect(() => {
-    if (phase !== 'visible') return;
     if (!ready || !minElapsed) return;
     const fadeTimer = setTimeout(() => setPhase('fading'), 80);
     const removeTimer = setTimeout(() => setPhase('gone'), 80 + FADE_DURATION);
@@ -30,7 +37,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ ready }) => {
       clearTimeout(fadeTimer);
       clearTimeout(removeTimer);
     };
-  }, [ready, minElapsed, phase]);
+  }, [ready, minElapsed]);
 
   if (phase === 'gone') return null;
 
@@ -38,10 +45,13 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ ready }) => {
     <div
       aria-hidden="true"
       className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background transition-opacity duration-300 ${
-        phase === 'fading' ? 'opacity-0' : 'opacity-100'
+        // While fading, the splash must NEVER intercept clicks — it is
+        // invisible but still mounted, so pointer-events: none guarantees the
+        // app underneath stays fully interactive during the fade.
+        phase === 'fading' ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-forest shadow-[0_0_28px_rgba(84,169,103,0.35)] mb-6">
+      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-forest shadow-[0_0_28px_rgba(60,149,240,0.35)] mb-6">
         <svg width="36" height="36" viewBox="0 0 16 16" fill="none">
           <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9" />
           <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5" />
@@ -49,7 +59,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ ready }) => {
           <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2" />
         </svg>
       </div>
-      <h1 className="lp-serif text-4xl text-white tracking-wide">VibeGrid</h1>
+      <h1 className="vg-serif text-4xl text-white tracking-wide">VibeGrid</h1>
       <p className="mt-2 text-xs text-white/40 font-mono">GPU-Accelerated Terminal Workspace</p>
       <div className="mt-8 flex items-center gap-1.5">
         {[0, 1, 2].map((i) => (

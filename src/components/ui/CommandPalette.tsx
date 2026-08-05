@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid, FolderOpen, BookOpen, Mic, Download, Upload } from 'lucide-react';
+import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid, FolderOpen, BookOpen, Mic, Download, Upload, Save, Terminal as TerminalIcon, Trash2, Play, Zap } from 'lucide-react';
+import { runMacro } from '@/lib/macros';
 import { useUIStore } from '@/store/useUIStore';
-import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
-import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
+import { usePaneStore, getTerminalNodes, PresetCount } from '@/store/usePaneStore';
+import { useSettingsStore, THEMES, UserCommand } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { useVoiceStore } from '@/store/useVoiceStore';
@@ -25,14 +26,19 @@ interface CommandPaletteProps {
 }
 
 const RECENTS_KEY = 'vibegrid_palette_recents_v1';
-const MAX_RECENTS = 8;
+
+/** Live recents cap (customization audit L15) — reads the setting so a change
+ *  in Settings applies immediately, no store subscription needed. */
+function maxRecents(): number {
+  return useSettingsStore.getState().paletteRecentsMax;
+}
 
 function loadRecents(): string[] {
   try {
     const raw = localStorage.getItem(RECENTS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'string').slice(0, MAX_RECENTS);
+      if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'string').slice(0, maxRecents());
     }
   } catch (e) {
     // ignore
@@ -52,17 +58,30 @@ function pruneRecents(recents: string[], validIds: Set<string>): string[] {
 
 function saveRecents(recents: string[]) {
   try {
-    localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, MAX_RECENTS)));
+    localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, maxRecents())));
   } catch (e) {
     // ignore
   }
 }
 
+/** Resolve the focused pane's live PTY id from the layout tree (shared by the
+ *  replay-transcript and custom-command actions). */
+function getFocusedPtyId(): string | undefined {
+  const paneId = usePaneStore.getState().focusedPaneId;
+  const find = (node: import('@/types/layout').PaneNode | null): string | undefined => {
+    if (!node) return undefined;
+    if (node.id === paneId && node.type === 'terminal') return node.paneId;
+    if (node.type === 'split') return find(node.children[0]) || find(node.children[1]);
+    return undefined;
+  };
+  return find(usePaneStore.getState().root);
+}
+
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) => {
   const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace, requestCreateWorkspace, requestSetLayoutPreset, requestResetLayout, notifyMaxPanes } = useUIStore();
   const { splitPane, toggleMaximize, setPaneTitle, setPaneCwd, focusedPaneId, paneCount, maxPanes } = usePaneStore();
-  const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings } = useSettingsStore();
-  const { workspaces } = useWorkspaceStore();
+  const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings, userCommands, updateSettings } = useSettingsStore();
+  const { workspaces, saveCurrentWorkspace } = useWorkspaceStore();
   const { keybindings } = useKeybindingsStore();
   // Gap 19: last transcription, re-playable from the palette. Must be called
   // before any early return (rules-of-hooks).
@@ -73,6 +92,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
   const [showWsModal, setShowWsModal] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [showFolderModal, setShowFolderModal] = useState(false);
+  // Customization audit C21: custom command manager.
+  const [showCmdModal, setShowCmdModal] = useState(false);
+  const [cmdLabel, setCmdLabel] = useState('');
+  const [cmdCommand, setCmdCommand] = useState('');
   const [recents, setRecents] = useState<string[]>(loadRecents);
   const importInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -88,16 +111,46 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
 
 
 
-  if (!isCommandPaletteOpen && !showWsModal && !showTitleModal && !showFolderModal) return null;
+  if (!isCommandPaletteOpen && !showWsModal && !showTitleModal && !showFolderModal && !showCmdModal) return null;
 
-  const presets: (1 | 2 | 4 | 6 | 8 | 16)[] = [1, 2, 4, 6, 8, 16];
+  // Customization audit L12: 3/5/9/12 added to the equal-grid presets.
+  const presets: PresetCount[] = [1, 2, 3, 4, 5, 6, 8, 9, 12, 16];
 
   const runCommand = (cmd: CommandItem) => {
-    const next = [cmd.id, ...recents.filter((r) => r !== cmd.id)].slice(0, MAX_RECENTS);
+    const next = [cmd.id, ...recents.filter((r) => r !== cmd.id)].slice(0, maxRecents());
     setRecents(next);
     saveRecents(next);
     cmd.action();
     setCommandPaletteOpen(false);
+  };
+
+  // Customization audit C21: type a user-defined command into the focused pane
+  // and press Enter. The pane must have a live PTY.
+  const runUserCommand = (uc: UserCommand) => {
+    const ptyId = getFocusedPtyId();
+    if (!ptyId) {
+      addToast({ type: 'error', title: 'No active pane', description: 'Focus a terminal pane before running a command.' });
+      return;
+    }
+    writeToPty(ptyId, `${uc.command}\r`);
+    addToast({ type: 'success', title: `Ran: ${uc.label}`, description: uc.command });
+  };
+
+  const addUserCommand = () => {
+    if (!cmdLabel.trim() || !cmdCommand.trim()) return;
+    const cmd: UserCommand = {
+      id: `uc-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      label: cmdLabel.trim().slice(0, 60),
+      command: cmdCommand.trim(),
+    };
+    updateSettings({ userCommands: [...userCommands, cmd] });
+    setCmdLabel('');
+    setCmdCommand('');
+    addToast({ type: 'success', title: 'Command added', description: `${cmd.label} will appear in the palette.` });
+  };
+
+  const deleteUserCommand = (id: string) => {
+    updateSettings({ userCommands: userCommands.filter((u) => u.id !== id) });
   };
 
   const commands: CommandItem[] = [
@@ -201,6 +254,41 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       },
     })),
     {
+      // Customization audit C24: manual save — the debounced autosave is the
+      // safety net, but sometimes you want the file updated right now.
+      id: 'save-workspace-now',
+      label: 'Save Workspace Now',
+      category: 'Workspace',
+      icon: <Save className="w-4 h-4 text-forest-light" />,
+      action: () => {
+        saveCurrentWorkspace();
+        addToast({ type: 'success', title: 'Workspace saved', description: 'The current layout and settings were written to disk.' });
+      },
+    },
+    // Customization audit C21: user-defined commands (persisted with settings).
+    ...userCommands.map((uc) => ({
+      id: `user-cmd-${uc.id}`,
+      label: uc.label,
+      category: 'Custom Commands',
+      icon: <TerminalIcon className="w-4 h-4 text-forest-light" />,
+      action: () => runUserCommand(uc),
+    })),
+    // Customization audit C22: user-defined macros.
+    ...useSettingsStore.getState().macros.map((m) => ({
+      id: `macro-run-${m.id}`,
+      label: `Run Macro: ${m.name}`,
+      category: 'Macros',
+      icon: <Zap className="w-4 h-4 text-forest-light" />,
+      action: () => runMacro(m),
+    })),
+    {
+      id: 'manage-user-commands',
+      label: 'Manage Custom Commands…',
+      category: 'Custom Commands',
+      icon: <Plus className="w-4 h-4 text-forest-light" />,
+      action: () => setShowCmdModal(true),
+    },
+    {
       id: 'open-settings',
       label: 'Open Settings Panel',
       category: 'Preferences',
@@ -281,12 +369,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       icon: <RotateCcw className="w-4 h-4 text-forest-light" />,
       action: () => resetFontSize(),
     },
-    ...Object.values(THEMES).map((theme) => ({
-      id: `theme-${theme.name}`,
+    // Customization audit C1: the palette offers custom themes too (built-ins
+    // plus any user-created palettes merged over them).
+    ...Object.entries({ ...THEMES, ...useSettingsStore.getState().customThemes }).map(([key, theme]) => ({
+      id: `theme-${key}`,
       label: `Switch Theme to ${theme.name}`,
       category: 'Themes',
       icon: <Palette className="w-4 h-4 text-forest-light" />,
-      action: () => setThemeName(Object.keys(THEMES).find((key) => THEMES[key].name === theme.name) || 'vibeDark'),
+      action: () => setThemeName(key),
     })),
     {
       id: 'reset-grid',
@@ -306,16 +396,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       category: 'Voice',
       icon: <Mic className="w-4 h-4 text-forest-light" />,
       action: () => {
-        const paneId = usePaneStore.getState().focusedPaneId;
-        const nodes = usePaneStore.getState().root;
-        // Find the terminal pane id for the focused layout node
-        const find = (node: import('@/types/layout').PaneNode | null): string | undefined => {
-          if (!node) return undefined;
-          if (node.id === paneId && node.type === 'terminal') return node.paneId;
-          if (node.type === 'split') return find(node.children[0]) || find(node.children[1]);
-          return undefined;
-        };
-        const ptyId = find(nodes);
+        const ptyId = getFocusedPtyId();
         if (ptyId) {
           writeToPty(ptyId, lastTranscript);
           addToast({ type: 'success', title: 'Re-inserted', description: `"${lastTranscript}"` });
@@ -462,7 +543,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           title="Create New Workspace"
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => requestCreateWorkspace(name.slice(0, 50))}
+          onSave={(name) => requestCreateWorkspace(name.slice(0, useSettingsStore.getState().workspaceNameMaxLength))}
           onClose={() => setShowWsModal(false)}
         />
       )}
@@ -472,9 +553,111 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           title="Edit Focused Pane Title"
           placeholder="Custom Pane Title"
           initialValue=""
-          onSave={(title) => setPaneTitle(focusedPaneId, title.slice(0, 40))}
+          onSave={(title) => setPaneTitle(focusedPaneId, title.slice(0, useSettingsStore.getState().paneTitleMaxLength))}
           onClose={() => setShowTitleModal(false)}
         />
+      )}
+
+      {/* Customization audit C21: custom-command manager overlay (z-60 above
+          the palette). Add/run/delete commands that type into the focused pane. */}
+      {showCmdModal && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in"
+          onClick={() => setShowCmdModal(false)}
+        >
+          <div
+            className="w-full max-w-md bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Manage custom commands"
+          >
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.03]">
+              <div className="flex items-center gap-2">
+                <TerminalIcon className="w-4 h-4 text-forest-bright" />
+                <span className="text-xs font-bold text-white/80">Custom Commands</span>
+              </div>
+              <button
+                onClick={() => setShowCmdModal(false)}
+                className="p-1 rounded hover:bg-white/10 text-white/45 hover:text-white/80 transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
+              {/* Add form */}
+              <div className="space-y-2 rounded-lg border border-white/10 bg-black/30 p-3">
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">New command</span>
+                <input
+                  type="text"
+                  value={cmdLabel}
+                  onChange={(e) => setCmdLabel(e.target.value)}
+                  placeholder="Label (e.g. Run tests)"
+                  className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright"
+                />
+                <input
+                  type="text"
+                  value={cmdCommand}
+                  onChange={(e) => setCmdCommand(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addUserCommand();
+                    }
+                  }}
+                  placeholder="Shell command (e.g. npm test)"
+                  className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright font-mono"
+                />
+                <button
+                  onClick={addUserCommand}
+                  disabled={!cmdLabel.trim() || !cmdCommand.trim()}
+                  className="w-full px-3 py-1.5 rounded-lg bg-forest hover:bg-forest-bright text-xs font-medium text-white transition-colors disabled:opacity-40 disabled:hover:bg-forest"
+                >
+                  Add Command
+                </button>
+              </div>
+
+              {/* Command list */}
+              {userCommands.length === 0 ? (
+                <p className="text-[11px] text-white/35 text-center py-4">
+                  No custom commands yet — add one above. It will appear in the palette under “Custom Commands”.
+                </p>
+              ) : (
+                userCommands.map((uc) => (
+                  <div
+                    key={uc.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-white/85 truncate">{uc.label}</div>
+                      <div className="text-[10px] text-white/40 font-mono truncate">$ {uc.command}</div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => runUserCommand(uc)}
+                        title="Run in focused pane"
+                        aria-label={`Run ${uc.label}`}
+                        className="p-1 rounded hover:bg-forest/20 text-forest-light transition-colors"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => deleteUserCommand(uc.id)}
+                        title="Delete command"
+                        aria-label={`Delete ${uc.label}`}
+                        className="p-1 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {showFolderModal && (

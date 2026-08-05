@@ -8,11 +8,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // VibeGrid brand palette — azure blue (was green). The primary accent
+        // is oklch(0.66 0.16 252); the <alpha-value> placeholder keeps
+        // Tailwind opacity modifiers (bg-forest/10, border-forest/30) working.
         forest: {
-          DEFAULT: '#2c7a40',
-          bright: '#54a967',
-          light: '#6ec782',
-          dark: '#1e542c',
+          DEFAULT: 'oklch(0.52 0.15 252 / <alpha-value>)',
+          bright: 'oklch(0.66 0.16 252 / <alpha-value>)',
+          light: 'oklch(0.78 0.13 252 / <alpha-value>)',
+          dark: 'oklch(0.44 0.13 252 / <alpha-value>)',
         },
         bgDark: '#03060a',
         surface: '#0a0a0b',

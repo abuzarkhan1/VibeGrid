@@ -10,7 +10,7 @@ const SECTION_LINKS = ['Desktop', 'CLI', 'Workspaces', 'Themes'];
 /** VibeGrid logo mark (2×2 pane grid). */
 function LogoMark() {
   return (
-    <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-forest text-white shadow-[0_0_18px_rgba(44,122,64,0.55)]">
+    <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-forest text-white shadow-[0_0_18px_rgba(11,107,196,0.55)]">
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
         <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
         <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
@@ -63,7 +63,7 @@ export function Navbar({ active }: NavbarProps) {
             <span>Star us</span>
           </a>
           <a href="/#download"
-            className="rounded-md bg-forest px-3.5 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_16px_rgba(84,169,103,0.4)] install-box-glow">
+            className="rounded-md bg-forest px-3.5 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_16px_rgba(60,149,240,0.4)] vg-install-glow">
             Download
           </a>
         </div>

@@ -20,6 +20,11 @@ export const StatusBar: React.FC = () => {
   const { workspaces, activeWorkspaceId, isLoading } = useWorkspaceStore();
   const { activeWebglPanes } = useUIStore();
   const fontSize = useSettingsStore((s) => s.fontSize);
+  // Customization audit: the whole bar can be hidden and badges toggled.
+  const hideStatusBar = useSettingsStore((s) => s.hideStatusBar);
+  const badges = useSettingsStore((s) => s.statusBarBadges);
+
+  if (hideStatusBar) return null;
 
   const activeWs = workspaces.find((w) => w.id === activeWorkspaceId);
 
@@ -30,12 +35,14 @@ export const StatusBar: React.FC = () => {
     <footer className="h-6 w-full bg-surface/90 backdrop-blur-md border-t border-white/[0.06] px-3 flex items-center justify-between text-[11px] text-white/50 select-none z-20">
       {/* Left info: Workspace Name & Focused Pane ID */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5 text-white/65">
-          <Layout className="w-3 h-3 text-forest-bright" />
-          <span className="font-semibold">{activeWs?.name || 'Default Workspace'}</span>
-        </div>
+        {badges.workspace && (
+          <div className="flex items-center gap-1.5 text-white/65">
+            <Layout className="w-3 h-3 text-forest-bright" />
+            <span className="font-semibold">{activeWs?.name || 'Default Workspace'}</span>
+          </div>
+        )}
 
-        {focusedPaneId && (
+        {focusedPaneId && badges.workspace && (
           <div className="flex items-center gap-1.5 text-white/45">
             <Terminal className="w-3 h-3 text-white/40" />
             <span className="font-mono text-[10px]">
@@ -54,21 +61,27 @@ export const StatusBar: React.FC = () => {
             <span>Restoring workspaces…</span>
           </div>
         )}
-        <div className="flex items-center gap-1.5 text-white/45" title="Terminal font size (Cmd/Ctrl +/- to adjust)">
-          <Type className="w-3 h-3 text-white/40" />
-          <span className="font-mono text-[10px]">{fontSize}px</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-white/45">
-          <Cpu className={`w-3 h-3 ${isWebglActive ? 'text-forest-bright' : 'text-amber-400'}`} />
-          <span>{isWebglActive ? 'GPU (WebGL 60FPS)' : 'CPU (Canvas Fallback)'}</span>
-        </div>
+        {badges.font && (
+          <div className="flex items-center gap-1.5 text-white/45" title="Terminal font size (Cmd/Ctrl +/- to adjust)">
+            <Type className="w-3 h-3 text-white/40" />
+            <span className="font-mono text-[10px]">{fontSize}px</span>
+          </div>
+        )}
+        {badges.gpu && (
+          <div className="flex items-center gap-1.5 text-white/45">
+            <Cpu className={`w-3 h-3 ${isWebglActive ? 'text-forest-bright' : 'text-amber-400'}`} />
+            <span>{isWebglActive ? 'GPU (WebGL 60FPS)' : 'CPU (Canvas Fallback)'}</span>
+          </div>
+        )}
 
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-[10px] font-mono text-forest-light">
-          <Layers className="w-3 h-3 text-forest-bright" />
-          <span>
-            {paneCount}/{maxPanes} Panes
-          </span>
-        </div>
+        {badges.panes && (
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-[10px] font-mono text-forest-light">
+            <Layers className="w-3 h-3 text-forest-bright" />
+            <span>
+              {paneCount}/{maxPanes} Panes
+            </span>
+          </div>
+        )}
       </div>
     </footer>
   );

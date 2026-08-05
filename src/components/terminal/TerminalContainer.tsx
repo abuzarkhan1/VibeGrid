@@ -9,8 +9,16 @@ interface TerminalContainerProps {
   title?: string;
 }
 
-export const TerminalContainer: React.FC<TerminalContainerProps> = ({ id, title }) => {
-  const { focusedPaneId, maximizedPaneId, setFocusedPane } = usePaneStore();
+/**
+ * Perf: memoized + fine-grained store selectors so a layout change elsewhere
+ * (e.g. dragging another divider, which only replaces the resized split's
+ * node reference) never re-renders this pane. It re-renders only when its own
+ * node (id/title) changes or focus state flips.
+ */
+export const TerminalContainer: React.FC<TerminalContainerProps> = React.memo(({ id, title }) => {
+  const focusedPaneId = usePaneStore((s) => s.focusedPaneId);
+  const maximizedPaneId = usePaneStore((s) => s.maximizedPaneId);
+  const setFocusedPane = usePaneStore((s) => s.setFocusedPane);
   const [isHovered, setIsHovered] = useState(false);
   const [hasActivity, setHasActivity] = useState(false);
 
@@ -27,9 +35,9 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = ({ id, title 
       onClick={handleFocus}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className={`h-full w-full flex flex-col overflow-hidden transition-all duration-150 relative rounded-lg bg-pane-bg border ${
+      className={`h-full w-full flex flex-col overflow-hidden transition-[border-color,box-shadow,opacity] duration-150 relative rounded-lg bg-pane-bg border ${
         isFocused
-          ? 'border-forest-bright/60 shadow-[0_0_14px_rgba(84,169,103,0.14)] z-10'
+          ? 'border-forest-bright/60 shadow-[0_0_14px_rgba(60,149,240,0.14)] z-10'
           : 'border-white/[0.07] hover:border-forest/35'
       }`}
     >
@@ -52,4 +60,4 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = ({ id, title 
       )}
     </div>
   );
-};
+});

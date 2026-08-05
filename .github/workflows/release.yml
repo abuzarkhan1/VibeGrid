@@ -12,7 +12,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest]
+        include:
+          # macOS: ONE universal binary covering Apple Silicon (M-series) and
+          # Intel Macs. Both Rust targets are installed and tauri-action lipos
+          # them into a single universal .app/.dmg. Requires Xcode (present on
+          # macos-latest runners) and the min macOS (10.15) from tauri.conf.
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+            rust-targets: 'aarch64-apple-darwin x86_64-apple-darwin'
+          # Linux: deb, rpm and AppImage bundles (webkit2gtk-4.1 toolchain).
+          - platform: ubuntu-22.04
+            args: ''
+            rust-targets: ''
+          # Windows: NSIS + MSI installers.
+          - platform: windows-latest
+            args: ''
+            rust-targets: ''
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -26,10 +41,32 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Add cross-compile Rust targets (macOS universal)
+        if: matrix.rust-targets != ''
+        run: rustup target add ${{ matrix.rust-targets }}
+
+      # Tauri (wry) + whisper-rs need system libraries to compile on Linux:
+      # webkit2gtk-4.1 for the webview, ayatana-appindicator for the tray,
+      # rsvg for icons, patchelf for the AppImage bundler, cmake for
+      # whisper.cpp. Canonical dep set from the Tauri v2 docs (libayatana —
+      # the old libappindicator3-dev is gone from modern Ubuntu).
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            librsvg2-dev \
+            libayatana-appindicator3-dev \
+            patchelf \
+            libxdo-dev \
+            libssl-dev \
+            cmake
+
       # whisper-rs compiles whisper.cpp — CMake + a C++ compiler are required
       # on every platform (audit: the Windows release build previously lacked
       # CMake and would fail at the whisper-rs-sys stage). CMake is only
-      # installed on Windows because macOS runners ship it preinstalled.
+      # installed on Windows because macOS/Ubuntu runners ship it preinstalled.
       - name: Install CMake (Windows)
         if: matrix.platform == 'windows-latest'
         uses: lukka/get-cmake@v0.6.0
@@ -67,6 +104,7 @@ jobs:
           WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         with:
+          args: ${{ matrix.args }}
           tagName: v__VERSION__
           releaseName: 'VibeGrid v__VERSION__'
           releaseBody: 'See CHANGELOG.md for details.'

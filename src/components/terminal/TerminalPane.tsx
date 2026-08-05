@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Terminal } from '@xterm/xterm';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { Terminal, ITerminalOptions } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
@@ -8,22 +9,60 @@ import { SearchAddon } from '@xterm/addon-search';
 import { open as shellOpen } from '@tauri-apps/plugin-shell';
 import '@xterm/xterm/css/xterm.css';
 
-import { spawnPty, writeToPty, resizePty, killPty, listenTerminalBatch, listenTerminalExit, paneSnapshot, isTauri } from '@/lib/tauri';
-import { useSettingsStore, THEMES } from '@/store/useSettingsStore';
+import { spawnPty, writeToPty, resizePty, killPty, listenTerminalBatch, listenTerminalExit, paneSnapshot, isTauri, SpawnPtyOptions } from '@/lib/tauri';
+import { useSettingsStore, THEMES, getAllThemes } from '@/store/useSettingsStore';
 import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
+import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { SearchBar } from '../ui/SearchBar';
 import { InputModal } from '../ui/InputModal';
+import { ConfirmModal } from '../ui/ConfirmModal';
 import { TerminalContextMenu, ContextMenuItem } from './TerminalContextMenu';
-import { Copy, ClipboardPaste, Search, Eraser, Columns, Rows, X, Terminal as TerminalIcon, Repeat } from 'lucide-react';
+import { Copy, ClipboardPaste, Search, Eraser, Columns, Rows, X, Terminal as TerminalIcon, Repeat, FileCode2, Palette } from 'lucide-react';
 import { PaneNode, TerminalNode } from '@/types/layout';
+import { TerminalTheme } from '@/types/terminal';
 import { escapeShellPath, bracketedPaste } from '@/lib/commandUtils';
 
 interface TerminalPaneProps {
   id: string; // Layout node ID
   isFocused: boolean;
   onActivity?: () => void;
+}
+
+/** This xterm build's typings omit `padding` even though the runtime supports
+ *  it (verified against node_modules/@xterm/xterm/lib/xterm.js). Expose it via
+ *  a typed intersection so the rest of the options stay type-checked. */
+type ExtendedTerminalOptions = ITerminalOptions & { padding?: number | string };
+
+/**
+ * Short terminal bell beep (customization audit C17). This xterm build ships
+ * no bellStyle option, so the bell is handled through `onBell` + Web Audio.
+ * The AudioContext is created lazily on the first bell (browsers require a
+ * user gesture before autoplay, and terminals are user-focused by then).
+ */
+let bellAudioCtx: AudioContext | null = null;
+function playBell() {
+  try {
+    const Ctor =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!Ctor) return;
+    if (!bellAudioCtx) bellAudioCtx = new Ctor();
+    if (bellAudioCtx.state === 'suspended') bellAudioCtx.resume();
+    const osc = bellAudioCtx.createOscillator();
+    const gain = bellAudioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    const now = bellAudioCtx.currentTime;
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    osc.connect(gain).connect(bellAudioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
+  } catch (e) {
+    // audio unavailable — silently ignore
+  }
 }
 
 /**
@@ -40,9 +79,115 @@ function overlapSuffix(snapshot: string, pending: string): number {
   return 0;
 }
 
+/** Parse the raw "shell args" setting (space-separated) into argv pieces (C11). */
+function parseShellArgs(raw: string): string[] {
+  return raw.trim() ? raw.trim().split(/\s+/) : [];
+}
+
+/** Parse the raw "shell env" setting (one KEY=VALUE per line) into an env map (C11).
+ *  Lines without '=' or with an empty key are skipped — a malformed line must
+ *  never break pane spawning. */
+function parseShellEnv(raw: string): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const line of raw.split(/\r?\n/)) {
+    const idx = line.indexOf('=');
+    if (idx > 0) {
+      const key = line.slice(0, idx).trim();
+      if (key) env[key] = line.slice(idx + 1);
+    }
+  }
+  return env;
+}
+
+/**
+ * Customization audit C20: copy the current selection as HTML (inline-styled
+ * `<pre>`) so pasting into a rich editor keeps the terminal colors. Walks the
+ * selected cells directly (xterm's selection API only exposes plain text) and
+ * groups consecutive same-colored cells into spans. Falls back to a plain
+ * text copy when the ClipboardItem API is unavailable.
+ */
+function copySelectionAsHtml(term: Terminal, theme: TerminalTheme): boolean {
+  const sel = term.getSelectionPosition();
+  if (!sel) return false;
+  const plain = term.getSelection();
+  const buffer = term.buffer.active;
+  const ansi = [
+    theme.black, theme.red, theme.green, theme.yellow,
+    theme.blue, theme.magenta, theme.cyan, theme.white,
+    theme.brightBlack, theme.brightRed, theme.brightGreen, theme.brightYellow,
+    theme.brightBlue, theme.brightMagenta, theme.brightCyan, theme.brightWhite,
+  ];
+  const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const rows: string[] = [];
+  for (let y = sel.start.y; y <= sel.end.y; y++) {
+    const line = buffer.getLine(y);
+    if (!line) {
+      rows.push('');
+      continue;
+    }
+    const startX = y === sel.start.y ? sel.start.x : 0;
+    const endX = y === sel.end.y ? Math.min(sel.end.x, line.length) : line.length;
+    let html = '';
+    let currentColor = '';
+    let run = '';
+    const flushRun = () => {
+      if (!run) return;
+      html += currentColor ? `<span style="color:${currentColor}">${escapeHtml(run)}</span>` : escapeHtml(run);
+      run = '';
+    };
+    for (let x = startX; x < endX; x++) {
+      const cell = line.getCell(x);
+      const ch = cell?.getChars() ?? ' ';
+      let color = '';
+      if (cell) {
+        const mode = cell.getFgColorMode();
+        const fg = cell.getFgColor();
+        if (mode === 2) {
+          // Direct RGB: 0xRRGGBB.
+          color = `#${((fg >> 16) & 0xff).toString(16).padStart(2, '0')}${((fg >> 8) & 0xff).toString(16).padStart(2, '0')}${(fg & 0xff).toString(16).padStart(2, '0')}`;
+        } else if (mode === 1 && fg >= 0 && fg < 16) {
+          color = ansi[fg] ?? '';
+        }
+      }
+      if (color !== currentColor) {
+        flushRun();
+        currentColor = color;
+      }
+      run += ch;
+    }
+    flushRun();
+    rows.push(html || '&nbsp;');
+  }
+  const htmlDoc = `<pre style="font-family:monospace;font-size:12px;line-height:1.4;white-space:pre;background:${theme.background};color:${theme.foreground};padding:8px">${rows.join('<br/>')}</pre>`;
+  try {
+    const item = new ClipboardItem({
+      'text/html': new Blob([htmlDoc], { type: 'text/html' }),
+      'text/plain': new Blob([plain], { type: 'text/plain' }),
+    });
+    navigator.clipboard.write([item]);
+    return true;
+  } catch (e) {
+    // ClipboardItem unsupported in this webview — plain-text copy still works.
+    navigator.clipboard.writeText(plain);
+    return false;
+  }
+}
+
 interface MenuState {
   x: number;
   y: number;
+}
+
+/** Retrieve a terminal node by id from the layout tree. Module scope (not a
+ * per-render closure) so the fine-grained store selector below stays stable
+ * across renders and only this pane's node drives its re-renders. */
+function findTerminalNode(node: PaneNode | null, targetId: string): TerminalNode | null {
+  if (!node) return null;
+  if (node.id === targetId && node.type === 'terminal') return node;
+  if (node.type === 'split') {
+    return findTerminalNode(node.children[0], targetId) || findTerminalNode(node.children[1], targetId);
+  }
+  return null;
 }
 
 export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onActivity }) => {
@@ -54,29 +199,110 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menu, setMenu] = useState<MenuState | null>(null);
+  // Customization audit C13: per-pane appearance popover (opened from the
+  // context menu).
+  const [showAppearanceMenu, setShowAppearanceMenu] = useState(false);
+  const [appearancePos, setAppearancePos] = useState<MenuState | null>(null);
   const [isDragOver, setIsDragOver] = useState(false); // visual feedback while dragging paths over the pane (gap 8)
   const [hasExited, setHasExited] = useState(false); // PTY process exited (audit fix)
   const [session, setSession] = useState(0); // bumped to relaunch a dead shell (UX audit P2 #9)
   const exitToastShownRef = useRef(false);
+  // Customization audit C20: a multi-line paste awaits explicit confirmation.
+  const [pendingPasteText, setPendingPasteText] = useState<string | null>(null);
 
-  const { fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, fontLigatures, lineHeight, terminalOpacity, copyOnSelect, defaultShell } = useSettingsStore();
-  const { root, setPanePtyId, setFocusedPane, splitPane, setPaneShell, swapPanes } = usePaneStore();
-  const { acquireWebglSlot, releaseWebglSlot, requestClosePane } = useUIStore();
+  // ── Perf: fine-grained store selectors ──────────────────────────────────
+  // Each pane subscribes ONLY to (a) its own node in the layout tree and (b)
+  // the actions it calls. The node selector returns the stable tree reference
+  // for this pane: an unrelated store update (a divider drag elsewhere, another
+  // pane's spawn/exit) keeps that reference intact, so this pane — and its
+  // xterm instance — does not re-render. Before, every pane subscribed to the
+  // whole store and re-rendered on EVERY layout change (O(n²) work per drag
+  // frame with 16 panes).
+  const currentNode = usePaneStore(useCallback((s) => findTerminalNode(s.root, id), [id]));
+  // Customization audit C12: per-workspace overrides for the ACTIVE workspace.
+  // The selector returns the stored reference, so unrelated workspace saves
+  // (which spread the record) do not re-render every pane.
+  const workspaceOverrides = useWorkspaceStore(
+    (s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.overrides
+  );
+  const setPanePtyId = usePaneStore((s) => s.setPanePtyId);
+  const setFocusedPane = usePaneStore((s) => s.setFocusedPane);
+  const splitPane = usePaneStore((s) => s.splitPane);
+  const setPaneShell = usePaneStore((s) => s.setPaneShell);
+  const setPaneAppearance = usePaneStore((s) => s.setPaneAppearance);
+  const clearPaneAppearance = usePaneStore((s) => s.clearPaneAppearance);
+  const swapPanes = usePaneStore((s) => s.swapPanes);
 
-  // Retrieve existing PTY ID & CWD if already spawned
-  const findTerminalNode = (node: PaneNode | null, targetId: string): TerminalNode | null => {
-    if (!node) return null;
-    if (node.id === targetId && node.type === 'terminal') return node;
-    if (node.type === 'split') {
-      return findTerminalNode(node.children[0], targetId) || findTerminalNode(node.children[1], targetId);
-    }
-    return null;
-  };
+  const {
+    fontSize,
+    fontFamily,
+    themeName,
+    scrollback,
+    cursorBlink,
+    cursorStyle,
+    fontLigatures,
+    lineHeight,
+    terminalOpacity,
+    copyOnSelect,
+    defaultShell,
+    // Customization audit C5/C6/C19: options this xterm build supports natively.
+    cursorWidth,
+    wordSeparators,
+    terminalPadding,
+  } = useSettingsStore(
+    useShallow((s) => ({
+      fontSize: s.fontSize,
+      fontFamily: s.fontFamily,
+      themeName: s.themeName,
+      scrollback: s.scrollback,
+      cursorBlink: s.cursorBlink,
+      cursorStyle: s.cursorStyle,
+      fontLigatures: s.fontLigatures,
+      lineHeight: s.lineHeight,
+      terminalOpacity: s.terminalOpacity,
+      copyOnSelect: s.copyOnSelect,
+      defaultShell: s.defaultShell,
+      // Customization audit C5/C6/C19: terminal behavior settings consumed here.
+      cursorWidth: s.cursorWidth,
+      wordSeparators: s.wordSeparators,
+      terminalPadding: s.terminalPadding,
+    }))
+  );
+  const acquireWebglSlot = useUIStore((s) => s.acquireWebglSlot);
+  const releaseWebglSlot = useUIStore((s) => s.releaseWebglSlot);
+  const requestClosePane = useUIStore((s) => s.requestClosePane);
 
-  const currentNode = findTerminalNode(root, id);
   const existingPtyId = currentNode?.paneId;
   const parentCwd = currentNode?.cwd;
   const parentShell = currentNode?.shell;
+
+  // Customization audit C12/C13: effective settings = pane override ??
+  // workspace override ?? global.
+  const paneAppearance = currentNode?.appearance;
+  const effThemeName = paneAppearance?.themeName ?? workspaceOverrides?.themeName ?? themeName;
+  const effFontSize = paneAppearance?.fontSize ?? workspaceOverrides?.fontSize ?? fontSize;
+  const effFontFamily = paneAppearance?.fontFamily ?? workspaceOverrides?.fontFamily ?? fontFamily;
+  const effOpacity = paneAppearance?.terminalOpacity ?? workspaceOverrides?.terminalOpacity ?? terminalOpacity;
+
+  // Paste the clipboard into the pane, honoring the multi-line confirmation
+  // guard (customization audit C20). Reads the setting live so a change in
+  // Settings applies to the next paste without remounting the pane.
+  const pasteFromClipboard = () => {
+    navigator.clipboard.readText().then((text) => {
+      if (!text || !ptyPaneIdRef.current) return;
+      if (useSettingsStore.getState().pasteConfirmNewlines && /\r?\n/.test(text)) {
+        setPendingPasteText(text);
+        return;
+      }
+      writeToPty(ptyPaneIdRef.current, bracketedPaste(text));
+    });
+  };
+  // The custom key handler is registered once per session; route its paste
+  // through a ref so it always calls the CURRENT helper.
+  const pasteFromClipboardRef = useRef(pasteFromClipboard);
+  useEffect(() => {
+    pasteFromClipboardRef.current = pasteFromClipboard;
+  });
 
   // Close the context menu on outside interaction
   useEffect(() => {
@@ -183,26 +409,48 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const theme = THEMES[themeName] || THEMES.vibeDark;
+    const theme = THEMES[effThemeName] || THEMES.vibeDark;
 
     // Initialize xterm.js instance
     const term = new Terminal({
-      fontSize,
-      fontFamily,
+      fontSize: effFontSize,
+      fontFamily: effFontFamily,
       theme,
       scrollback,
       cursorBlink,
       cursorStyle,
+      cursorWidth,
       lineHeight,
       convertEol: true,
       allowProposedApi: true,
+      // Customization audit C5/C6/C19: this xterm build supports these natively
+      // (scrollOnOutput and bellStyle were dropped from this build — they are
+      // implemented manually below via onBell / write-follow).
+      wordSeparator: wordSeparators,
+      padding: terminalPadding,
+    } as ExtendedTerminalOptions);
+
+    // Customization audit C17: terminal bell. This build has no bellStyle
+    // option, so play a short beep through Web Audio when the setting is on.
+    term.onBell(() => {
+      if (useSettingsStore.getState().terminalBell) playBell();
     });
 
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
 
-    // Clickable URLs via the shell plugin (with web fallback)
-    const webLinksAddon = new WebLinksAddon((_event, uri) => {
+    // Clickable URLs via the shell plugin (with web fallback). Customization
+    // audit C16: gated by the clickableLinks toggle and can require a modifier
+    // key — read live so a Settings change applies without remounting.
+    const webLinksAddon = new WebLinksAddon((event, uri) => {
+      const { clickableLinks: linksEnabled, linkModifier: mod } = useSettingsStore.getState();
+      if (!linksEnabled) return;
+      const modOk =
+        mod === 'click' ||
+        (mod === 'meta' && event.metaKey) ||
+        (mod === 'ctrl' && event.ctrlKey) ||
+        (mod === 'alt' && event.altKey);
+      if (!modOk) return;
       if (isTauri()) {
         shellOpen(uri).catch(() => window.open(uri, '_blank'));
       } else {
@@ -301,12 +549,9 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
         // Bracketed Paste Mode (FR-017). Plain Cmd/Ctrl+V only — Cmd/Ctrl+Shift+V
         // is reserved for Voice-to-Terminal and must NOT paste into the shell.
+        // Customization audit C20: multi-line pastes can confirm first.
         if (isMod && !ev.shiftKey && ev.code === 'KeyV') {
-          navigator.clipboard.readText().then((text) => {
-            if (text && ptyPaneIdRef.current) {
-              writeToPty(ptyPaneIdRef.current, bracketedPaste(text));
-            }
-          });
+          pasteFromClipboardRef.current();
           return false;
         }
       }
@@ -333,8 +578,27 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         if (!ptyId) {
           // UX audit P3 #28: per-pane shell override wins, else the global
           // default shell setting, else the system default.
-          const effectiveShell = parentShell || defaultShell || undefined;
-          ptyId = await spawnPty(cols, rows, parentCwd, effectiveShell);
+          // Customization audit C12: a workspace override wins over the global
+          // default shell/cwd; a per-pane override wins over both.
+          const effectiveShell = parentShell || workspaceOverrides?.defaultShell || defaultShell || undefined;
+          // Customization audit C7: a pane's own cwd wins, then a workspace
+          // override, then the global "new pane" default, then the session dir.
+          const effectiveCwd =
+            parentCwd || workspaceOverrides?.defaultCwd || useSettingsStore.getState().defaultCwd || undefined;
+          // Customization audit C11: global shell args/env apply ONLY when the
+          // pane is spawning with the global default shell (no per-pane or
+          // workspace override) — the args were written for that shell.
+          const isGlobalDefaultShell = !parentShell && !workspaceOverrides?.defaultShell;
+          let spawnOpts: SpawnPtyOptions | undefined;
+          if (isGlobalDefaultShell) {
+            const s = useSettingsStore.getState();
+            const shellArgs = parseShellArgs(s.shellArgs);
+            const shellEnv = parseShellEnv(s.shellEnv);
+            if (shellArgs.length > 0 || Object.keys(shellEnv).length > 0) {
+              spawnOpts = { shellArgs, shellEnv };
+            }
+          }
+          ptyId = await spawnPty(cols, rows, effectiveCwd, effectiveShell, spawnOpts);
           if (disposed) {
             // Unmounted mid-spawn — kill the orphan shell immediately instead of
             // leaking a process with no handle.
@@ -424,6 +688,11 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             return;
           }
           term.write(event.payload[currentPtyId]);
+          // Customization audit C18: this xterm build dropped scrollOnOutput, so
+          // implement its semantics (auto-scroll on output when enabled) here.
+          if (useSettingsStore.getState().scrollOnOutput) {
+            term.scrollToBottom();
+          }
           // Surface activity in unfocused panes so users can monitor agents at a glance
           if (!isFocused) {
             onActivity?.();
@@ -535,14 +804,19 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     const term = terminalRef.current;
     if (!term) return;
 
-    const theme = THEMES[themeName] || THEMES.vibeDark;
-    term.options.fontSize = fontSize;
-    term.options.fontFamily = fontFamily;
+    // Customization audit C12: apply effective (workspace-override-aware) values.
+    const theme = THEMES[effThemeName] || THEMES.vibeDark;
+    term.options.fontSize = effFontSize;
+    term.options.fontFamily = effFontFamily;
     term.options.theme = theme;
     term.options.scrollback = scrollback;
     term.options.cursorBlink = cursorBlink;
     term.options.cursorStyle = cursorStyle;
+    term.options.cursorWidth = cursorWidth;
     term.options.lineHeight = lineHeight;
+    // Customization audit C5/C6/C19: behavior options update live too.
+    term.options.wordSeparator = wordSeparators;
+    (term.options as ExtendedTerminalOptions).padding = terminalPadding;
 
     if (fitAddonRef.current) {
       try {
@@ -551,7 +825,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         // ignore fit error
       }
     }
-  }, [fontSize, fontFamily, themeName, scrollback, cursorBlink, cursorStyle, lineHeight]);
+  }, [effThemeName, effFontSize, effFontFamily, scrollback, cursorBlink, cursorStyle, lineHeight, cursorWidth, wordSeparators, terminalPadding]);
 
   // Focus terminal when isFocused changes
   useEffect(() => {
@@ -562,6 +836,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    // Customization audit C15: right-click can paste directly (tmux-style)
+    // instead of opening the context menu.
+    if (useSettingsStore.getState().rightClickPaste) {
+      pasteFromClipboard();
+      return;
+    }
     setMenu({ x: e.clientX, y: e.clientY });
   };
 
@@ -577,22 +857,40 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       },
     },
     {
+      // Customization audit C20: colored HTML copy for rich editors.
+      id: 'copy-as-html',
+      label: 'Copy as HTML (with colors)',
+      icon: <FileCode2 className="w-3.5 h-3.5" />,
+      disabled: !terminalRef.current?.hasSelection(),
+      action: () => {
+        const term = terminalRef.current;
+        if (!term || !term.hasSelection()) return;
+        const theme = THEMES[effThemeName] || THEMES.vibeDark;
+        copySelectionAsHtml(term, theme);
+        useUIStore.getState().addToast({ type: 'success', title: 'Copied as HTML', description: 'Terminal colors preserved for rich-text paste.' });
+      },
+    },
+    {
       id: 'paste',
       label: 'Paste',
       icon: <ClipboardPaste className="w-3.5 h-3.5" />,
-      action: () => {
-        navigator.clipboard.readText().then((text) => {
-          if (text && ptyPaneIdRef.current) {
-            writeToPty(ptyPaneIdRef.current, bracketedPaste(text));
-          }
-        });
-      },
+      action: () => pasteFromClipboard(),
     },
     {
       id: 'set-shell',
       label: 'Set Shell for This Pane…',
       icon: <TerminalIcon className="w-3.5 h-3.5" />,
       action: () => setShowShellModal(true),
+    },
+    {
+      // Customization audit C13: per-pane appearance overrides.
+      id: 'appearance',
+      label: 'Appearance for This Pane…',
+      icon: <Palette className="w-3.5 h-3.5" />,
+      action: () => {
+        setAppearancePos(menu ? { x: menu.x, y: menu.y } : null);
+        setShowAppearanceMenu(true);
+      },
     },
     {
       id: 'find',
@@ -655,7 +953,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
   return (
     <div
       className={`relative h-full w-full bg-pane-bg p-1.5 overflow-hidden ${fontLigatures ? 'font-ligatures' : ''}`}
-      style={{ opacity: terminalOpacity }}
+      style={{ opacity: effOpacity }}
       onContextMenu={handleContextMenu}
     >
       {isSearchOpen && (
@@ -706,7 +1004,97 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         </div>
       )}
 
+      {/* Customization audit C20: multi-line paste confirmation */}
+      {pendingPasteText && (
+        <ConfirmModal
+          title="Paste multi-line content?"
+          message={`Your clipboard contains ${pendingPasteText.trim().split(/\r?\n/).length} line(s). Multi-line text pasted into a shell can execute commands unintentionally — review before confirming.`}
+          confirmLabel="Paste Anyway"
+          isDanger={true}
+          onConfirm={() => {
+            if (ptyPaneIdRef.current) {
+              writeToPty(ptyPaneIdRef.current, bracketedPaste(pendingPasteText));
+            }
+            setPendingPasteText(null);
+          }}
+          onClose={() => setPendingPasteText(null)}
+        />
+      )}
+
       {menu && <TerminalContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
+
+      {/* Customization audit C13: per-pane appearance popover. A transparent
+          backdrop eats clicks so the popover closes on outside interaction. */}
+      {showAppearanceMenu && appearancePos && (
+        <>
+          <div className="fixed inset-0 z-[59]" onClick={() => setShowAppearanceMenu(false)} />
+          <div
+            className="fixed z-[60] w-[230px] rounded-lg bg-surfaceCard border border-white/10 shadow-2xl shadow-black/60 backdrop-blur-md p-3 text-xs space-y-2.5 animate-fade-in"
+            style={{ left: appearancePos.x, top: appearancePos.y }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">Pane Appearance</span>
+              <button
+                onClick={() => setShowAppearanceMenu(false)}
+                className="p-0.5 rounded hover:bg-white/10 text-white/45 hover:text-white/80"
+                aria-label="Close pane appearance"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-white/50 mb-1">Theme (this pane)</label>
+              <select
+                value={paneAppearance?.themeName ?? ''}
+                onChange={(e) => setPaneAppearance(id, { themeName: e.target.value || undefined })}
+                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+              >
+                <option value="">— inherit workspace/global —</option>
+                {Object.entries(getAllThemes(useSettingsStore.getState())).map(([key, t]) => (
+                  <option key={key} value={key}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-white/50 mb-1">Font Size (px)</label>
+              <input
+                type="number"
+                value={paneAppearance?.fontSize ?? ''}
+                onChange={(e) => setPaneAppearance(id, { fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
+                placeholder="inherit"
+                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-semibold text-white/50 mb-1">Opacity — {paneAppearance?.terminalOpacity !== undefined ? `${Math.round(paneAppearance.terminalOpacity * 100)}%` : 'inherit'}</label>
+              <input
+                type="range"
+                min={0.3}
+                max={1}
+                step={0.05}
+                value={paneAppearance?.terminalOpacity ?? 1}
+                onChange={(e) => setPaneAppearance(id, { terminalOpacity: Number(e.target.value) })}
+                className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
+              />
+            </div>
+
+            {paneAppearance && Object.keys(paneAppearance).length > 0 && (
+              <button
+                onClick={() => {
+                  clearPaneAppearance(id);
+                  setShowAppearanceMenu(false);
+                }}
+                className="w-full px-2 py-1.5 rounded-lg border border-white/10 text-[10px] text-white/55 hover:border-rose-500/40 hover:text-rose-300 transition-colors"
+              >
+                Clear overrides (inherit workspace/global)
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
       {showShellModal && (
         <InputModal

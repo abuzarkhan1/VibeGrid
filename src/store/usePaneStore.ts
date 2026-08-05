@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { PaneNode, SplitDirection, TerminalNode, SplitNode } from '@/types/layout';
+import { PaneNode, SplitDirection, TerminalNode, SplitNode, PaneAppearance } from '@/types/layout';
 import { killPty } from '@/lib/tauri';
+import { useSettingsStore } from './useSettingsStore';
 
 // Workspace isolation: PTYs are killed ONLY by explicit destructive actions
 // (closePane / shrinking a layout preset / resetLayout / deleteWorkspace).
@@ -25,6 +26,9 @@ interface TerminalWithRect {
   rect: Rect;
 }
 
+/** Preset equal-grid counts (customization audit L12: 3/5/9/12 were MISSING). */
+export type PresetCount = 1 | 2 | 3 | 4 | 5 | 6 | 8 | 9 | 12 | 16;
+
 interface PaneState {
   root: PaneNode;
   focusedPaneId: string | null;
@@ -32,7 +36,7 @@ interface PaneState {
   paneCount: number;
   maxPanes: number;
   layoutMode: 'preset' | 'custom';
-  presetCount: 1 | 2 | 4 | 6 | 8 | 16;
+  presetCount: PresetCount;
 
   // Actions
   splitPane: (targetId: string, direction: SplitDirection) => boolean;
@@ -44,11 +48,15 @@ interface PaneState {
   setPaneCwd: (nodeId: string, cwd: string) => void;
   /** Per-pane shell override (audit: `shell` field was dead — now wired). */
   setPaneShell: (nodeId: string, shell: string) => void;
+  /** Per-pane appearance overrides (customization audit C13). */
+  setPaneAppearance: (nodeId: string, patch: PaneAppearance) => void;
+  /** Remove ALL per-pane appearance overrides for a pane (C13). */
+  clearPaneAppearance: (nodeId: string) => void;
   /** Swap the content of two terminal panes (audit: pane swap was MISSING). */
   swapPanes: (idA: string, idB: string) => void;
   toggleMaximize: (id?: string) => void;
   navigateFocus: (direction: 'left' | 'right' | 'up' | 'down' | 'next' | 'prev') => void;
-  setLayoutPreset: (count: 1 | 2 | 4 | 6 | 8 | 16) => void;
+  setLayoutPreset: (count: PresetCount) => void;
   resetLayout: () => void;
 }
 
@@ -221,24 +229,41 @@ function combineRows(rows: PaneNode[]): PaneNode {
   };
 }
 
-// Helper: Generate preset layout tree (1, 2, 4, 6, 8, 16) from an explicit
-// list of terminal nodes — lets expansion keep existing terminals (with live
-// paneIds) instead of always creating fresh ones.
+/**
+ * How each preset grid splits into rows of terminals (customization audit L12).
+ * Rows never exceed 4 cells (createRow handles 1–4; a 4-cell row is 2×2 with
+ * 0.5 ratios, a 3-cell row splits 1/3 — both recognized by isEqualPresetShape).
+ * The preset is the sum of its rows.
+ */
+const PRESET_ROW_LAYOUTS: Record<PresetCount, number[]> = {
+  1: [1],
+  2: [2],
+  3: [3],
+  4: [2, 2],
+  5: [3, 2],
+  6: [3, 3],
+  8: [4, 4],
+  9: [3, 3, 3],
+  12: [4, 4, 4],
+  16: [4, 4, 4, 4],
+};
+
+// Helper: Generate a preset layout tree from an explicit list of terminal nodes
+// — lets expansion keep existing terminals (with live paneIds) instead of
+// always creating fresh ones. Row structure comes from PRESET_ROW_LAYOUTS.
 function buildPresetTreeFromNodes(terms: TerminalNode[]): { root: PaneNode; firstPaneId: string } {
-  const count = terms.length;
+  const count = terms.length as PresetCount;
   const firstPaneId = terms[0].id;
 
   if (count === 1) return { root: terms[0], firstPaneId };
   if (count === 2) return { root: createRow(terms), firstPaneId };
 
-  let numRows = 2;
-  if (count === 16) numRows = 4;
-  const colsPerRow = count / numRows;
-
   const rows: PaneNode[] = [];
-  for (let r = 0; r < numRows; r++) {
-    const rowTerms = terms.slice(r * colsPerRow, (r + 1) * colsPerRow);
-    rows.push(createRow(rowTerms));
+  let offset = 0;
+  for (const rowSize of PRESET_ROW_LAYOUTS[count] ?? [count]) {
+    const rowTerms = terms.slice(offset, offset + rowSize);
+    if (rowTerms.length > 0) rows.push(createRow(rowTerms));
+    offset += rowSize;
   }
 
   return { root: combineRows(rows), firstPaneId };
@@ -322,12 +347,16 @@ export const usePaneStore = create<PaneState>((set, get) => ({
   focusedPaneId: initialTerminalId,
   maximizedPaneId: null,
   paneCount: 1,
-  maxPanes: 16,
+  // Customization audit L1: the pane ceiling is user-configurable now.
+  maxPanes: useSettingsStore.getState().maxPanes,
   layoutMode: 'preset',
   presetCount: 1,
 
   splitPane: (targetId: string, direction: SplitDirection): boolean => {
-    const { root, paneCount, maxPanes } = get();
+    const { root, paneCount } = get();
+    // Read the LIVE setting so a maxPanes change applies immediately without
+    // waiting for a store sync (customization audit L1).
+    const maxPanes = useSettingsStore.getState().maxPanes;
 
     if (paneCount >= maxPanes) {
       return false;
@@ -413,7 +442,9 @@ export const usePaneStore = create<PaneState>((set, get) => ({
   },
 
   setRatio: (splitId: string, ratio: number) => {
-    const clampedRatio = Math.max(0.1, Math.min(0.9, ratio));
+    // Customization audit L11: widen the ratio bounds — the GridRenderer's
+    // minSize already prevents degenerate panes, so allow 2%–98% splits.
+    const clampedRatio = Math.max(0.02, Math.min(0.98, ratio));
     const newRoot = replaceNode(get().root, splitId, (node) => {
       if (node.type === 'split') {
         return { ...node, ratio: clampedRatio };
@@ -465,6 +496,35 @@ export const usePaneStore = create<PaneState>((set, get) => ({
     const newRoot = replaceNode(get().root, nodeId, (node) => {
       if (node.type === 'terminal') {
         return { ...node, shell: shell || undefined };
+      }
+      return node;
+    });
+    set({ root: newRoot });
+  },
+
+  setPaneAppearance: (nodeId: string, patch: PaneAppearance) => {
+    const newRoot = replaceNode(get().root, nodeId, (node) => {
+      if (node.type === 'terminal') {
+        // Merge over the existing overrides, dropping undefined/empty entries
+        // so clearing a single field (e.g. fontSize) really un-overrides it.
+        const merged: PaneAppearance = { ...node.appearance, ...patch };
+        const clean: PaneAppearance = {};
+        (Object.entries(merged) as Array<[keyof PaneAppearance, string | number | undefined]>).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && v !== '') clean[k] = v as never;
+        });
+        return { ...node, appearance: Object.keys(clean).length > 0 ? clean : undefined };
+      }
+      return node;
+    });
+    set({ root: newRoot });
+  },
+
+  clearPaneAppearance: (nodeId: string) => {
+    const newRoot = replaceNode(get().root, nodeId, (node) => {
+      if (node.type === 'terminal' && node.appearance) {
+        const rest = { ...node };
+        delete (rest as { appearance?: unknown }).appearance;
+        return rest as TerminalNode;
       }
       return node;
     });
@@ -562,7 +622,7 @@ export const usePaneStore = create<PaneState>((set, get) => ({
     set({ focusedPaneId: closestNodeId });
   },
 
-  // Set Preset Equal Grid Layout (1, 2, 4, 6, 8, 16).
+  // Set Preset Equal Grid Layout (1, 2, 3, 4, 5, 6, 8, 9, 12, 16).
   //   count > current → NON-DESTRUCTIVE EXPANSION: every existing terminal
   //     keeps its live paneId; only the missing panes are added fresh.
   //   count < current → SHRINK: the focused pane stays; the extras are closed

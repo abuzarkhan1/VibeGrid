@@ -19,17 +19,17 @@
 }
 
 /* ================================================================
-   EXACT FREEBUFF KEYFRAMES (from 13oocm0m8zbvy.css)
+   VIBEGRID MOTION SYSTEM (vg-* keyframes)
    ================================================================ */
 
 /* 1. Twinkling Stars */
-@keyframes lp-twinkle {
+@keyframes vg-twinkle {
   0%, 100% { opacity: var(--min); }
   50%       { opacity: var(--max); }
 }
 
-/* 2. Shooting Stars (exact: flash at 2%, vanish at 9%, stay gone) */
-@keyframes lp-shoot {
+/* 2. Shooting Stars (flash at 2%, vanish at 9%, stay gone) */
+@keyframes vg-shoot {
   0%   { opacity: 0; transform: translate(0, 0); }
   2%   { opacity: 1; }
   9%   { transform: translate3d(var(--dx), var(--dy), 0); opacity: 0; }
@@ -37,13 +37,13 @@
 }
 
 /* 3. Live Map Pulse (SVG dots) */
-@keyframes lp-lm-pulse {
+@keyframes vg-lm-pulse {
   0%, 100% { opacity: 0.22; }
   50%       { opacity: 0.7; }
 }
 
 /* 4. Terminal caret blink */
-@keyframes lp-caret-blink {
+@keyframes vg-caret-blink {
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0; }
 }
@@ -54,55 +54,55 @@
 }
 
 /* 6. Scroll-reveal fade-up */
-@keyframes fb-rise {
-  0%   { opacity: 0; transform: translate3d(0, var(--fb-distance, 14px), 0); }
+@keyframes vg-rise {
+  0%   { opacity: 0; transform: translate3d(0, var(--vg-distance, 14px), 0); }
   100% { opacity: 1; transform: none; }
 }
 
 /* 7. Scroll-reveal fade */
-@keyframes fb-fade {
+@keyframes vg-fade {
   0%   { opacity: 0; }
   100% { opacity: 1; }
 }
 
 /* 8. Scroll-reveal pop/scale */
-@keyframes fb-pop {
-  0%   { opacity: 0; transform: scale(var(--fb-scale, 0.965)) translate3d(0, var(--fb-distance, 10px), 0); }
+@keyframes vg-pop {
+  0%   { opacity: 0; transform: scale(var(--vg-scale, 0.965)) translate3d(0, var(--vg-distance, 10px), 0); }
   100% { opacity: 1; transform: none; }
 }
 
 /* 9. Scroll-reveal slide from left */
-@keyframes fb-slide-right {
-  0%   { opacity: 0; transform: translate3d(calc(-1 * var(--fb-distance, 18px)), 0, 0); }
+@keyframes vg-slide-right {
+  0%   { opacity: 0; transform: translate3d(calc(-1 * var(--vg-distance, 18px)), 0, 0); }
   100% { opacity: 1; transform: none; }
 }
 
 /* 10. Scroll-reveal text blur */
-@keyframes fb-text {
+@keyframes vg-text {
   0%   { opacity: 0; filter: blur(6px); transform: translateY(8px); }
   100% { opacity: 1; filter: blur(0); transform: none; }
 }
 
 /* 11. Skeleton sweep shimmer */
-@keyframes fb-skeleton-sweep {
+@keyframes vg-skeleton-sweep {
   0%   { transform: translate(-100%); }
   100% { transform: translate(100%); }
 }
 
 /* 12. Logo scroll marquee */
-@keyframes logo-scroll {
+@keyframes vg-logo-scroll {
   0%   { transform: translate(0); }
   100% { transform: translate(-50%); }
 }
 
 /* 13. Download button glow breathe */
-@keyframes install-glow-breathe {
-  0%, 100% { box-shadow: 0 0 20px rgba(124,255,63,0.25), 0 0 40px rgba(124,255,63,0.1); }
-  50%       { box-shadow: 0 0 25px rgba(124,255,63,0.35), 0 0 50px rgba(124,255,63,0.15); }
+@keyframes vg-install-glow-breathe {
+  0%, 100% { box-shadow: 0 0 20px rgba(92,194,255,0.25), 0 0 40px rgba(92,194,255,0.1); }
+  50%       { box-shadow: 0 0 25px rgba(92,194,255,0.35), 0 0 50px rgba(92,194,255,0.15); }
 }
 
 /* 14. Terminal scan line */
-@keyframes scan-line {
+@keyframes vg-scan-line {
   0%   { transform: translateY(-100vh); }
   100% { transform: translateY(100vh); }
 }
@@ -123,11 +123,11 @@
   50%       { animation-timing-function: cubic-bezier(0,0,0.2,1); transform: none; }
 }
 
-/* 18. Green keyword glow */
-@keyframes keyword-glow-enter {
-  0%   { text-shadow: 0 0 40px rgba(124,255,63,0.3), 0 0 80px rgba(124,255,63,0.1); }
-  40%  { text-shadow: 0 0 60px rgba(124,255,63,0.6), 0 0 120px rgba(124,255,63,0.3); }
-  100% { text-shadow: 0 0 40px rgba(124,255,63,0.3), 0 0 80px rgba(124,255,63,0.1); }
+/* 18. Accent keyword glow */
+@keyframes vg-keyword-glow-enter {
+  0%   { text-shadow: 0 0 40px rgba(92,194,255,0.3), 0 0 80px rgba(92,194,255,0.1); }
+  40%  { text-shadow: 0 0 60px rgba(92,194,255,0.6), 0 0 120px rgba(92,194,255,0.3); }
+  100% { text-shadow: 0 0 40px rgba(92,194,255,0.3), 0 0 80px rgba(92,194,255,0.1); }
 }
 
 /* 19. Fade-in-up */
@@ -147,21 +147,21 @@
 }
 
 /* 22. Scroll-reveal fall from top */
-@keyframes fb-fall {
-  0%   { opacity: 0; transform: translate3d(0, calc(-1 * var(--fb-distance, 10px)), 0); }
+@keyframes vg-fall {
+  0%   { opacity: 0; transform: translate3d(0, calc(-1 * var(--vg-distance, 10px)), 0); }
   100% { opacity: 1; transform: none; }
 }
 
 /* 23. Scroll-reveal slide from right */
-@keyframes fb-slide-left {
-  0%   { opacity: 0; transform: translate3d(var(--fb-distance, 18px), 0, 0); }
+@keyframes vg-slide-left {
+  0%   { opacity: 0; transform: translate3d(var(--vg-distance, 18px), 0, 0); }
   100% { opacity: 1; transform: none; }
 }
 
 /* 24. Text glow breathe */
 @keyframes glow-pulse {
-  0%, 100% { text-shadow: 0 0 20px rgba(124,255,63,0.4), 0 0 40px rgba(124,255,63,0.2), 0 0 80px rgba(124,255,63,0.1); }
-  50%      { text-shadow: 0 0 30px rgba(124,255,63,0.6), 0 0 60px rgba(124,255,63,0.3), 0 0 100px rgba(124,255,63,0.15); }
+  0%, 100% { text-shadow: 0 0 20px rgba(92,194,255,0.4), 0 0 40px rgba(92,194,255,0.2), 0 0 80px rgba(92,194,255,0.1); }
+  50%      { text-shadow: 0 0 30px rgba(92,194,255,0.6), 0 0 60px rgba(92,194,255,0.3), 0 0 100px rgba(92,194,255,0.15); }
 }
 
 /* 25. Staggered letter fade-in */
@@ -194,34 +194,34 @@
 }
 
 /* ================================================================
-   FREEBUFF COMPONENT CLASSES (exact)
+   VIBEGRID COMPONENT CLASSES (vg-*)
    ================================================================ */
 
 /* GPU acceleration */
-.lp-gpu {
+.vg-gpu {
   will-change: transform;
   backface-visibility: hidden;
   transform: translateZ(0);
 }
 
 /* Stars */
-.lp-star {
+.vg-star {
   position: absolute;
   background: #fff;
   border-radius: 9999px;
   box-shadow: 0 0 var(--glow) rgba(255,255,255,0.85);
-  animation: lp-twinkle var(--dur) ease-in-out var(--delay) infinite;
+  animation: vg-twinkle var(--dur) ease-in-out var(--delay) infinite;
 }
 
 /* Shooting Stars */
-.lp-shooting-star {
+.vg-shooting-star {
   position: absolute;
   opacity: 0;
   will-change: transform, opacity;
-  animation: lp-shoot var(--dur) ease-out var(--delay) infinite;
+  animation: vg-shoot var(--dur) ease-out var(--delay) infinite;
 }
 /* Shooting star tail */
-.lp-shooting-star::before {
+.vg-shooting-star::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -234,15 +234,15 @@
 }
 
 /* Live map dot pulse */
-.lp-lm-pulse {
+.vg-lm-pulse {
   transform-box: fill-box;
   transform-origin: 50%;
-  animation: lp-lm-pulse var(--dur, 3s) ease-in-out var(--delay, 0s) infinite;
+  animation: vg-lm-pulse var(--dur, 3s) ease-in-out var(--delay, 0s) infinite;
 }
 
 /* Caret blink */
-.lp-caret-blink {
-  animation: 1.1s step-end infinite lp-caret-blink;
+.vg-caret-blink {
+  animation: 1.1s step-end infinite vg-caret-blink;
 }
 
 /* Ping ripple */
@@ -251,14 +251,14 @@
 }
 
 /* ---- Typography ---- */
-.lp-hero-heading {
+.vg-hero-heading {
   font-optical-sizing: auto;
   font-feature-settings: "kern" 1, "liga" 1;
   letter-spacing: 0.012em;
   font-family: Newsreader, serif;
   font-weight: 400;
 }
-.lp-feature-heading {
+.vg-feature-heading {
   font-optical-sizing: auto;
   letter-spacing: 0.012em;
   font-family: Newsreader, serif;
@@ -267,74 +267,74 @@
   line-height: 2.5rem;
 }
 @media (min-width: 768px) {
-  .lp-feature-heading { font-size: 3rem; line-height: 1; }
+  .vg-feature-heading { font-size: 3rem; line-height: 1; }
 }
 @media (min-width: 1024px) {
-  .lp-feature-heading { font-size: 56px; }
+  .vg-feature-heading { font-size: 56px; }
 }
-.lp-serif {
+.vg-serif {
   font-optical-sizing: auto;
   font-family: Newsreader, serif;
   font-weight: 300;
 }
 
 /* ---- Glow ---- */
-.lp-text-glow-green {
-  text-shadow: 0 0 16px rgba(44,122,64,0.4);
+.vg-text-glow {
+  text-shadow: 0 0 16px rgba(11,107,196,0.4);
 }
-.neon-text {
-  text-shadow: 0 0 20px rgba(124,255,63,0.4), 0 0 40px rgba(124,255,63,0.2), 0 0 80px rgba(124,255,63,0.1);
+.vg-neon-text {
+  text-shadow: 0 0 20px rgba(92,194,255,0.4), 0 0 40px rgba(92,194,255,0.2), 0 0 80px rgba(92,194,255,0.1);
 }
-.hover-glow-flare { transition: text-shadow 0.5s, filter 0.5s; }
-.hover-glow-flare:hover {
-  text-shadow: 0 0 30px rgba(124,255,63,0.9), 0 0 60px rgba(124,255,63,0.6), 0 0 120px rgba(124,255,63,0.35);
+.vg-glow-flare { transition: text-shadow 0.5s, filter 0.5s; }
+.vg-glow-flare:hover {
+  text-shadow: 0 0 30px rgba(92,194,255,0.9), 0 0 60px rgba(92,194,255,0.6), 0 0 120px rgba(92,194,255,0.35);
   filter: brightness(1.2);
 }
 
 /* ---- Install button glow ---- */
-.install-box-glow {
-  animation: 3s ease-in-out infinite install-glow-breathe;
+.vg-install-glow {
+  animation: 3s ease-in-out infinite vg-install-glow-breathe;
 }
 
 /* ---- Scan line ---- */
-.animate-scan-line {
-  animation: 8s linear infinite scan-line;
+.vg-scan-line {
+  animation: 8s linear infinite vg-scan-line;
 }
 
 /* ---- Marquee ---- */
-.animate-logo-scroll {
-  animation: 30s linear infinite logo-scroll;
+.vg-logo-scroll {
+  animation: 30s linear infinite vg-logo-scroll;
 }
 
-/* ---- Scroll reveals: fb-in-* system ---- */
-.fb-animate {
-  animation-duration: var(--fb-duration, 0.52s);
-  animation-timing-function: var(--fb-ease, cubic-bezier(0.22, 1, 0.36, 1));
+/* ---- Scroll reveals: vg-in-* system ---- */
+.vg-animate {
+  animation-duration: var(--vg-duration, 0.52s);
+  animation-timing-function: var(--vg-ease, cubic-bezier(0.22, 1, 0.36, 1));
   animation-fill-mode: both;
-  animation-delay: calc(var(--fb-delay, 0s) + var(--fb-index, 0) * var(--fb-step, 55ms));
+  animation-delay: calc(var(--vg-delay, 0s) + var(--vg-index, 0) * var(--vg-step, 55ms));
 }
-.fb-animate.fb-in-rise   { animation-name: fb-rise; }
-.fb-animate.fb-in-fade   { animation-name: fb-fade; }
-.fb-animate.fb-in-pop    { animation-name: fb-pop; }
-.fb-animate.fb-in-fall   { animation-name: fb-fall; }
-.fb-animate.fb-in-left   { animation-name: fb-slide-right; }
-.fb-animate.fb-in-right  { animation-name: fb-slide-left; }
-.fb-animate.fb-in-text   { animation-name: fb-text; }
+.vg-animate.vg-in-rise   { animation-name: vg-rise; }
+.vg-animate.vg-in-fade   { animation-name: vg-fade; }
+.vg-animate.vg-in-pop    { animation-name: vg-pop; }
+.vg-animate.vg-in-fall   { animation-name: vg-fall; }
+.vg-animate.vg-in-left   { animation-name: vg-slide-right; }
+.vg-animate.vg-in-right  { animation-name: vg-slide-left; }
+.vg-animate.vg-in-text   { animation-name: vg-text; }
 
 /* Hidden until intersection observer fires */
-.fb-hidden { opacity: 0; }
+.vg-hidden { opacity: 0; }
 
-/* ---- Keyword glow ---- */
-.keyword-filled {
-  color: #7cff3f;
-  -webkit-text-stroke: 1.5px #7cff3f;
-  text-shadow: 0 0 40px rgba(124,255,63,0.3), 0 0 80px rgba(124,255,63,0.1);
-  animation: 0.8s ease-out keyword-glow-enter;
+/* ---- Accent keyword ---- */
+.vg-keyword-filled {
+  color: #5cc2ff;
+  -webkit-text-stroke: 1.5px #5cc2ff;
+  text-shadow: 0 0 40px rgba(92,194,255,0.3), 0 0 80px rgba(92,194,255,0.1);
+  animation: 0.8s ease-out vg-keyword-glow-enter;
 }
 
 /* ---- Terminal cursor ---- */
 .animate-terminal-cursor {
-  animation: 1s step-end infinite lp-caret-blink;
+  animation: 1s step-end infinite vg-caret-blink;
 }
 
 /* ---- Utility ---- */
@@ -369,7 +369,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.06) 36%, rgba(124,255,63,0.05) 50%, transparent 64%);
+  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.06) 36%, rgba(92,194,255,0.05) 50%, transparent 64%);
   background-size: 200% 100%;
   background-position: 200% 0;
   opacity: 0;
@@ -383,14 +383,14 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .lp-star, .lp-shooting-star, .lp-lm-pulse, .lp-caret-blink,
-  .install-box-glow, .animate-ping, .animate-pulse, .animate-bounce,
-  .animate-logo-scroll, .animate-scan-line, .animate-glow-pulse,
+  .vg-star, .vg-shooting-star, .vg-lm-pulse, .vg-caret-blink,
+  .vg-install-glow, .animate-ping, .animate-pulse, .animate-bounce,
+  .vg-logo-scroll, .vg-scan-line, .animate-glow-pulse,
   .animate-terminal-cursor, .animate-thinking-dot, .animate-letter-fade-in,
   .animate-in, .animate-out,
-  .fb-animate { animation: none !important; }
+  .vg-animate { animation: none !important; }
   .shine-layer { opacity: 0; }
-  .lp-star { opacity: var(--max, 1); }
-  .lp-shooting-star { opacity: 0; }
-  .fb-hidden { opacity: 1 !important; }
+  .vg-star { opacity: var(--max, 1); }
+  .vg-shooting-star { opacity: 0; }
+  .vg-hidden { opacity: 1 !important; }
 }

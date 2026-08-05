@@ -39,7 +39,7 @@ export const ZapHoverIcon: React.FC<IconProps> = ({ className = "w-6 h-6 text-am
 };
 
 /** 🦀 (Rust PTY Backend) → CpuHoverIcon */
-export const CpuHoverIcon: React.FC<IconProps> = ({ className = "w-6 h-6 text-emerald-400", size = 24 }) => {
+export const CpuHoverIcon: React.FC<IconProps> = ({ className = "w-6 h-6 text-[#3C95F0]", size = 24 }) => {
   const [isHovered, setIsHovered] = useState(false);
   return (
     <motion.div
@@ -50,17 +50,17 @@ export const CpuHoverIcon: React.FC<IconProps> = ({ className = "w-6 h-6 text-em
       transition={{ type: "spring", stiffness: 350, damping: 12 }}
     >
       <motion.div
-        animate={isHovered ? { rotate: [0, 90, 180, 270, 360], filter: "drop-shadow(0px 0px 10px rgba(52, 211, 153, 0.8))" } : { rotate: 0 }}
+        animate={isHovered ? { rotate: [0, 90, 180, 270, 360], filter: "drop-shadow(0px 0px 10px rgba(60, 149, 240, 0.8))" } : { rotate: 0 }}
         transition={{ duration: 0.8, ease: "easeInOut" }}
       >
-        <Cpu size={size} className="stroke-emerald-400" />
+        <Cpu size={size} className="stroke-[#3C95F0]" />
       </motion.div>
     </motion.div>
   );
 };
 
 /** ⊞ (1–16 Pane Grid) → GridHoverIcon */
-export const GridHoverIcon: React.FC<IconProps> = ({ className = "w-6 h-6 text-emerald-400", size = 24 }) => {
+export const GridHoverIcon: React.FC<IconProps> = ({ className = "w-6 h-6 text-[#3C95F0]", size = 24 }) => {
   const [isHovered, setIsHovered] = useState(false);
   return (
     <motion.div
@@ -71,10 +71,10 @@ export const GridHoverIcon: React.FC<IconProps> = ({ className = "w-6 h-6 text-e
       transition={{ type: "spring", stiffness: 300, damping: 15 }}
     >
       <motion.div
-        animate={isHovered ? { scale: [1, 1.15, 1], filter: "drop-shadow(0 0 10px rgba(84, 169, 103, 0.85))" } : { scale: 1 }}
+        animate={isHovered ? { scale: [1, 1.15, 1], filter: "drop-shadow(0 0 10px rgba(60, 149, 240, 0.85))" } : { scale: 1 }}
         transition={{ repeat: Infinity, duration: 1.2, ease: "easeInOut" }}
       >
-        <Grid size={size} className="stroke-emerald-400" />
+        <Grid size={size} className="stroke-[#3C95F0]" />
       </motion.div>
     </motion.div>
   );

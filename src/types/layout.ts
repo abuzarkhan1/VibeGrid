@@ -1,5 +1,15 @@
 export type SplitDirection = 'horizontal' | 'vertical';
 
+/** Per-pane appearance overrides (customization audit C13). Each field is
+ *  optional; an absent field falls back to the workspace override (C12), then
+ *  the global setting. Persisted with the layout in the workspace file. */
+export interface PaneAppearance {
+  themeName?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  terminalOpacity?: number;
+}
+
 export interface TerminalNode {
   type: 'terminal';
   id: string;
@@ -7,6 +17,8 @@ export interface TerminalNode {
   title?: string;
   cwd?: string;
   shell?: string;
+  /** Per-pane appearance overrides (customization audit C13). */
+  appearance?: PaneAppearance;
 }
 
 export interface SplitNode {

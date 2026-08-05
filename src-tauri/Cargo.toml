@@ -42,5 +42,8 @@ tauri = { version = "2.0.0", features = ["test"] }
 # would hard-kill VibeGrid instead of letting the error surface.
 codegen-units = 1
 lto = true
-opt-level = "z"
+# opt-level "3" (was "z"): the PTY reader → batcher → IPC flush loop is hot
+# code — the size-optimized build cost real keystroke latency / throughput.
+# Release-binary size stays modest thanks to lto + strip.
+opt-level = 3
 strip = true

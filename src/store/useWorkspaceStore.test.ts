@@ -430,4 +430,88 @@ describe('VibeGrid Workspace Persistence', () => {
     useWorkspaceStore.getState().moveWorkspace('a', 1);
     expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'a', 'b']);
   });
+
+  // Customization audit C23: drag-reorder moves a workspace to an absolute
+  // index and persists the order to localStorage.
+  it('moveWorkspaceTo reorders by absolute index and persists the order', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'a', name: 'A', layout: { type: 'terminal', id: 't1', title: 'T1' }, createdAt: 1, updatedAt: 1, version: 1 },
+        { id: 'b', name: 'B', layout: { type: 'terminal', id: 't2', title: 'T2' }, createdAt: 2, updatedAt: 2, version: 1 },
+        { id: 'c', name: 'C', layout: { type: 'terminal', id: 't3', title: 'T3' }, createdAt: 3, updatedAt: 3, version: 1 },
+      ],
+      activeWorkspaceId: 'a',
+      isLoading: false,
+    });
+
+    useWorkspaceStore.getState().moveWorkspaceTo('c', 0);
+    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'a', 'b']);
+
+    useWorkspaceStore.getState().moveWorkspaceTo('a', 2);
+    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'b', 'a']);
+
+    // Out-of-range and same-index are no-ops.
+    useWorkspaceStore.getState().moveWorkspaceTo('c', -1);
+    useWorkspaceStore.getState().moveWorkspaceTo('c', 99);
+    useWorkspaceStore.getState().moveWorkspaceTo('c', 0);
+    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'b', 'a']);
+
+    // Order is persisted for the next launch.
+    expect(JSON.parse(localStorage.getItem('vibegrid.workspace-order') || '[]')).toEqual(['c', 'b', 'a']);
+  });
+
+  // Customization audit C12: per-workspace overrides are stored on the record,
+  // cleared when emptied, and persisted through save/load payloads.
+  it('setWorkspaceOverrides stores, clears and persists overrides', () => {
+    useWorkspaceStore.setState({
+      workspaces: [
+        { id: 'a', name: 'A', layout: { type: 'terminal', id: 't1', title: 'T1' }, createdAt: 1, updatedAt: 1, version: 1 },
+      ],
+      activeWorkspaceId: 'a',
+      isLoading: false,
+    });
+
+    useWorkspaceStore
+      .getState()
+      .setWorkspaceOverrides('a', { themeName: 'nord', fontSize: 16, defaultShell: '/bin/zsh' });
+
+    const afterSet = useWorkspaceStore.getState().workspaces[0];
+    expect(afterSet.overrides).toEqual({ themeName: 'nord', fontSize: 16, defaultShell: '/bin/zsh' });
+
+    // The persisted payload carries the overrides (Rust WorkspaceData field).
+    const lastPayload = mockedInvoke.mock.calls.find((c) => c[0] === 'save_workspace')?.[1];
+    expect((lastPayload as { workspace: { overrides?: unknown } }).workspace.overrides).toEqual({
+      themeName: 'nord',
+      fontSize: 16,
+      defaultShell: '/bin/zsh',
+    });
+
+    // Empty object clears the override (falls back to global settings).
+    useWorkspaceStore.getState().setWorkspaceOverrides('a', null);
+    expect(useWorkspaceStore.getState().workspaces[0].overrides).toBeUndefined();
+  });
+
+  // Customization audit L16: deleting the LAST workspace used to refuse; now it
+  // resets to a fresh default workspace (running terminals included).
+  it('deleting the last workspace resets to a fresh default instead of refusing', () => {
+    const state = useWorkspaceStore.getState();
+    expect(state.workspaces.length).toBe(1);
+    const oldId = state.workspaces[0].id;
+
+    useWorkspaceStore.getState().deleteWorkspace(oldId);
+
+    const after = useWorkspaceStore.getState();
+    expect(after.workspaces.length).toBe(1);
+    expect(after.workspaces[0].id).not.toBe(oldId); // fresh id — no disk collision
+    expect(after.workspaces[0].name).toBe('Default Workspace');
+    expect(after.activeWorkspaceId).toBe(after.workspaces[0].id);
+    expect(usePaneStore.getState().paneCount).toBe(1);
+    expect(usePaneStore.getState().root.type).toBe('terminal');
+    // The on-disk delete was issued and the fresh workspace persisted.
+    expect(mockedInvoke).toHaveBeenCalledWith('delete_workspace', { id: oldId });
+    expect(mockedInvoke).toHaveBeenCalledWith(
+      'save_workspace',
+      expect.objectContaining({ workspace: expect.objectContaining({ id: after.workspaces[0].id }) })
+    );
+  });
 });

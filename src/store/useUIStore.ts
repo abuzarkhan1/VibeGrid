@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { usePaneStore, getTerminalNodes, planPresetKeep, isEqualPresetTree } from './usePaneStore';
+import { usePaneStore, getTerminalNodes, planPresetKeep, isEqualPresetTree, PresetCount } from './usePaneStore';
 import { useWorkspaceStore } from './useWorkspaceStore';
+import { useSettingsStore } from './useSettingsStore';
 
 export interface ToastMessage {
   id: string;
@@ -40,7 +41,7 @@ interface UIState {
    * terminated (the focused pane always survives). Null = no pending request.
    */
   pendingLayoutAction:
-    | { type: 'preset'; count: 1 | 2 | 4 | 6 | 8 | 16; closingCount: number }
+    | { type: 'preset'; count: PresetCount; closingCount: number }
     | { type: 'reset'; closingCount: number }
     | null;
   // Audit find 4: the 'new-workspace' keybinding needs a reachable create modal
@@ -58,12 +59,18 @@ interface UIState {
   acquireWebglSlot: (paneId: string) => boolean;
   releaseWebglSlot: (paneId: string) => void;
   requestClosePane: (paneId: string) => void;
+  /** Customization audit L19: bypass the confirm dialog for pane close. */
+  requestClosePaneImmediate: (paneId: string) => void;
+  requestSetLayoutPresetImmediate: (count: PresetCount) => void;
+  requestResetLayoutImmediate: () => void;
+  /** Customization audit L19: is confirmation enabled for this action? */
+  shouldConfirm: (action: 'paneClose' | 'quit' | 'layoutShrink' | 'workspaceDelete') => boolean;
   cancelPendingClose: () => void;
   requestQuit: () => void;
   cancelQuit: () => void;
   /** Guarded preset/reset: applies immediately when nothing is running, else
    * asks for confirmation first (a grid rebuild terminates all panes). */
-  requestSetLayoutPreset: (count: 1 | 2 | 4 | 6 | 8 | 16) => void;
+  requestSetLayoutPreset: (count: PresetCount) => void;
   requestResetLayout: () => void;
   confirmPendingLayoutAction: () => void;
   cancelPendingLayoutAction: () => void;
@@ -92,7 +99,14 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
   setCheatsheetOpen: (open: boolean) => set({ isCheatsheetOpen: open }),
 
-  requestClosePane: (paneId: string) => set({ pendingClosePaneId: paneId }),
+  requestClosePane: (paneId: string) => {
+    // Customization audit L19: with confirmation off, close (and kill) now.
+    if (useSettingsStore.getState().confirmations.paneClose !== 'always') {
+      usePaneStore.getState().closePane(paneId);
+      return;
+    }
+    set({ pendingClosePaneId: paneId });
+  },
   cancelPendingClose: () => set({ pendingClosePaneId: null }),
   requestQuit: () => set({ pendingQuit: true }),
   cancelQuit: () => set({ pendingQuit: false }),
@@ -163,6 +177,25 @@ export const useUIStore = create<UIState>((set, get) => ({
     useWorkspaceStore.getState().switchWorkspace(wsId);
   },
 
+  // Customization audit L19: confirmation strictness. 'never' performs the
+  // destructive action immediately (killing processes without a dialog);
+  // 'always' keeps the guarded confirm flow. Each call site still decides
+  // whether it wants the guarded or the immediate path via these actions.
+  requestClosePaneImmediate: (paneId: string) => {
+    usePaneStore.getState().closePane(paneId);
+  },
+  requestSetLayoutPresetImmediate: (count) => {
+    usePaneStore.getState().setLayoutPreset(count);
+  },
+  requestResetLayoutImmediate: () => {
+    usePaneStore.getState().resetLayout();
+  },
+
+  /** Convenience: does the user want confirmation for this action? */
+  shouldConfirm: (action: 'paneClose' | 'quit' | 'layoutShrink' | 'workspaceDelete') => {
+    return useSettingsStore.getState().confirmations[action] === 'always';
+  },
+
   // Workspace isolation: creating a workspace also switches to it without
   // terminating anything. The current workspace's terminals keep running in
   // the background.
@@ -185,7 +218,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     // UX audit P3 #15: cap the stack so repeated toasts (e.g. copy-on-select)
     // can never overflow the screen, and dedupe identical toasts by title +
     // description so a repeating event replaces itself instead of stacking.
-    const MAX_TOASTS = 4;
+    // Customization audit L14: the cap and default duration are settings now.
+    const MAX_TOASTS = useSettingsStore.getState().toastMaxCount;
     const now = get();
     const dup = now.toasts.find(
       (t) => t.title === toast.title && (t.description ?? '') === (toast.description ?? '')
@@ -206,7 +240,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       return { toasts: [...base, newToast] };
     });
 
-    const duration = toast.durationMs ?? 3000;
+    const duration = toast.durationMs ?? useSettingsStore.getState().toastDefaultDurationMs;
     const needsTimer = !dup || (dup && (toast.durationMs ?? -1) > 0 && (dup.durationMs ?? 0) === 0);
     if (duration > 0 && needsTimer) {
       setTimeout(() => {
@@ -224,7 +258,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   removeToast: (id: string) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 
   acquireWebglSlot: (paneId: string) => {
-    const { activeWebglPanes, maxWebglSlots } = get();
+    const { activeWebglPanes } = get();
+    // Customization audit L2: the WebGL context cap is a user setting now — read
+    // it live so a change applies immediately (maxWebglSlots state is kept as a
+    // fallback for tests/back-compat).
+    const maxWebglSlots = useSettingsStore.getState().maxWebglSlots || get().maxWebglSlots;
     if (activeWebglPanes.includes(paneId)) return true;
     if (activeWebglPanes.length < maxWebglSlots) {
       set({ activeWebglPanes: [...activeWebglPanes, paneId] });

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 /**
  * Animated count-up — counts from 0 to `target` with an ease-out curve
- * the first time the element scrolls into view (Freebuff's live-stats
+ * the first time the element scrolls into view (the live-stats
  * number animation). Respects prefers-reduced-motion (jumps to target).
  */
 export default function CountUp({

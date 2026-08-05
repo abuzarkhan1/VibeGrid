@@ -1,4 +1,4 @@
-// World-map geometry + live activity dots, extracted from Freebuff.com /live.
+// World-map geometry + live activity dots.
 // Generated 2026-08-04. Do not edit by hand.
 
 type MapDot = { x: number; y: number; r: number; dur: number; delay: number; count: string | null };

@@ -6,12 +6,27 @@ export const isTauri = (): boolean => {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 };
 
-export async function spawnPty(cols: number, rows: number, cwd?: string, shell?: string): Promise<string> {
+/** Extra spawn options for a new pane (customization audit C11): startup args
+ *  and environment for the DEFAULT shell. Only passed when the pane uses the
+ *  global default shell (never for a per-pane shell override). */
+export interface SpawnPtyOptions {
+  shellArgs?: string[];
+  shellEnv?: Record<string, string>;
+}
+
+export async function spawnPty(
+  cols: number,
+  rows: number,
+  cwd?: string,
+  shell?: string,
+  opts?: SpawnPtyOptions
+): Promise<string> {
   if (!isTauri()) {
     console.warn('[VibeGrid] Not running in Tauri; returning mock PTY pane ID');
     return `mock-pty-${Date.now()}`;
   }
-  return await invoke<string>('spawn_pty', { cols, rows, cwd, shell });
+  const { shellArgs, shellEnv } = opts ?? {};
+  return await invoke<string>('spawn_pty', { cols, rows, cwd, shell, shellArgs, shellEnv });
 }
 
 export async function writeToPty(paneId: string, data: string): Promise<void> {
@@ -164,10 +179,63 @@ export async function voiceSetInputDevice(name: string): Promise<void> {
   }
 }
 
+/** Configure the Whisper transcription language (customization audit C28).
+ *  'auto' = auto-detect; any other value is a Whisper language code (e.g. 'en'). */
+export async function voiceSetLanguage(language: string): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    await invoke('voice_set_language', { language });
+  } catch (e) {
+    console.error('[VibeGrid] voice_set_language failed:', e);
+  }
+}
+
+/** Configure the Whisper model size (customization audit C28): tiny | base | small | medium. */
+export async function voiceSetModelSize(size: string): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    await invoke('voice_set_model_size', { size });
+  } catch (e) {
+    console.error('[VibeGrid] voice_set_model_size failed:', e);
+  }
+}
+
+/** Enable/disable launch-at-login (customization audit C9 — native backend, no plugin). */
+export async function autostartSetEnabled(enabled: boolean): Promise<void> {
+  if (!isTauri()) return;
+  try {
+    await invoke('autostart_set_enabled', { enabled });
+  } catch (e) {
+    console.error('[VibeGrid] autostart_set_enabled failed:', e);
+  }
+}
+
+/** Query the current launch-at-login state (customization audit C9). */
+export async function autostartIsEnabled(): Promise<boolean> {
+  if (!isTauri()) return false;
+  try {
+    return await invoke<boolean>('autostart_is_enabled');
+  } catch (e) {
+    console.error('[VibeGrid] autostart_is_enabled failed:', e);
+    return false;
+  }
+}
+
 /** Reassign the system-wide summon shortcut (audit: was hardcoded in Rust). */
 export async function setGlobalSummon(accel: string): Promise<string> {
   if (!isTauri()) return accel;
   return await invoke<string>('set_global_summon', { accel });
+}
+
+/** The MCP/HTTP endpoint port (customization audit S8 — surfaced in Settings). */
+export async function getHttpPort(): Promise<number> {
+  if (!isTauri()) return 8792;
+  try {
+    return await invoke<number>('get_http_port');
+  } catch (e) {
+    console.error('[VibeGrid] get_http_port failed:', e);
+    return 8792;
+  }
 }
 
 /** Live mic level (0..1) for the real-time waveform while dictating. */

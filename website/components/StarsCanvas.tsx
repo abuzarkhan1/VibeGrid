@@ -34,10 +34,10 @@ const SHOOTING_STARS = [
 /** Twinkling + shooting star field. Place inside a `relative` hero. */
 export function StarsCanvas() {
   return (
-    <div className="lp-gpu pointer-events-none absolute inset-0">
+    <div className="vg-gpu pointer-events-none absolute inset-0">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {STARS.map((s, i) => (
-          <span key={i} className="lp-star" style={{
+          <span key={i} className="vg-star" style={{
             left: s.left, top: s.top,
             width: `${s.w}px`, height: `${s.w}px`,
             '--min': s.min, '--max': s.max,
@@ -47,7 +47,7 @@ export function StarsCanvas() {
       </div>
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {SHOOTING_STARS.map((s, i) => (
-          <span key={i} className="lp-shooting-star" style={{
+          <span key={i} className="vg-shooting-star" style={{
             top: s.top, left: s.left,
             '--dx': s.dx, '--dy': s.dy, '--dur': s.dur, '--delay': s.delay,
           } as React.CSSProperties} />

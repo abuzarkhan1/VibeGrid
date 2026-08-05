@@ -1,8 +1,21 @@
 import { create } from 'zustand';
-import { usePaneStore, getTerminalNodes, killPanesInLayout } from './usePaneStore';
+import { usePaneStore, getTerminalNodes, killPanesInLayout, PresetCount } from './usePaneStore';
 import { PaneNode, TerminalNode } from '@/types/layout';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri } from '@/lib/tauri';
+
+/** Per-workspace settings overrides (customization audit C12). Each field is
+ *  optional; an absent field falls back to the global setting. Persisted with
+ *  the workspace file and applied to the terminal panes of that workspace
+ *  only. Only fields a user actively overrides are present in the object. */
+export interface WorkspaceOverrides {
+  themeName?: string;
+  fontSize?: number;
+  fontFamily?: string;
+  defaultShell?: string;
+  defaultCwd?: string;
+  terminalOpacity?: number;
+}
 
 interface Workspace {
   id: string;
@@ -12,6 +25,14 @@ interface Workspace {
   updatedAt: number;
   /** On-disk schema version (audit improvement) — kept in sync with Rust. */
   version: number;
+  /** Per-workspace settings overrides (customization audit C12), persisted to
+   *  disk with the workspace. Absent = use the global settings. */
+  overrides?: WorkspaceOverrides;
+  /** Optional emoji badge shown in the sidebar (customization audit C23). */
+  emoji?: string;
+  /** Soft-delete (customization audit C23): archived workspaces keep their
+   *  files and running terminals but leave the active sidebar list. */
+  archived?: boolean;
   /**
    * In-memory-only view state captured when the workspace is left, restored
    * when it is switched back to (workspace isolation): which pane was focused,
@@ -23,7 +44,7 @@ interface Workspace {
     focusedPaneId: string | null;
     maximizedPaneId: string | null;
     layoutMode: 'preset' | 'custom';
-    presetCount: 1 | 2 | 4 | 6 | 8 | 16;
+    presetCount: PresetCount;
   };
 }
 
@@ -43,6 +64,20 @@ interface WorkspaceState {
   duplicateWorkspace: (id: string) => string;
   /** Reorder a workspace in the list (UX audit P3: workspaces were unordered). */
   moveWorkspace: (id: string, direction: -1 | 1) => void;
+  /** Move a workspace to an absolute index (customization audit C23: drag to
+   *  reorder in the sidebar). Order is persisted across restarts. */
+  moveWorkspaceTo: (id: string, targetIndex: number) => void;
+  /** Set/clear per-workspace settings overrides (customization audit C12).
+   *  Pass {} or null to clear. Persists with the workspace file. */
+  setWorkspaceOverrides: (id: string, overrides: WorkspaceOverrides | null) => void;
+  /** Set the sidebar emoji badge (customization audit C23). '' clears it. */
+  setWorkspaceEmoji: (id: string, emoji: string) => void;
+  /** Archive / unarchive a workspace (customization audit C23). Archived
+   *  workspaces leave the active list but keep their files + terminals. */
+  toggleArchive: (id: string) => void;
+  /** A brand-new empty workspace (customization audit L16 — the fresh default
+   *  that replaces the last workspace when it is deleted). */
+  freshDefaultWorkspace: () => Workspace;
   loadWorkspaces: () => Promise<void>;
   saveCurrentWorkspace: () => Promise<void>;
 }
@@ -57,6 +92,29 @@ function newWorkspaceId(): string {
   return `ws-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 const ACTIVE_WS_STORAGE_KEY = 'vibegrid.active-workspace';
+const WORKSPACE_ORDER_KEY = 'vibegrid.workspace-order';
+
+/** Persist the sidebar order (customization audit C23) so a drag-reorder
+ *  survives restarts — the on-disk list is sorted by updated_at, so without
+ *  this the user's manual order would be silently lost on next launch. */
+function persistWorkspaceOrder(ids: string[]) {
+  try {
+    localStorage.setItem(WORKSPACE_ORDER_KEY, JSON.stringify(ids));
+  } catch {
+    // storage unavailable — non-fatal
+  }
+}
+
+function readStoredWorkspaceOrder(): string[] | null {
+  try {
+    const raw = localStorage.getItem(WORKSPACE_ORDER_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : null;
+  } catch {
+    return null;
+  }
+}
 
 function persistActiveWorkspaceId(id: string) {
   try {
@@ -134,6 +192,9 @@ function persistWorkspaceToDisk(ws: Workspace, layout: PaneNode) {
       created_at: ws.createdAt,
       updated_at: Date.now(),
       version: ws.version,
+      overrides: ws.overrides ?? null,
+      emoji: ws.emoji ?? null,
+      archived: ws.archived ?? null,
     },
   }).catch(console.error);
 }
@@ -236,6 +297,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       workspaces: [...state.workspaces, newWs],
       activeWorkspaceId: activate ? id : state.activeWorkspaceId,
     }));
+    persistWorkspaceOrder(get().workspaces.map((w) => w.id));
 
     if (activate) {
       applyLayoutToPaneStore(newWs.layout);
@@ -263,6 +325,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
     const targetWs = updatedWorkspaces.find((w) => w.id === id);
     if (!targetWs) return;
+    // Customization audit C23: archived workspaces are not switchable — the
+    // sidebar/palette exclude them from the active list anyway, this is the
+    // guard for any stray call (e.g. a stale keybinding).
+    if (targetWs.archived) return;
 
     set({ workspaces: updatedWorkspaces, activeWorkspaceId: id });
     persistActiveWorkspaceId(id);
@@ -314,6 +380,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }));
     }
     set((state) => ({ workspaces: [...state.workspaces, copy] }));
+    persistWorkspaceOrder(get().workspaces.map((w) => w.id));
     persistWorkspaceToDisk(copy, copy.layout);
     return newId;
   },
@@ -323,14 +390,87 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     const idx = workspaces.findIndex((w) => w.id === id);
     const target = idx + direction;
     if (idx === -1 || target < 0 || target >= workspaces.length) return;
-    const next = [...workspaces];
-    [next[idx], next[target]] = [next[target], next[idx]];
-    set({ workspaces: next });
+    get().moveWorkspaceTo(id, target);
   },
+
+  moveWorkspaceTo: (id: string, targetIndex: number) => {
+    const { workspaces } = get();
+    const idx = workspaces.findIndex((w) => w.id === id);
+    if (idx === -1 || targetIndex < 0 || targetIndex >= workspaces.length || idx === targetIndex) return;
+    const next = [...workspaces];
+    const [moved] = next.splice(idx, 1);
+    next.splice(targetIndex, 0, moved);
+    set({ workspaces: next });
+    persistWorkspaceOrder(next.map((w) => w.id));
+  },
+
+  setWorkspaceOverrides: (id: string, overrides: WorkspaceOverrides | null) => {
+    const next = overrides && Object.keys(overrides).length > 0 ? overrides : undefined;
+    set((state) => ({
+      workspaces: state.workspaces.map((w) =>
+        w.id === id ? { ...w, overrides: next, updatedAt: Date.now() } : w
+      ),
+    }));
+    const target = get().workspaces.find((w) => w.id === id);
+    if (target) persistWorkspaceToDisk(target, target.layout);
+  },
+
+  setWorkspaceEmoji: (id: string, emoji: string) => {
+    set((state) => ({
+      workspaces: state.workspaces.map((w) =>
+        w.id === id ? { ...w, emoji: emoji || undefined, updatedAt: Date.now() } : w
+      ),
+    }));
+    const target = get().workspaces.find((w) => w.id === id);
+    if (target) persistWorkspaceToDisk(target, target.layout);
+  },
+
+  toggleArchive: (id: string) => {
+    const { workspaces, activeWorkspaceId } = get();
+    const target = workspaces.find((w) => w.id === id);
+    if (!target) return;
+    const archived = !target.archived;
+    // Archiving the ACTIVE workspace: switch to another visible workspace
+    // first (archived workspaces are not switchable). Non-destructive — the
+    // archived workspace's terminals keep running in the background.
+    let nextActiveId = activeWorkspaceId;
+    if (archived && activeWorkspaceId === id) {
+      const nextVisible = workspaces.find((w) => w.id !== id && !w.archived);
+      nextActiveId = nextVisible?.id ?? id;
+    }
+    set((state) => ({
+      workspaces: state.workspaces.map((w) =>
+        w.id === id ? { ...w, archived, updatedAt: Date.now() } : w
+      ),
+      activeWorkspaceId: nextActiveId,
+    }));
+    if (nextActiveId !== activeWorkspaceId) {
+      persistActiveWorkspaceId(nextActiveId);
+      const nextWs = get().workspaces.find((w) => w.id === nextActiveId);
+      if (nextWs) applyLayoutToPaneStore(nextWs.layout, nextWs.view);
+    }
+    const updated = get().workspaces.find((w) => w.id === id);
+    if (updated) persistWorkspaceToDisk(updated, updated.layout);
+  },
+
+  /** A brand-new empty workspace (fresh id so it never collides with the
+   *  deleted one on disk). Customization audit L16: deleting the LAST workspace
+   *  resets to a fresh default instead of refusing. */
+  freshDefaultWorkspace: (): Workspace => ({
+    id: newWorkspaceId(),
+    name: 'Default Workspace',
+    layout: {
+      type: 'terminal',
+      id: `term-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      title: 'Terminal 1',
+    },
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    version: 1,
+  }),
 
   deleteWorkspace: (id: string) => {
     const { workspaces, activeWorkspaceId } = get();
-    if (workspaces.length <= 1) return; // Retain at least 1 workspace
 
     // Workspace isolation: only an EXPLICIT delete terminates a workspace's
     // background terminals (they survive switches). Kill its live panes.
@@ -341,6 +481,22 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     } else {
       const doomed = workspaces.find((w) => w.id === id);
       if (doomed) killPanesInLayout(doomed.layout);
+    }
+
+    // Customization audit L16: deleting the LAST workspace no longer refuses —
+    // the user gets a fresh default workspace instead (the app must always have
+    // one, but the slate is wiped clean, running terminals included).
+    if (workspaces.length <= 1) {
+      const fresh = get().freshDefaultWorkspace();
+      set({ workspaces: [fresh], activeWorkspaceId: fresh.id });
+      persistActiveWorkspaceId(fresh.id);
+      persistWorkspaceOrder([fresh.id]);
+      applyLayoutToPaneStore(fresh.layout);
+      if (isTauri()) {
+        invoke('delete_workspace', { id }).catch(console.error);
+        persistWorkspaceToDisk(fresh, fresh.layout);
+      }
+      return;
     }
 
     const remaining = workspaces.filter((w) => w.id !== id);
@@ -356,6 +512,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       activeWorkspaceId: nextActiveId,
     });
     persistActiveWorkspaceId(nextActiveId);
+    persistWorkspaceOrder(remaining.map((w) => w.id));
 
     if (isTauri()) {
       invoke('delete_workspace', { id }).catch(console.error);
@@ -371,7 +528,17 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       // The Rust WorkspaceData struct serializes the layout as a `layout`
       // JSON object (serde_json::Value) — NOT a string. Read it directly.
       const list = await invoke<
-        Array<{ id: string; name: string; layout: PaneNode; created_at: number; updated_at: number; version?: number }>
+        Array<{
+          id: string;
+          name: string;
+          layout: PaneNode;
+          created_at: number;
+          updated_at: number;
+          version?: number;
+          overrides?: WorkspaceOverrides | null;
+          emoji?: string | null;
+          archived?: boolean | null;
+        }>
       >('list_workspaces');
       if (list && list.length > 0) {
         const loaded: Workspace[] = list.map((w) => ({
@@ -381,7 +548,25 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
           createdAt: w.created_at,
           updatedAt: w.updated_at,
           version: w.version ?? 1,
+          // Customization audit C12: restore per-workspace overrides.
+          overrides: w.overrides ?? undefined,
+          // Customization audit C23: restore emoji badge + archive flag.
+          emoji: w.emoji ?? undefined,
+          archived: w.archived ?? false,
         }));
+
+        // Customization audit C23: apply the user's persisted sidebar order
+        // (drag-reorder) on top of the disk's updated_at ordering. Unknown ids
+        // sort last, keeping their relative disk order (stable sort).
+        const storedOrder = readStoredWorkspaceOrder();
+        if (storedOrder && storedOrder.length > 0) {
+          const rank = new Map(storedOrder.map((id, i) => [id, i]));
+          loaded.sort((a, b) => {
+            const ra = rank.get(a.id) ?? Number.MAX_SAFE_INTEGER;
+            const rb = rank.get(b.id) ?? Number.MAX_SAFE_INTEGER;
+            return ra - rb;
+          });
+        }
 
         // Restore the workspace the user was actually in last session (audit
         // fix): the disk list is ordered by most-recently-updated, but the
@@ -446,6 +631,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
             created_at: activeWs.createdAt,
             updated_at: activeWs.updatedAt,
             version: activeWs.version,
+            overrides: activeWs.overrides ?? null,
+            emoji: activeWs.emoji ?? null,
+            archived: activeWs.archived ?? null,
           },
         });
       } catch (e) {

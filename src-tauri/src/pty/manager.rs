@@ -64,12 +64,18 @@ impl<R: Runtime> PtyManager<R> {
     /// Spawns a new PTY session and returns the assigned pane_id (UUID).
     /// `shell` optionally overrides the user's default shell per-pane
     /// (audit: the dead `TerminalNode.shell` field is now wired end-to-end).
+    /// `shell_args`/`shell_env` are the global default-shell startup config
+    /// (customization audit C11) — applied to the spawned command; the built-in
+    /// TERM/COLORTERM/LANG/VIBEGRID env always win over user overrides.
+    #[allow(clippy::too_many_arguments)]
     pub fn spawn_pane(
         &self,
         cols: u16,
         rows: u16,
         cwd: Option<String>,
         shell: Option<String>,
+        shell_args: Option<Vec<String>>,
+        shell_env: Option<HashMap<String, String>>,
         batcher: IpcBatcher<R>,
     ) -> Result<String, String> {
         let pane_id = Uuid::new_v4().to_string();
@@ -93,7 +99,22 @@ impl<R: Runtime> PtyManager<R> {
         let shell = shell.unwrap_or_else(get_default_shell);
         let mut cmd = CommandBuilder::new(&shell);
 
-        // Configure Environment Variables
+        // Customization audit C11: startup args + user environment for the
+        // default shell. User env is applied FIRST so the built-in
+        // TERM/COLORTERM/LANG/VIBEGRID set below always wins — a user TERM
+        // override could break rendering, and later `env()` calls win.
+        if let Some(args) = shell_args {
+            for arg in args {
+                cmd.arg(arg);
+            }
+        }
+        if let Some(env) = shell_env {
+            for (key, value) in env {
+                cmd.env(key, value);
+            }
+        }
+
+        // Configure Environment Variables (applied last — they win)
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
         cmd.env("LANG", "en_US.UTF-8");
@@ -304,7 +325,7 @@ mod tests {
 
         // 1. Spawn a real shell.
         let pane_id = manager
-            .spawn_pane(80, 24, None, None, batcher.clone())
+            .spawn_pane(80, 24, None, None, None, None, batcher.clone())
             .expect("spawn_pane should succeed");
         assert!(
             manager.sessions.lock().contains_key(&pane_id),
@@ -312,8 +333,13 @@ mod tests {
         );
 
         // 2. Write a command that echoes a unique marker, then read it back.
+        // NOTE: the command must NOT exit the shell — the reader releases the
+        // pane's history on EOF (pane_exited), so a shell that prints and exits
+        // in the same instant races the 16ms batch flush and flakily loses the
+        // marker. `sleep` keeps the process alive until kill_pane below, so the
+        // flush always lands before the assertion reads mcp_history.
         let marker = format!("VG_PTY_TEST_{}", Uuid::new_v4().simple());
-        let cmd = format!("printf '{}'; printf '\\r\\n'; exit\n", marker);
+        let cmd = format!("printf '{}'; printf '\\r\\n'; sleep 30\n", marker);
         manager
             .write_to_pane(&pane_id, &cmd)
             .expect("write_to_pane should succeed");
@@ -358,5 +384,60 @@ mod tests {
             err.contains(ERR_PANE_NOT_FOUND),
             "double-kill should report pane not found, got: {err}"
         );
+    }
+
+    /// Customization audit C11: shell startup args + environment are applied
+    /// to the spawned process. Uses an explicit POSIX shell (`/bin/sh`) with
+    /// `-c` so the test is deterministic regardless of the runner's default
+    /// shell, and asserts the marker env var reaches the child. The script
+    /// ends with `sleep` so the shell stays alive while we poll — the reader
+    /// releases the pane's history on EOF (`pane_exited`), so an immediately
+    /// exiting shell would erase its own output before the assertion runs.
+    #[test]
+    #[cfg(unix)]
+    fn test_spawn_applies_shell_args_and_env() {
+        let app = tauri::test::mock_builder()
+            .build(tauri::test::mock_context(tauri::test::noop_assets()))
+            .expect("mock app builds");
+        let batcher: IpcBatcher<tauri::test::MockRuntime> = IpcBatcher::new(app.handle().clone());
+        let manager: PtyManager<tauri::test::MockRuntime> = PtyManager::new();
+        manager.set_batcher(batcher.clone());
+
+        let marker = format!("VG_ENV_{}", Uuid::new_v4().simple());
+        let mut env = HashMap::new();
+        env.insert("VG_TEST_MARKER".to_string(), marker.clone());
+
+        let pane_id = manager
+            .spawn_pane(
+                80,
+                24,
+                None,
+                Some("/bin/sh".to_string()),
+                Some(vec![
+                    "-c".to_string(),
+                    format!("printf '%s' \"$VG_TEST_MARKER\"; sleep 30"),
+                ]),
+                Some(env),
+                batcher.clone(),
+            )
+            .expect("spawn_pane should succeed");
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(10);
+        let mut seen = String::new();
+        while std::time::Instant::now() < deadline {
+            seen = batcher
+                .mcp_history
+                .lock()
+                .get(&pane_id)
+                .cloned()
+                .unwrap_or_default();
+            if seen.contains(&marker) {
+                break;
+            }
+            thread::sleep(Duration::from_millis(25));
+        }
+        assert!(seen.contains(&marker), "env/args not applied; got: {seen:?}");
+
+        manager.kill_pane(&pane_id).ok();
     }
 }

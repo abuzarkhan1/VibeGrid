@@ -1,8 +1,12 @@
+use std::collections::HashMap;
 use tauri::{async_runtime::spawn_blocking, State};
 use crate::AppState;
 
 /// Spawn a new PTY session. `shell` optionally overrides the default shell for
 /// this pane (audit: the per-pane shell field is now wired end-to-end).
+/// `shell_args`/`shell_env` carry the global default-shell startup config
+/// (customization audit C11) and are only supplied when no per-pane override
+/// is in play.
 ///
 /// The underlying `openpty` + process spawn is blocking work — run it off the
 /// async runtime thread (audit improvement: spawn_blocking) so a slow spawn
@@ -14,10 +18,12 @@ pub async fn spawn_pty(
     rows: u16,
     cwd: Option<String>,
     shell: Option<String>,
+    shell_args: Option<Vec<String>>,
+    shell_env: Option<HashMap<String, String>>,
 ) -> Result<String, String> {
     let manager = state.pty_manager.clone();
     let batcher = state.batcher.clone();
-    spawn_blocking(move || manager.spawn_pane(cols, rows, cwd, shell, batcher))
+    spawn_blocking(move || manager.spawn_pane(cols, rows, cwd, shell, shell_args, shell_env, batcher))
         .await
         .map_err(|e| format!("Spawn task failed: {e}"))?
 }

@@ -122,7 +122,7 @@ export default function Home() {
   const { skyRef, hillsRef, cardRef } = useParallax();
 
   return (
-    <div className="dark relative min-h-screen bg-black font-sans text-white overflow-x-hidden selection:bg-emerald-500 selection:text-black">
+    <div className="dark relative min-h-screen bg-black font-sans text-white overflow-x-hidden selection:bg-[#3C95F0] selection:text-black">
 
       {/* ═══════════════════════════ NAVBAR ═══════════════════════════ */}
       <Navbar active="home" />
@@ -140,7 +140,7 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-4xl px-6 pb-32 pt-36 text-center">
 
           {/* Badge */}
-          <div className="fb-hidden fb-in-rise mb-8 inline-flex items-center gap-2 rounded-full border border-forest/30 bg-forest/10 px-3.5 py-1 text-[12px] text-forest-bright">
+          <div className="vg-hidden vg-in-rise mb-8 inline-flex items-center gap-2 rounded-full border border-forest/30 bg-forest/10 px-3.5 py-1 text-[12px] text-forest-bright">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-forest-bright" />
@@ -149,23 +149,23 @@ export default function Home() {
           </div>
 
           {/* Main heading */}
-          <h1 className="lp-hero-heading fb-hidden fb-in-text text-[44px] leading-[1.08] text-white sm:text-[58px] md:text-[72px] lg:text-[84px]"
-              style={{ '--fb-delay': '0.05s' } as React.CSSProperties}>
+          <h1 className="vg-hero-heading vg-hidden vg-in-text text-[44px] leading-[1.08] text-white sm:text-[58px] md:text-[72px] lg:text-[84px]"
+              style={{ '--vg-delay': '0.05s' } as React.CSSProperties}>
             The "Agnostic"<br />
-            <StaggeredText text="Vibe Coder" className="lp-text-glow-green text-forest-bright" step={45} startDelay={450} />{' '}
+            <StaggeredText text="Vibe Coder" className="vg-text-glow text-forest-bright" step={45} startDelay={450} />{' '}
           </h1>
 
           {/* Sub text */}
-          <p className="fb-hidden fb-in-rise mx-auto mt-6 max-w-2xl text-[17px] leading-relaxed text-white/55"
-             style={{ '--fb-delay': '0.12s' } as React.CSSProperties}>
+          <p className="vg-hidden vg-in-rise mx-auto mt-6 max-w-2xl text-[17px] leading-relaxed text-white/55"
+             style={{ '--vg-delay': '0.12s' } as React.CSSProperties}>
             The lightning-fast, free, local-first grid for orchestrating <strong className="text-white">YOUR choice of AI agents.</strong> Escape BridgeSpace's walled garden and experience true vibe coding.
           </p>
 
           {/* CTA buttons */}
-          <div className="fb-hidden fb-in-rise mt-10 flex flex-wrap items-center justify-center gap-3"
-               style={{ '--fb-delay': '0.18s' } as React.CSSProperties}>
+          <div className="vg-hidden vg-in-rise mt-10 flex flex-wrap items-center justify-center gap-3"
+               style={{ '--vg-delay': '0.18s' } as React.CSSProperties}>
             <a href="/#download"
-               className="install-box-glow group flex items-center gap-2 rounded-xl border border-forest/40 bg-forest px-5 py-3 text-[14px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_28px_rgba(84,169,103,0.55)]">
+               className="vg-install-glow group flex items-center gap-2 rounded-xl border border-forest/40 bg-forest px-5 py-3 text-[14px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_28px_rgba(60,149,240,0.55)]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 5v14M5 12l7 7 7-7"/>
               </svg>
@@ -189,8 +189,8 @@ export default function Home() {
           </div>
 
           {/* Social proof */}
-          <p className="fb-hidden fb-in-rise mt-6 flex items-center justify-center gap-2 text-[13px] text-white/30"
-             style={{ '--fb-delay': '0.24s' } as React.CSSProperties}>
+          <p className="vg-hidden vg-in-rise mt-6 flex items-center justify-center gap-2 text-[13px] text-white/30"
+             style={{ '--vg-delay': '0.24s' } as React.CSSProperties}>
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-75" />
               <span className="animate-pulse relative inline-flex h-2 w-2 rounded-full bg-forest-bright" />
@@ -205,15 +205,15 @@ export default function Home() {
           {/* Sky layer */}
           <img ref={skyRef} src="/sky-bg.webp" alt="" aria-hidden="true"
                decoding="async" draggable="false"
-               className="lp-gpu pointer-events-none absolute inset-x-0 bottom-[32%] z-0 w-full select-none object-cover brightness-[0.7] saturate-[0.8]" />
+               className="vg-gpu pointer-events-none absolute inset-x-0 bottom-[32%] z-0 w-full select-none object-cover brightness-[0.7] saturate-[0.8]" />
 
           {/* Hills layer */}
           <img ref={hillsRef} src="/hills-bg.webp" alt="" aria-hidden="true"
                decoding="async" draggable="false"
-               className="lp-gpu pointer-events-none absolute inset-x-0 bottom-[21%] z-[1] w-full select-none object-cover brightness-[1.15] contrast-[1.05]" />
+               className="vg-gpu pointer-events-none absolute inset-x-0 bottom-[21%] z-[1] w-full select-none object-cover brightness-[1.15] contrast-[1.05]" />
 
           {/* Comparison card */}
-          <div ref={cardRef} className="lp-gpu absolute inset-x-0 top-[11%] z-10 mx-auto w-full max-w-4xl px-3 sm:px-6">
+          <div ref={cardRef} className="vg-gpu absolute inset-x-0 top-[11%] z-10 mx-auto w-full max-w-4xl px-3 sm:px-6">
             <div className="relative w-full overflow-hidden rounded-t-[20px] border border-b-0 border-white/[0.08] bg-[#0b0c0e]/95 px-4 pt-7 pb-[42vh] sm:px-9 sm:pt-9 sm:pb-[46vh] shadow-[0_50px_140px_-25px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.04)_inset]">
 
               {/* Scan line effect */}
@@ -235,7 +235,7 @@ export default function Home() {
                 <div className="relative space-y-3 sm:space-y-4">
                   {COMPETITORS.map((comp, i) => (
                     <div key={i} className="flex items-center"
-                         style={{ '--fb-index': i, '--fb-step': '60ms' } as React.CSSProperties}>
+                         style={{ '--vg-index': i, '--vg-step': '60ms' } as React.CSSProperties}>
                       <div className="flex shrink-0 items-center gap-2 sm:gap-3 w-[112px] sm:w-[180px] lg:w-[200px]">
                         <div className={`h-[26px] w-[26px] rounded-[5px] flex items-center justify-center text-[10px] font-bold ${comp.primary ? 'bg-forest/20 border border-forest/30 text-forest-bright' : 'bg-white/5 border border-white/10 text-white/40'}`}>
                           {comp.name[0]}
@@ -247,7 +247,7 @@ export default function Home() {
                       <div className="relative h-9 flex-1 sm:h-11">
                         {comp.primary ? (
                           <>
-                            <div className="absolute left-0 top-1/2 h-[22px] w-[3px] -translate-y-1/2 rounded-full bg-forest-bright shadow-[0_0_14px_4px_rgba(84,169,103,0.7)] sm:h-[26px]" />
+                            <div className="absolute left-0 top-1/2 h-[22px] w-[3px] -translate-y-1/2 rounded-full bg-forest-bright shadow-[0_0_14px_4px_rgba(60,149,240,0.7)] sm:h-[26px]" />
                             <span className="absolute top-1/2 -translate-y-1/2 pl-2 text-[12px] font-normal tabular-nums sm:pl-3 sm:text-[15px]" style={{ left: '3px' }}>
                               <span className="font-medium text-forest-bright">$0 / yr</span>
                             </span>
@@ -279,24 +279,24 @@ export default function Home() {
         <section id="desktop" className="relative z-30 -mt-[24vh] bg-black px-6 py-10 md:-mt-[38vh]">
           <div className="mx-auto max-w-6xl divide-y divide-white/[0.06]">
             <div className="grid scroll-mt-24 items-center gap-10 py-24 md:grid-cols-2 md:gap-16 md:py-36">
-              <div className="fb-hidden fb-in-rise">
+              <div className="vg-hidden vg-in-rise">
                 <div className="mb-3 flex items-center gap-2">
                   <span className="rounded-full border border-forest/40 bg-forest/15 px-2 py-0.5 text-[10px] font-normal uppercase tracking-wide text-forest-bright">New</span>
                 </div>
-                <h2 className="lp-feature-heading text-white">
+                <h2 className="vg-feature-heading text-white">
                   Introducing <span className="text-forest-bright">VibeGrid Desktop</span>
                 </h2>
                 <p className="mt-4 max-w-md text-lg text-white/55">
                   Run coding agents in parallel on your machine — each in its own workspace.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <a href="/#download" className="install-box-glow inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-forest-bright">
+                  <a href="/#download" className="vg-install-glow inline-flex items-center gap-2 rounded-xl bg-forest px-5 py-2.5 text-sm font-medium text-white transition-all hover:bg-forest-bright">
                     Download free →
                   </a>
                 </div>
               </div>
               {/* Terminal mock */}
-              <div className="fb-hidden fb-in-right" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+              <div className="vg-hidden vg-in-right" style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
                 <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0b0d] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
                   {/* Terminal title bar */}
                   <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
@@ -334,19 +334,19 @@ export default function Home() {
         {/* ── CLI Section ── */}
         <section id="cli" className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-4xl">
-            <div className="fb-hidden fb-in-rise mb-12 text-center">
+            <div className="vg-hidden vg-in-rise mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                 INSTALLER
               </div>
-              <h2 className="lp-feature-heading text-white">
-                One command to <span className="text-forest-bright lp-text-glow-green">install</span>
+              <h2 className="vg-feature-heading text-white">
+                One command to <span className="text-forest-bright vg-text-glow">install</span>
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-[15px] text-white/50">
                 Pipe the official installer script — it detects your OS and architecture and grabs the right build.
               </p>
             </div>
 
-            <div className="fb-hidden fb-in-rise mx-auto flex max-w-xl flex-col gap-3">
+            <div className="vg-hidden vg-in-rise mx-auto flex max-w-xl flex-col gap-3">
               <InstallCmd cmd="curl -fsSL https://vibegrid.vercel.app/install.sh | sh" />
             </div>
           </div>
@@ -356,11 +356,11 @@ export default function Home() {
         <section id="workspaces" className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-6xl">
             <div className="grid items-center gap-10 md:grid-cols-2 md:gap-16">
-              <div className="fb-hidden fb-in-rise">
+              <div className="vg-hidden vg-in-rise">
                 <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                   Workspaces
                 </div>
-                <h2 className="lp-feature-heading text-white">
+                <h2 className="vg-feature-heading text-white">
                   Named workspaces, <span className="text-forest-bright">instant switching</span>
                 </h2>
                 <p className="mt-4 max-w-md text-[15px] leading-relaxed text-white/50">
@@ -377,7 +377,7 @@ export default function Home() {
                   ))}
                 </div>
               </div>
-              <div className="fb-hidden fb-in-right" style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+              <div className="vg-hidden vg-in-right" style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
                 <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0a0b0d] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)]">
                   <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
                     <span className="h-3 w-3 rounded-full bg-red-500/70" />
@@ -403,11 +403,11 @@ export default function Home() {
         {/* ── Themes Section ── */}
         <section id="themes" className="relative scroll-mt-24 bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-6xl">
-            <div className="fb-hidden fb-in-rise mb-12 text-center">
+            <div className="vg-hidden vg-in-rise mb-12 text-center">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                 Themes
               </div>
-              <h2 className="lp-feature-heading text-white">
+              <h2 className="vg-feature-heading text-white">
                 8 built-in themes, <span className="text-forest-bright">fully customizable</span>
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-[15px] text-white/50">
@@ -416,9 +416,9 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="fb-hidden fb-in-rise grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            <div className="vg-hidden vg-in-rise grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
               {[
-                { name: 'VibeDark', bg: '#0b0d12', fg: '#e2e8f0', acc: '#54a967' },
+                { name: 'VibeDark', bg: '#0b0d12', fg: '#e2e8f0', acc: '#3c95f0' },
                 { name: 'One Dark Pro', bg: '#282c34', fg: '#abb2bf', acc: '#61afef' },
                 { name: 'Nord', bg: '#2e3440', fg: '#d8dee9', acc: '#88c0d0' },
                 { name: 'Tokyo Night', bg: '#1a1b26', fg: '#c0caf5', acc: '#7aa2f7' },
@@ -445,12 +445,12 @@ export default function Home() {
         <section className="relative bg-black px-6 pt-24 pb-16 md:pt-32 md:pb-20">
           <div className="mx-auto max-w-6xl">
             <div className="mb-16 text-center">
-              <div className="fb-hidden fb-in-rise mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
+              <div className="vg-hidden vg-in-rise mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-white/50 uppercase tracking-widest">
                 Features
               </div>
-              <h2 className="lp-feature-heading fb-hidden fb-in-text text-white">
+              <h2 className="vg-feature-heading vg-hidden vg-in-text text-white">
                 Everything you need for Vibe Coding.<br/>
-                <span className="animate-glow-pulse text-forest-bright lp-text-glow-green">No Walled Gardens.</span>
+                <span className="animate-glow-pulse text-forest-bright vg-text-glow">No Walled Gardens.</span>
               </h2>
             </div>
 
@@ -464,8 +464,8 @@ export default function Home() {
                 { icon: <KeyboardHoverIcon size={26} />, title: 'Command Palette', desc: 'Cmd+Shift+P fuzzy search. Every command, shortcut, and setting discoverable in one place.' },
               ].map((f, i) => (
                 <div key={i}
-                     className="fb-hidden fb-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
-                     style={{ '--fb-index': i, '--fb-step': '70ms', '--fb-delay': '0.05s' } as React.CSSProperties}>
+                     className="vg-hidden vg-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] p-6 transition-all duration-500 hover:border-forest/30 hover:bg-forest/[0.04]"
+                     style={{ '--vg-index': i, '--vg-step': '70ms', '--vg-delay': '0.05s' } as React.CSSProperties}>
                   <div className="shine-layer" aria-hidden="true" />
                   <div className="mb-4 flex items-center h-8">{f.icon}</div>
                   <h3 className="mb-2 text-[15px] font-medium text-white/90">{f.title}</h3>
@@ -476,14 +476,14 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ── Live Map (Freebuff live-stats + pulsing world map) ── */}
+        {/* ── Live activity map (world SVG + pulsing dots) ── */}
         <LiveMap />
 
         {/* ── Quote / Social Proof ── */}
         <section className="relative bg-black px-6 py-16 md:py-24">
           <div className="mx-auto max-w-3xl text-center">
-            <div className="fb-hidden fb-in-fade">
-              <p className="lp-serif text-[22px] leading-relaxed text-white/70 sm:text-[28px] md:text-[34px]">
+            <div className="vg-hidden vg-in-fade">
+              <p className="vg-serif text-[22px] leading-relaxed text-white/70 sm:text-[28px] md:text-[34px]">
                 "Life-changing in making a dream of mine come true"
               </p>
               <p className="mt-4 text-[13px] text-white/35">— Developer community feedback</p>
@@ -494,17 +494,17 @@ export default function Home() {
         {/* ── Download Section ── */}
         <section id="download" className="relative bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-4xl">
-            <div className="fb-hidden fb-in-rise mb-12 text-center">
-              <h2 className="lp-feature-heading text-white mb-4">
-                Download <span className="text-forest-bright lp-text-glow-green">VibeGrid</span>
+            <div className="vg-hidden vg-in-rise mb-12 text-center">
+              <h2 className="vg-feature-heading text-white mb-4">
+                Download <span className="text-forest-bright vg-text-glow">VibeGrid</span>
               </h2>
               <p className="text-white/50 text-lg">Free forever. No account needed. Just download and run.</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
               {/* macOS */}
-              <div className="fb-hidden fb-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 transition-all hover:border-forest/30 hover:bg-forest/[0.03]"
-                   style={{ '--fb-delay': '0s' } as React.CSSProperties}>
+              <div className="vg-hidden vg-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 transition-all hover:border-forest/30 hover:bg-forest/[0.03]"
+                   style={{ '--vg-delay': '0s' } as React.CSSProperties}>
                 <div className="shine-layer" aria-hidden="true" />
                 <div className="absolute inset-0 animate-scan-line pointer-events-none">
                   <div className="h-px w-full bg-gradient-to-r from-transparent via-forest/10 to-transparent" />
@@ -517,7 +517,7 @@ export default function Home() {
                     href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v0.1.0/VibeGrid_0.1.0_aarch64.dmg"
                     target="_blank"
                     rel="noreferrer"
-                    className="install-box-glow flex items-center justify-center gap-2 rounded-xl bg-forest px-4 py-3 text-sm font-medium text-white transition-all hover:bg-forest-bright"
+                    className="vg-install-glow flex items-center justify-center gap-2 rounded-xl bg-forest px-4 py-3 text-sm font-medium text-white transition-all hover:bg-forest-bright"
                   >
                     Download for Apple Silicon
                   </a>
@@ -533,8 +533,8 @@ export default function Home() {
               </div>
 
               {/* Windows */}
-              <div className="fb-hidden fb-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 transition-all hover:border-white/15"
-                   style={{ '--fb-delay': '0.08s' } as React.CSSProperties}>
+              <div className="vg-hidden vg-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 transition-all hover:border-white/15"
+                   style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
                 <div className="shine-layer" aria-hidden="true" />
                 <div className="mb-6 flex items-center h-10"><WindowHoverIcon size={32} /></div>
                 <h3 className="mb-1 text-[18px] font-medium text-white">Windows</h3>
@@ -557,13 +557,13 @@ export default function Home() {
         {/* ── FAQ ── */}
         <section className="relative bg-black px-6 py-24 md:py-32">
           <div className="mx-auto max-w-3xl">
-            <div className="fb-hidden fb-in-rise mb-12 text-center">
-              <h2 className="lp-feature-heading text-white">Frequently asked</h2>
+            <div className="vg-hidden vg-in-rise mb-12 text-center">
+              <h2 className="vg-feature-heading text-white">Frequently asked</h2>
             </div>
             <div className="divide-y divide-white/[0.06]">
               {FAQS.map((faq, i) => (
-                <details key={i} className="fb-hidden fb-in-fall group py-5"
-                         style={{ '--fb-index': i, '--fb-step': '60ms' } as React.CSSProperties}>
+                <details key={i} className="vg-hidden vg-in-fall group py-5"
+                         style={{ '--vg-index': i, '--vg-step': '60ms' } as React.CSSProperties}>
                   <summary className="flex cursor-pointer items-center justify-between text-[15px] font-normal text-white/80 transition-colors hover:text-white list-none">
                     {faq.q}
                     <svg className="h-4 w-4 shrink-0 text-white/30 transition-transform group-open:rotate-45" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

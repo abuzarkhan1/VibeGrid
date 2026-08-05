@@ -1,3 +1,4 @@
+pub mod autostart;
 pub mod commands;
 pub mod config;
 pub mod ipc;
@@ -175,6 +176,7 @@ pub fn run() {
             commands::resize_pty,
             commands::kill_pty,
             commands::set_batch_interval,
+            commands::get_http_port,
             commands::pane_snapshot,
             commands::save_workspace,
             commands::load_workspace,
@@ -188,7 +190,11 @@ pub fn run() {
             commands::voice_set_silence_timeout,
             commands::voice_set_input_device,
             commands::voice_list_input_devices,
+            commands::voice_set_language,
+            commands::voice_set_model_size,
             commands::set_global_summon,
+            autostart::autostart_set_enabled,
+            autostart::autostart_is_enabled,
         ])
         .build(tauri::generate_context!())
         .expect("error while building VibeGrid application");
