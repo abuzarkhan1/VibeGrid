@@ -1,73 +1,185 @@
 'use client';
 
-interface NavbarProps {
+import React, { useState, useEffect, useRef } from 'react';
+
+export interface NavbarProps {
   /** Which page is currently active (controls the About link highlight). */
   active?: 'home' | 'about';
 }
 
-const SECTION_LINKS = ['Desktop', 'CLI', 'Workspaces', 'Themes'];
+const NAV_LINKS = [
+  { label: 'Desktop', href: '/#desktop' },
+  { label: 'CLI', href: '/#cli' },
+  { label: 'Workspaces', href: '/#workspaces' },
+  { label: 'Themes', href: '/#themes' },
+  { label: 'About', href: '/about' },
+];
 
-/** VibeGrid logo mark (2×2 pane grid). */
-function LogoMark() {
-  return (
-    <div className="flex h-7 w-7 items-center justify-center rounded-[7px] bg-forest text-white shadow-[0_0_18px_rgba(11,107,196,0.55)]">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
-        <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-        <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-        <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2"/>
-      </svg>
-    </div>
-  );
-}
-
-function GithubIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.929.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
-    </svg>
-  );
-}
-
-/** Fixed top navbar, identical across every page. */
 export function Navbar({ active }: NavbarProps) {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const mobileNavRef = useRef<HTMLElement>(null);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 15);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+        hamburgerRef.current?.focus();
+      }
+    };
+    if (menuOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const nav = mobileNavRef.current;
+    if (!nav) return;
+
+    const focusable = Array.from(
+      nav.querySelectorAll<HTMLElement>('a, button')
+    ).filter((el) => !el.hasAttribute('disabled'));
+
+    if (focusable.length === 0) return;
+
+    focusable[0].focus();
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    nav.addEventListener('keydown', handleTab);
+    return () => nav.removeEventListener('keydown', handleTab);
+  }, [menuOpen]);
+
   return (
-    <header className="fixed top-0 z-50 w-full border-b border-white/[0.06] bg-black/85 backdrop-blur-md">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
+    <>
+      <header
+        role="banner"
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${
+          scrolled
+            ? 'bg-[#08080a] backdrop-blur-2xl border-white/[0.08] py-4'
+            : 'bg-[#08080a]/80 backdrop-blur-xl border-transparent py-5'
+        }`}
+      >
+        <div className="max-w-6xl mx-auto px-6 sm:px-8 flex items-center justify-between h-12">
+          <a
+            href="/"
+            className="text-2xl sm:text-3xl font-black text-white tracking-tight select-none flex items-center gap-1 hover:opacity-90 transition-opacity"
+          >
+            <span className="font-black tracking-tight text-white">Vibe</span>
+            <em className="italic font-serif font-bold text-zinc-100 text-2xl sm:text-3xl">
+              Grid
+            </em>
+          </a>
 
-        {/* Logo */}
-        <a href="/" className="flex shrink-0 items-center gap-2.5 hover:opacity-80 transition-opacity">
-          <LogoMark />
-          <span className="text-sm font-medium text-white/90 tracking-tight">VibeGrid</span>
-        </a>
+          <nav aria-label="Main navigation" className="hidden md:flex items-center gap-10">
+            {NAV_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                aria-current={link.label === 'About' && active === 'about' ? 'page' : undefined}
+                className="text-base font-black tracking-tight text-white hover:text-zinc-300 transition-colors duration-150"
+              >
+                {link.label}
+              </a>
+            ))}
+          </nav>
 
-        {/* Nav links */}
-        <nav className="hidden items-center gap-1 md:flex">
-          {SECTION_LINKS.map((item) => (
-            <a key={item} href={`/#${item.toLowerCase()}`}
-              className="rounded-md px-3 py-1.5 text-[13.5px] text-white/55 transition-colors hover:text-white hover:bg-white/5">
-              {item}
+          <div className="hidden md:flex items-center">
+            <a
+              href="/#download"
+              className="text-base font-black tracking-tight px-7 py-3 rounded-full bg-white text-black hover:bg-zinc-200 transition-all duration-200 shadow-2xl shadow-white/30 active:scale-[0.98] inline-flex items-center justify-center cursor-pointer select-none border-2 border-white"
+            >
+              Download
+            </a>
+          </div>
+
+          <button
+            ref={hamburgerRef}
+            className="md:hidden flex flex-col justify-center items-center w-11 h-11 min-w-[44px] min-h-[44px] p-2 gap-1.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+          >
+            <span
+              className={`block h-0.5 w-6 bg-white transition-all duration-200 origin-center ${
+                menuOpen ? 'rotate-45 translate-y-[8px]' : ''
+              }`}
+            />
+            <span
+              className={`block h-0.5 w-6 bg-white transition-all duration-200 ${
+                menuOpen ? 'opacity-0' : ''
+              }`}
+            />
+            <span
+              className={`block h-0.5 w-6 bg-white transition-all duration-200 origin-center ${
+                menuOpen ? '-rotate-45 -translate-y-[8px]' : ''
+              }`}
+            />
+          </button>
+        </div>
+      </header>
+
+      {menuOpen && (
+        <nav
+          id="mobile-nav"
+          ref={mobileNavRef}
+          aria-label="Mobile navigation"
+          className="fixed inset-0 z-40 bg-[#08080a]/98 backdrop-blur-3xl flex flex-col justify-center items-center gap-8 md:hidden px-6"
+        >
+          {NAV_LINKS.map((link) => (
+            <a
+              key={link.label}
+              href={link.href}
+              className="text-3xl font-black tracking-tight text-white hover:text-zinc-300 transition-colors"
+              onClick={() => setMenuOpen(false)}
+            >
+              {link.label}
             </a>
           ))}
-          <a href="/about" aria-current={active === 'about' ? 'page' : undefined}
-            className={`rounded-md px-3 py-1.5 text-[13.5px] transition-colors hover:bg-white/5 ${active === 'about' ? 'text-white' : 'text-white/55 hover:text-white'}`}>
-            About
+          <a
+            href="/#download"
+            className="text-lg font-black tracking-tight px-8 py-4 rounded-full bg-white text-black hover:bg-zinc-200 transition-all mt-4 w-full text-center shadow-2xl active:scale-[0.98] border-2 border-white"
+            onClick={() => setMenuOpen(false)}
+          >
+            Download VibeGrid
           </a>
         </nav>
-
-        {/* Right side */}
-        <div className="flex items-center gap-2.5">
-          <a href="https://github.com/abuzarkhan1/VibeGrid" target="_blank" rel="noreferrer"
-            className="hidden items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-[13px] text-white/70 transition-colors hover:border-white/20 hover:text-white sm:flex">
-            <GithubIcon />
-            <span>Star us</span>
-          </a>
-          <a href="/#download"
-            className="rounded-md bg-forest px-3.5 py-1.5 text-[13px] font-medium text-white transition-all hover:bg-forest-bright hover:shadow-[0_0_16px_rgba(60,149,240,0.4)] vg-install-glow">
-            Download
-          </a>
-        </div>
-      </div>
-    </header>
+      )}
+    </>
   );
 }

@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
 
+const spaceGrotesk = { variable: 'font-space' };
+const instrumentSerif = { variable: 'font-serif' };
+const jetbrainsMono = { variable: 'font-mono' };
+
 export const metadata: Metadata = {
   title: 'VibeGrid — The GPU-Accelerated Multi-Pane Terminal Workspace for Mac & Windows',
   description: 'VibeGrid is a free, open-source GPU-accelerated multi-pane terminal workspace using Tauri 2 + Rust + React + WebGL. Orchestrate AI coding agents, terminal grids (1 to 16 panes), workspaces, and custom keybindings.',
@@ -43,13 +47,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark" style={{ colorScheme: 'dark' }}>
+    <html
+      lang="en"
+      className={`dark ${spaceGrotesk.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      style={{ colorScheme: 'dark' }}
+    >
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
-      <body className="flex flex-col min-h-screen bg-black font-sans text-white antialiased">
+      <body className="flex flex-col min-h-screen bg-[#08080a] font-sans text-white antialiased">
         {children}
       </body>
     </html>

@@ -34,7 +34,7 @@ const SHOOTING_STARS = [
 /** Twinkling + shooting star field. Place inside a `relative` hero. */
 export function StarsCanvas() {
   return (
-    <div className="vg-gpu pointer-events-none absolute inset-0">
+    <div className="vg-gpu pointer-events-none absolute inset-0 overflow-hidden">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {STARS.map((s, i) => (
           <span key={i} className="vg-star" style={{
