@@ -36,8 +36,10 @@ export const TerminalContainer: React.FC<TerminalContainerProps> = React.memo(({
     <div
       onClick={handleFocus}
       style={{ '--pane-accent': paneColorForIndex(paneIndex) } as React.CSSProperties}
-      className={`vg-pane-frame h-full w-full flex flex-col overflow-hidden relative rounded-lg ${
-        isFocused ? 'vg-pane-focused' : ''
+      className={`vg-pane-frame h-full w-full flex flex-col overflow-hidden relative rounded-lg border bg-[#08080a] ${
+        isFocused
+          ? 'border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.07)] vg-pane-focused'
+          : 'border-white/[0.08]'
       } ${paneIndex % 2 === 1 ? 'vg-pane-alt' : ''}`}
     >
       {/* UX audit P1 #6/#7: the title bar is ALWAYS visible so every pane is

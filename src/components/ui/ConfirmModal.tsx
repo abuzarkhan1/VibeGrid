@@ -50,34 +50,34 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
     >
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col backdrop-blur-md"
+        className="w-full max-w-sm bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.03]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center gap-2 text-amber-400">
             <AlertTriangle className="w-4 h-4" />
-            <h3 className="text-xs font-medium text-white/90 uppercase tracking-wider">{title}</h3>
+            <h3 className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">{title}</h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close confirmation dialog"
-            className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          <p className="text-xs text-white/70 leading-relaxed">{message}</p>
+          <p className="text-xs text-zinc-300 leading-relaxed">{message}</p>
 
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2.5 pt-2">
             <button
               onClick={onClose}
-              className="px-3 py-1.5 rounded-lg border border-white/10 text-xs text-white/50 hover:bg-white/5 transition-colors"
+              className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
@@ -87,8 +87,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 onConfirm();
                 onClose();
               }}
-              className={`px-4 py-1.5 rounded-lg text-xs font-medium text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-bright/70 ${
-                isDanger ? 'bg-rose-600 hover:bg-rose-500' : 'bg-forest hover:bg-forest-bright'
+              className={`px-5 py-2 rounded-2xl text-xs font-extrabold font-space transition-colors focus:outline-none focus-visible:ring-2 ${
+                isDanger
+                  ? 'bg-rose-600 hover:bg-rose-500 text-white focus-visible:ring-rose-400'
+                  : 'bg-white text-black hover:bg-zinc-200 focus-visible:ring-white/70'
               }`}
             >
               {confirmLabel}

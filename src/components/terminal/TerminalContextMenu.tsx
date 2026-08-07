@@ -42,7 +42,7 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
       ref={ref}
       role="menu"
       aria-label="Terminal actions"
-      className="fixed z-[60] min-w-[190px] py-1.5 rounded-lg bg-surfaceCard border border-white/10 shadow-2xl shadow-black/60 backdrop-blur-md text-xs animate-fade-in"
+      className="fixed z-[60] min-w-[190px] py-1.5 rounded-xl bg-zinc-900/95 border border-white/[0.08] shadow-2xl backdrop-blur-xl font-mono text-xs animate-fade-in"
       style={{ left: x, top: y }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -62,16 +62,16 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
               item.disabled
                 ? 'text-white/25 cursor-not-allowed'
-                : 'text-white/70 hover:bg-forest/10 hover:text-white'
+                : 'text-zinc-300 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <span className="w-4 flex justify-center text-forest-bright/80">{item.icon}</span>
+            <span className="w-4 flex justify-center text-zinc-400">{item.icon}</span>
             <span>{item.label}</span>
           </button>
         )
       )}
       <div className="my-1 h-px bg-white/[0.06]" />
-      <div className="px-3 py-1 text-[10px] text-white/30">Right-click actions · drag &amp; drop paths to insert</div>
+      <div className="px-3 py-1 text-[10px] text-zinc-500">Right-click actions · drag &amp; drop paths to insert</div>
     </div>
   );
 };

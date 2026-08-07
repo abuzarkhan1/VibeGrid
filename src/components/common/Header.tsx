@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
   const presets: PresetCount[] = [1, 2, 3, 4, 5, 6, 8, 9, 12, 16];
 
   return (
-    <header className="h-9 w-full bg-surface/95 backdrop-blur-md border-b border-white/[0.06] px-3 flex items-center justify-between select-none z-20">
+    <header className="h-9 w-full bg-[#08080a] backdrop-blur-md border-b border-white/[0.08] px-3 flex items-center justify-between select-none z-20">
       {/* Left: Sidebar Toggle, Brand logo & Workspace selector */}
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
@@ -78,42 +78,45 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
             onClick={onToggleSidebar}
             title={`${isSidebarOpen ? 'Collapse' : 'Expand'} Sidebar (Cmd/Ctrl+B)`}
             aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            className={`p-1 rounded border transition-colors ${
-              isSidebarOpen ? 'bg-forest/20 border-forest/40 text-forest-light' : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-white/50'
+            className={`p-1 rounded-lg border transition-colors ${
+              isSidebarOpen ? 'bg-zinc-800 border-white/20 text-zinc-100' : 'bg-[#08080a] hover:bg-zinc-900 border-white/[0.08] text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <PanelLeft className="w-4 h-4" />
           </button>
         )}
 
-        <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" onClick={onOpenAbout} title="About VibeGrid">
-          <div className="flex h-6 w-6 items-center justify-center rounded-[6px] bg-forest text-white shadow-[0_0_8px_rgba(11,107,196,0.35)]">
+        <div className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity" onClick={onOpenAbout} title="About VibeGrid">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#08080a] border border-white/[0.12] text-white shadow-[0_0_12px_rgba(255,255,255,0.08)]">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
-              <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-              <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-              <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2"/>
+              <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.95"/>
+              <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.55"/>
+              <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.55"/>
+              <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.25"/>
             </svg>
           </div>
-          <span className="text-xs font-medium text-white/90 tracking-tight">VibeGrid</span>
+          <div className="flex items-center tracking-tight text-sm">
+            <span className="font-['Space_Grotesk'] font-black text-white">Vibe</span>
+            <span className="font-serif italic font-bold text-zinc-100 ml-0.5">Grid</span>
+          </div>
         </div>
 
         {/* Workspace Dropdown */}
         <div className="relative">
           <button
             onClick={() => setIsWsDropdownOpen(!isWsDropdownOpen)}
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-white/65 transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#08080a] hover:bg-zinc-900 border border-white/[0.08] text-xs font-['Space_Grotesk'] font-bold text-zinc-200 hover:text-white transition-colors shadow-sm"
           >
-            <span className="font-medium max-w-[120px] truncate">{activeWs?.name || 'Default Workspace'}</span>
-            <ChevronDown className="w-3 h-3 text-white/50" />
+            <span className="max-w-[120px] truncate">{activeWs?.name || 'Default Workspace'}</span>
+            <ChevronDown className="w-3 h-3 text-zinc-400" />
           </button>
 
           {isWsDropdownOpen && (
             <div
               onMouseLeave={() => setIsWsDropdownOpen(false)}
-              className="absolute top-8 left-0 z-50 w-56 bg-surfaceCard border border-white/10 rounded-lg shadow-xl py-1 text-xs animate-fade-in backdrop-blur-md"
+              className="absolute top-8 left-0 z-50 w-56 bg-[#08080a] border border-white/[0.08] rounded-xl shadow-2xl py-1 text-xs animate-fade-in backdrop-blur-md"
             >
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-white/40 uppercase">Workspaces</div>
+              <div className="px-3 py-1.5 text-[10px] font-['Space_Grotesk'] font-bold text-zinc-500 uppercase">Workspaces</div>
               {workspaces.map((ws) => {
                 const running = ws.id === activeWorkspaceId
                   ? getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length
@@ -141,16 +144,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                   }}
                   title={ws.id === activeWorkspaceId ? `${ws.name} (double-click to rename)` : `Switch to ${ws.name} (double-click to rename)`}
                   className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors focus:outline-none focus-visible:bg-white/10 ${
-                    ws.id === activeWorkspaceId ? 'bg-forest/10 text-forest-light font-semibold' : 'text-white/65 hover:bg-white/5'
+                    ws.id === activeWorkspaceId ? 'bg-zinc-800/80 text-white font-semibold' : 'text-zinc-300 hover:bg-zinc-900'
                   }`}
                 >
-                  <span className="truncate flex items-center gap-1.5">
+                  <span className="truncate flex items-center gap-1.5 font-['Space_Grotesk']">
                     {ws.name}
                     {/* UX audit P1 #5: running indicator in the dropdown too. */}
                     {running > 0 && (
                       <span title={`${running} running terminal${running > 1 ? 's' : ''}`} className="relative flex h-1.5 w-1.5 shrink-0">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-60" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-forest-bright" />
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       </span>
                     )}
                   </span>
@@ -163,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                       }}
                       title="Rename Workspace"
                       aria-label={`Rename workspace ${ws.name}`}
-                      className="p-0.5 rounded hover:bg-white/10 text-white/45 hover:text-white/80"
+                      className="p-0.5 rounded hover:bg-white/10 text-zinc-400 hover:text-white"
                     >
                       <Edit2 className="w-3 h-3" />
                     </button>
@@ -178,7 +181,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                       }}
                       title="Delete Workspace"
                       aria-label={`Delete workspace ${ws.name}`}
-                      className="p-0.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400"
+                      className="p-0.5 rounded hover:bg-rose-950/60 text-zinc-400 hover:text-rose-400"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -192,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                     setShowCreateModal(true);
                     setIsWsDropdownOpen(false);
                   }}
-                  className="w-full px-3 py-1.5 flex items-center gap-2 text-forest-light hover:bg-white/5 transition-colors"
+                  className="w-full px-3 py-1.5 flex items-center gap-2 text-zinc-200 hover:bg-zinc-900 font-['Space_Grotesk'] font-bold transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>New Workspace</span>
@@ -203,10 +206,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         </div>
       </div>
 
-      {/* Center: Preset Grid Buttons (1, 2, 4, 6, 8, 16) */}
-      <div className="flex items-center gap-1.5 bg-white/[0.03] p-0.5 rounded-lg border border-white/10 backdrop-blur-md">
-        <div className="flex items-center gap-1 px-1.5 text-[10px] font-bold text-white/45 uppercase tracking-wider">
-          <Grid className="w-3 h-3 text-forest-bright" />
+      {/* Center: Preset Grid Tabs (1, 2, 3, 4, 5, 6, 8, 9, 12, 16) */}
+      <div className="flex items-center gap-1 bg-[#08080a] p-1 rounded-lg border border-white/[0.08] backdrop-blur-md">
+        <div className="flex items-center gap-1 px-1.5 text-[10px] font-['Space_Grotesk'] font-bold text-zinc-400 uppercase tracking-wider">
+          <Grid className="w-3 h-3 text-zinc-300" />
           <span className="hidden md:inline">Grid:</span>
         </div>
 
@@ -219,8 +222,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
               // processes are running a confirmation is shown first.
               onClick={() => requestSetLayoutPreset(p)}
               title={`Set Equal Grid to ${p} Pane${p > 1 ? 's' : ''}`}
-              className={`px-2 py-0.5 text-xs font-mono font-bold rounded transition-all ${
-                isActive ? 'bg-forest text-white' : 'text-white/45 hover:text-white/90 hover:bg-white/5'
+              className={`px-2 py-0.5 text-xs font-['Space_Grotesk'] font-bold rounded-md transition-all ${
+                isActive ? 'bg-zinc-800 text-white shadow-sm border border-white/10' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
               }`}
             >
               {p}
@@ -231,23 +234,23 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
 
       {/* Right Controls: Quick Split, Settings, Command Palette */}
       <div className="flex items-center gap-1.5">
-        <div className="hidden sm:flex items-center gap-1 border-r border-white/[0.06] pr-2">
+        <div className="hidden sm:flex items-center gap-1 border-r border-white/[0.08] pr-2">
           <button
             onClick={handleSplitH}
             title="Split Horizontally (Cmd/Ctrl+D)"
             aria-label="Split horizontally"
-            className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/65 transition-colors"
+            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 hover:text-white transition-colors"
           >
-            <Columns className="w-3.5 h-3.5 text-forest-bright" />
+            <Columns className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={handleSplitV}
             title="Split Vertically (Cmd/Ctrl+Shift+D)"
             aria-label="Split vertically"
-            className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/65 transition-colors"
+            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 hover:text-white transition-colors"
           >
-            <Rows className="w-3.5 h-3.5 text-forest-bright" />
+            <Rows className="w-3.5 h-3.5" />
           </button>
 
           <button
@@ -256,7 +259,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
             onClick={requestResetLayout}
             title="Reset to 1 Pane"
             aria-label="Reset layout to one pane"
-            className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/45 hover:text-amber-400 transition-colors"
+            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-400 hover:text-amber-400 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -267,7 +270,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
             onClick={onOpenAbout}
             title="About VibeGrid"
             aria-label="About VibeGrid"
-            className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/45 hover:text-white/80 transition-colors"
+            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-400 hover:text-zinc-200 transition-colors"
           >
             <Info className="w-3.5 h-3.5" />
           </button>
@@ -277,15 +280,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           onClick={toggleSettings}
           title="Settings (Cmd/Ctrl+,)"
           aria-label="Open settings"
-          className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/45 hover:text-white/80 transition-colors"
+          className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-400 hover:text-zinc-200 transition-colors"
         >
           <Settings className="w-3.5 h-3.5" />
-        </button>          <button
-            onClick={toggleCommandPalette}
-            aria-label="Open command palette"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-forest hover:bg-forest-bright border border-forest/40 text-xs font-medium text-white transition-all hover:shadow-[0_0_14px_rgba(60,149,240,0.35)]"
-          >
-          <Command className="w-3.5 h-3.5 text-white" />
+        </button>
+
+        <button
+          onClick={toggleCommandPalette}
+          aria-label="Open command palette"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-xs font-['Space_Grotesk'] font-bold text-zinc-200 hover:text-white transition-all shadow-sm"
+        >
+          <Command className="w-3.5 h-3.5 text-zinc-300" />
           <span className="hidden sm:inline">Palette</span>
         </button>
       </div>

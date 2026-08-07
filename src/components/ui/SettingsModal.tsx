@@ -470,126 +470,127 @@ export const SettingsModal: React.FC = () => {
       ).filter((t) => t.paneId).length
     : 0;
 
-  return (      <div
-        onClick={toggleSettings}
-        role="dialog"
-        aria-modal="true"
-        aria-label="VibeGrid settings"
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
-      >
-        <div
-          ref={panelRef}
-          onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col max-h-[85vh] backdrop-blur-md"
+  return (
+    <div
+      onClick={toggleSettings}
+      role="dialog"
+      aria-modal="true"
+      aria-label="VibeGrid settings"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
+    >
+      <div
+        ref={panelRef}
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-2xl bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[85vh] backdrop-blur-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.03]">
-          <h2 className="text-sm font-medium text-white/90 uppercase tracking-wider">VibeGrid Settings</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+          <h2 className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">VibeGrid Settings</h2>
           <button
             onClick={toggleSettings}
             aria-label="Close settings"
-            className="p-1.5 rounded-lg hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-white/[0.06] bg-black/30 px-4">
+        <div className="flex border-b border-white/[0.08] bg-black/40 px-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('font')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'font'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <Type className="w-3.5 h-3.5" />
-            <span>Font & Appearance</span>
+            <span className="font-space font-bold normal-case tracking-tight">Font &amp; Appearance</span>
           </button>
 
           <button
             onClick={() => setActiveTab('theme')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'theme'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
-            <span>Themes</span>
+            <span className="font-space font-bold normal-case tracking-tight">Themes</span>
           </button>
 
           <button
             onClick={() => setActiveTab('terminal')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'terminal'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <TerminalIcon className="w-3.5 h-3.5" />
-            <span>Terminal</span>
+            <span className="font-space font-bold normal-case tracking-tight">Terminal</span>
           </button>
 
           <button
             onClick={() => setActiveTab('workspaces')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'workspaces'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <Layout className="w-3.5 h-3.5" />
-            <span>Workspaces</span>
+            <span className="font-space font-bold normal-case tracking-tight">Workspaces</span>
           </button>
 
           <button
             onClick={() => setActiveTab('limits')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'limits'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>Limits</span>
+            <span className="font-space font-bold normal-case tracking-tight">Limits</span>
           </button>
 
           <button
             onClick={() => setActiveTab('appearance')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'appearance'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
-            <span>Appearance</span>
+            <span className="font-space font-bold normal-case tracking-tight">Appearance</span>
           </button>
 
           <button
             onClick={() => setActiveTab('keyboard')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'keyboard'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <KeyboardIcon className="w-3.5 h-3.5" />
-            <span>Keybindings</span>
+            <span className="font-space font-bold normal-case tracking-tight">Keybindings</span>
           </button>
 
           <button
             onClick={() => setActiveTab('profiles')}
-            className={`px-4 py-2.5 text-xs font-medium flex items-center gap-2 border-b-2 transition-colors ${
+            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'profiles'
-                ? 'border-forest-bright text-forest-bright bg-forest/10'
-                : 'border-transparent text-white/50 hover:text-white/80'
+                ? 'border-white text-white bg-white/5'
+                : 'border-transparent text-zinc-400 hover:text-white'
             }`}
           >
             <UserRound className="w-3.5 h-3.5" />
-            <span>Profiles</span>
+            <span className="font-space font-bold normal-case tracking-tight">Profiles</span>
           </button>
         </div>
 
@@ -683,11 +684,11 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'theme' && (
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Themes ({Object.keys(allThemes).length})</span>
+                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Themes ({Object.keys(allThemes).length})</span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowCreateThemeModal(true)}
-                    className="px-2.5 py-1.5 rounded-lg bg-forest hover:bg-forest-bright text-[11px] font-medium text-white flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
                     title="Create a new theme based on the current one"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -695,7 +696,7 @@ export const SettingsModal: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setThemeImportOpen(!themeImportOpen)}
-                    className="px-2.5 py-1.5 rounded-lg border border-white/10 text-[11px] text-white/60 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-1.5 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-300 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
                     title="Import a theme from JSON"
                   >
                     <Upload className="w-3.5 h-3.5" />
@@ -705,20 +706,20 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {themeImportOpen && (
-                <div className="rounded-lg border border-white/10 bg-black/40 p-3 space-y-2 animate-fade-in">
-                  <label className="block text-[10px] text-white/40">Paste a theme palette as JSON (a raw palette object, or {'{ name, ...palette }'}):</label>
+                <div className="rounded-xl border border-white/[0.08] bg-black/40 p-4 space-y-3 animate-fade-in">
+                  <label className="block text-[10px] font-mono text-zinc-400">Paste a theme palette as JSON (a raw palette object, or {'{ name, ...palette }'}):</label>
                   <textarea
                     value={themeImportText}
                     onChange={(e) => setThemeImportText(e.target.value)}
                     rows={4}
                     placeholder='{"name":"My Theme","background":"#0b0d12","foreground":"#e2e8f0","cursor":"#3c95f0",...}'
-                    className="w-full px-3 py-2 rounded-lg bg-black/60 border border-white/10 text-[11px] font-mono text-white/90 placeholder-white/25 focus:outline-none focus:border-forest-bright resize-y"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/[0.08] text-xs font-mono text-white/90 placeholder-white/25 focus:outline-none focus:border-white/30 resize-y"
                   />
                   <div className="flex justify-end">
                     <button
                       onClick={handleImportTheme}
                       disabled={!themeImportText.trim()}
-                      className="px-3 py-1.5 rounded-lg bg-forest hover:bg-forest-bright disabled:opacity-50 text-[11px] font-medium text-white transition-colors"
+                      className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 disabled:opacity-40 text-xs font-extrabold font-space transition-colors"
                     >
                       Import Theme
                     </button>
@@ -1070,9 +1071,9 @@ export const SettingsModal: React.FC = () => {
                       onClick={handleMicTest}
                       disabled={micTesting}
                       title="Record for 1.6s and check the input level"
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 text-[10px] text-white/60 hover:text-forest-light hover:border-forest/40 disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space disabled:opacity-50 transition-colors"
                     >
-                      <Mic className="w-3 h-3" />
+                      <Mic className="w-3 h-3 text-black" />
                       {micTesting ? 'Listening…' : 'Test Microphone'}
                     </button>
                   </div>
@@ -1220,10 +1221,10 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'workspaces' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Active Workspaces ({workspaces.length})</span>
+                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Active Workspaces ({workspaces.length})</span>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-3 py-1.5 rounded-lg bg-forest hover:bg-forest-bright text-xs font-medium text-white flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create Workspace</span>
@@ -1813,41 +1814,41 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'keyboard' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Custom Keybindings</span>
+                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Custom Keybindings</span>
                 <button
                   // UX audit P0 #2: resetting keybindings is destructive — confirm.
                   onClick={() => setConfirmResetKeybindings(true)}
-                  className="px-2.5 py-1 rounded border border-white/10 text-xs text-white/50 hover:text-amber-400 flex items-center gap-1 transition-colors"
+                  className="px-3.5 py-1.5 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-amber-400 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reset Defaults</span>
                 </button>
               </div>
 
-              <p className="text-[11px] text-white/40 leading-relaxed">Click a shortcut to reassign it, then press the new key combination. Press <kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-[10px]">Esc</kbd> to cancel. Conflicts are detected automatically.</p>
+              <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">Click a shortcut to reassign it, then press the new key combination. Press <kbd className="px-1.5 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-[10px] text-zinc-300">Esc</kbd> to cancel. Conflicts are detected automatically.</p>
 
               <div className="space-y-2">
                 {Object.values(keybindings).map((kb) => (
                   <div
                     key={kb.id}
-                    className={`p-3 rounded-lg border flex items-center justify-between text-xs transition-colors ${
+                    className={`p-3 rounded-xl border flex items-center justify-between text-xs transition-colors ${
                       recordingId === kb.id
-                        ? 'border-forest-bright bg-forest/10'
-                        : 'border-white/10 bg-black/40 hover:border-forest/40'
+                        ? 'border-white bg-white/10 text-white'
+                        : 'border-white/[0.08] bg-black/40 hover:border-white/20'
                     }`}
                   >
                     <div>
-                      <div className="font-medium text-white/85">{kb.label}</div>
-                      <div className="text-[10px] text-white/35 font-mono">{kb.id}</div>
+                      <div className="font-space font-bold text-white/90">{kb.label}</div>
+                      <div className="text-[10px] text-zinc-400 font-mono">{kb.id}</div>
                     </div>
 
                     <button
                       onClick={() => setRecordingId(recordingId === kb.id ? null : kb.id)}
                       title={recordingId === kb.id ? 'Press a key combination to record it' : 'Click to reassign'}
-                      className={`flex items-center gap-2 px-2.5 py-1 font-mono border rounded text-[11px] transition-colors ${
+                      className={`flex items-center gap-2 px-3 py-1 font-mono border rounded-lg text-[11px] transition-colors ${
                         recordingId === kb.id
-                          ? 'border-forest-bright/70 bg-forest/20 text-forest-light animate-pulse'
-                          : 'border-white/10 bg-white/5 text-forest-light hover:border-forest/50'
+                          ? 'border-white bg-white/20 text-white animate-pulse'
+                          : 'border-white/10 bg-white/5 text-zinc-300 hover:border-white/30'
                       }`}
                     >
                       {recordingId === kb.id ? 'Press keys…' : kb.currentKey}
@@ -1857,14 +1858,14 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {/* Customization audit C22: macros (action sequences + pauses). */}
-              <div className="mt-6 border-t border-white/[0.06] pt-4">
+              <div className="mt-6 border-t border-white/[0.08] pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Macros ({macros.length})</span>
+                  <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Macros ({macros.length})</span>
                   <button
                     onClick={addMacro}
-                    className="px-2.5 py-1 rounded bg-forest hover:bg-forest-bright text-xs text-white flex items-center gap-1 transition-colors"
+                    className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
                   >
-                    <Plus className="w-3 h-3" /> New Macro
+                    <Plus className="w-3.5 h-3.5" /> New Macro
                   </button>
                 </div>
                 <p className="text-[11px] text-white/40 leading-relaxed mb-3">
@@ -1970,8 +1971,8 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'profiles' && (
             <div className="space-y-5">
               <div>
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Settings Profiles</span>
-                <p className="text-[11px] text-white/40 mt-1">Save your current settings (fonts, themes, terminal options, voice, startup behavior…) as a named profile and switch between them. Profiles are stored locally.</p>
+                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Settings Profiles</span>
+                <p className="text-[11px] text-zinc-400 font-sans mt-1">Save your current settings (fonts, themes, terminal options, voice, startup behavior…) as a named profile and switch between them. Profiles are stored locally.</p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -1983,11 +1984,11 @@ export const SettingsModal: React.FC = () => {
                     if (e.key === 'Enter') saveProfile();
                   }}
                   placeholder="Profile name (e.g. Work / Home)"
-                  className="flex-1 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] text-xs font-space text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30"
                 />
                 <button
                   onClick={saveProfile}
-                  className="px-3 py-2 rounded-lg bg-forest hover:bg-forest-bright text-xs font-medium text-white flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" /> Save Current
                 </button>
@@ -1995,11 +1996,11 @@ export const SettingsModal: React.FC = () => {
 
               <div className="space-y-2">
                 {listSettingsProfiles().length === 0 && (
-                  <p className="text-[11px] text-white/35 text-center py-4">No profiles saved yet.</p>
+                  <p className="text-[11px] text-zinc-500 font-mono text-center py-4">No profiles saved yet.</p>
                 )}
                 {listSettingsProfiles().map((name) => (
-                  <div key={name} className="p-3 rounded-lg border border-white/10 bg-black/40 flex items-center justify-between">
-                    <span className="text-xs font-medium text-white/85 truncate">{name}</span>
+                  <div key={name} className="p-3.5 rounded-xl border border-white/[0.08] bg-black/40 flex items-center justify-between">
+                    <span className="text-xs font-bold font-space text-white/90 truncate">{name}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => {
@@ -2009,7 +2010,7 @@ export const SettingsModal: React.FC = () => {
                             addToast({ type: 'error', title: 'Could not apply profile', description: `"${name}" appears to be corrupt.` });
                           }
                         }}
-                        className="px-2.5 py-1 rounded bg-white/5 hover:bg-forest/15 text-xs text-forest-light transition-colors"
+                        className="px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space transition-colors"
                       >
                         Apply
                       </button>
@@ -2017,7 +2018,7 @@ export const SettingsModal: React.FC = () => {
                         onClick={() => deleteSettingsProfile(name)}
                         title={`Delete profile ${name}`}
                         aria-label={`Delete profile ${name}`}
-                        className="p-1.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -2027,16 +2028,16 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {/* Customization audit S8: MCP/HTTP endpoint info. */}
-              <div className="border-t border-white/[0.06] pt-4">
+              <div className="border-t border-white/[0.08] pt-4">
                 <div className="flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5 text-forest-bright" />
-                  <span className="text-xs font-bold text-white/70 uppercase tracking-wider">MCP / HTTP Endpoint</span>
+                  <Globe className="w-3.5 h-3.5 text-white/80" />
+                  <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">MCP / HTTP Endpoint</span>
                 </div>
-                <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
+                <p className="text-[11px] text-zinc-400 font-sans mt-1 leading-relaxed">
                   VibeGrid exposes a read-only state API that MCP clients and scripts can query (pane list, output history). The server listens on localhost only.
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                  <code className="flex-1 px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-[11px] font-mono text-forest-light truncate">
+                  <code className="flex-1 px-3 py-2 rounded-xl bg-black/40 border border-white/[0.08] text-[11px] font-mono text-zinc-300 truncate">
                     http://127.0.0.1:{httpPort ?? '…'}/panes
                   </code>
                   <button
@@ -2044,14 +2045,14 @@ export const SettingsModal: React.FC = () => {
                       navigator.clipboard.writeText(`http://127.0.0.1:${httpPort ?? 8792}/panes`);
                       addToast({ type: 'success', title: 'Endpoint copied' });
                     }}
-                    className="px-2.5 py-2 rounded-lg border border-white/10 text-xs text-white/55 hover:bg-white/5 transition-colors"
+                    className="px-3 py-2 rounded-xl border border-white/10 text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
                     title="Copy endpoint URL"
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <p className="text-[10px] text-white/35 mt-1.5">
-                  Port override: <code className="font-mono">VIBEGRID_HTTP_PORT</code> env var (default 8792).
+                <p className="text-[10px] text-zinc-500 font-mono mt-1.5">
+                  Port override: <code className="font-mono text-zinc-400">VIBEGRID_HTTP_PORT</code> env var (default 8792).
                 </p>
               </div>
             </div>
@@ -2059,11 +2060,11 @@ export const SettingsModal: React.FC = () => {
         </div>
 
         {/* Footer: import / export / reset */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center gap-2">
             <button
               onClick={handleExport}
-              className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs text-white/60 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+              className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-colors"
               title="Download settings as JSON"
             >
               <Download className="w-3.5 h-3.5" />
@@ -2071,7 +2072,7 @@ export const SettingsModal: React.FC = () => {
             </button>
             <button
               onClick={() => importInputRef.current?.click()}
-              className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs text-white/60 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+              className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-colors"
               title="Import settings from JSON"
             >
               <Upload className="w-3.5 h-3.5" />
@@ -2092,7 +2093,7 @@ export const SettingsModal: React.FC = () => {
           <button
             // UX audit P0 #2: resetting ALL settings is destructive — confirm.
             onClick={() => setConfirmResetAll(true)}
-            className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs text-white/50 hover:text-amber-400 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+            className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-amber-400 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
             title="Reset all settings to defaults"
           >
             <RotateCcw className="w-3.5 h-3.5" />

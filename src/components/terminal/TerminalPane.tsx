@@ -952,7 +952,11 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   return (
     <div
-      className={`relative h-full w-full bg-pane-bg p-1.5 overflow-hidden ${fontLigatures ? 'font-ligatures' : ''}`}
+      className={`relative h-full w-full bg-[#08080a] p-1.5 overflow-hidden border ${
+        isFocused
+          ? 'border-white/30 shadow-[0_0_15px_rgba(255,255,255,0.07)]'
+          : 'border-white/[0.08]'
+      } ${fontLigatures ? 'font-ligatures' : ''}`}
       style={{ opacity: effOpacity }}
       onContextMenu={handleContextMenu}
     >
@@ -1029,7 +1033,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         <>
           <div className="fixed inset-0 z-[59]" onClick={() => setShowAppearanceMenu(false)} />
           <div
-            className="fixed z-[60] w-[230px] rounded-lg bg-surfaceCard border border-white/10 shadow-2xl shadow-black/60 backdrop-blur-md p-3 text-xs space-y-2.5 animate-fade-in"
+            className="fixed z-[60] w-[230px] rounded-xl bg-zinc-900/95 border border-white/[0.08] shadow-2xl backdrop-blur-xl p-3 text-xs space-y-2.5 animate-fade-in font-mono"
             style={{ left: appearancePos.x, top: appearancePos.y }}
           >
             <div className="flex items-center justify-between">
@@ -1048,7 +1052,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
               <select
                 value={paneAppearance?.themeName ?? ''}
                 onChange={(e) => setPaneAppearance(id, { themeName: e.target.value || undefined })}
-                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/[0.08] text-xs text-white/90 focus:outline-none focus:border-white/30"
               >
                 <option value="">— inherit workspace/global —</option>
                 {Object.entries(getAllThemes(useSettingsStore.getState())).map(([key, t]) => (
@@ -1064,7 +1068,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                 value={paneAppearance?.fontSize ?? ''}
                 onChange={(e) => setPaneAppearance(id, { fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
                 placeholder="inherit"
-                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/[0.08] text-xs text-white/90 focus:outline-none focus:border-white/30"
               />
             </div>
 
@@ -1087,7 +1091,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                   clearPaneAppearance(id);
                   setShowAppearanceMenu(false);
                 }}
-                className="w-full px-2 py-1.5 rounded-lg border border-white/10 text-[10px] text-white/55 hover:border-rose-500/40 hover:text-rose-300 transition-colors"
+                className="w-full px-2 py-1.5 rounded-lg border border-white/[0.08] text-[10px] text-white/55 hover:border-rose-500/40 hover:text-rose-300 transition-colors"
               >
                 Clear overrides (inherit workspace/global)
               </button>

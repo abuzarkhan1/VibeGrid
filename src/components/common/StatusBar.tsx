@@ -32,20 +32,24 @@ export const StatusBar: React.FC = () => {
   const isWebglActive = focusedPaneId ? activeWebglPanes.includes(focusedPaneId) : true;
 
   return (
-    <footer className="h-6 w-full bg-surface/90 backdrop-blur-md border-t border-white/[0.06] px-3 flex items-center justify-between text-[11px] text-white/50 select-none z-20">
-      {/* Left info: Workspace Name & Focused Pane ID */}
+    <footer className="h-6 w-full bg-[#08080a] backdrop-blur-md border-t border-white/[0.08] px-3 flex items-center justify-between font-mono text-xs text-zinc-400 select-none z-20">
+      {/* Left info: Workspace Name & Focused Pane ID with pulse indicator */}
       <div className="flex items-center gap-4">
         {badges.workspace && (
-          <div className="flex items-center gap-1.5 text-white/65">
-            <Layout className="w-3 h-3 text-forest-bright" />
-            <span className="font-semibold">{activeWs?.name || 'Default Workspace'}</span>
+          <div className="flex items-center gap-2 text-zinc-200">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            <Layout className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="font-semibold text-xs text-zinc-200">{activeWs?.name || 'Default Workspace'}</span>
           </div>
         )}
 
         {focusedPaneId && badges.workspace && (
-          <div className="flex items-center gap-1.5 text-white/45">
-            <Terminal className="w-3 h-3 text-white/40" />
-            <span className="font-mono text-[10px]">
+          <div className="flex items-center gap-1.5 text-zinc-400">
+            <Terminal className="w-3 h-3 text-zinc-500" />
+            <span className="text-xs text-zinc-400">
               {focusedNode?.title || focusedPaneId}
               {focusedNode?.cwd ? ` (${focusedNode.cwd})` : ''}
             </span>
@@ -53,30 +57,34 @@ export const StatusBar: React.FC = () => {
         )}
       </div>
 
-      {/* Right status badges: GPU WebGL & Pane count badge */}
-      <div className="flex items-center gap-3">
+      {/* Right status badges: GPU WebGL with pulse & Pane count badge */}
+      <div className="flex items-center gap-3.5">
         {isLoading && (
-          <div className="flex items-center gap-1.5 text-white/45">
-            <Loader2 className="w-3 h-3 text-forest-bright animate-spin" />
-            <span>Restoring workspaces…</span>
+          <div className="flex items-center gap-1.5 text-zinc-300">
+            <Loader2 className="w-3 h-3 text-zinc-200 animate-spin" />
+            <span className="text-xs">Restoring workspaces…</span>
           </div>
         )}
         {badges.font && (
-          <div className="flex items-center gap-1.5 text-white/45" title="Terminal font size (Cmd/Ctrl +/- to adjust)">
-            <Type className="w-3 h-3 text-white/40" />
-            <span className="font-mono text-[10px]">{fontSize}px</span>
+          <div className="flex items-center gap-1.5 text-zinc-400" title="Terminal font size (Cmd/Ctrl +/- to adjust)">
+            <Type className="w-3 h-3 text-zinc-500" />
+            <span className="text-xs">{fontSize}px</span>
           </div>
         )}
         {badges.gpu && (
-          <div className="flex items-center gap-1.5 text-white/45">
-            <Cpu className={`w-3 h-3 ${isWebglActive ? 'text-forest-bright' : 'text-amber-400'}`} />
-            <span>{isWebglActive ? 'GPU (WebGL 60FPS)' : 'CPU (Canvas Fallback)'}</span>
+          <div className="flex items-center gap-2 text-zinc-300">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${isWebglActive ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              <span className={`relative inline-flex h-2 w-2 rounded-full ${isWebglActive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            </span>
+            <Cpu className={`w-3.5 h-3.5 ${isWebglActive ? 'text-zinc-300' : 'text-amber-400'}`} />
+            <span className="text-xs">{isWebglActive ? 'GPU (WebGL 60FPS)' : 'CPU (Canvas Fallback)'}</span>
           </div>
         )}
 
         {badges.panes && (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/[0.04] border border-white/10 text-[10px] font-mono text-forest-light">
-            <Layers className="w-3 h-3 text-forest-bright" />
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-900/90 border border-white/[0.08] text-xs text-zinc-300">
+            <Layers className="w-3 h-3 text-zinc-400" />
             <span>
               {paneCount}/{maxPanes} Panes
             </span>

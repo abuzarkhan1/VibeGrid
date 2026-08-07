@@ -14,19 +14,19 @@ const addToastLazy = (toast: { type: 'info' | 'warning' | 'error' | 'success'; t
 export const THEMES: Record<string, TerminalTheme> = {
   vibeDark: {
     name: 'VibeDark',
-    background: '#0b0d12',
-    foreground: '#e2e8f0',
-    cursor: '#3c95f0',
-    cursorAccent: '#0b0d12',
-    selectionBackground: 'rgba(60, 149, 240, 0.3)',
-    black: '#0d0f12',
+    background: '#08080a',
+    foreground: '#f4f4f5',
+    cursor: '#ffffff',
+    cursorAccent: '#08080a',
+    selectionBackground: 'rgba(255, 255, 255, 0.25)',
+    black: '#0a0a0c',
     red: '#f43f5e',
     green: '#3c95f0',
     yellow: '#f59e0b',
     blue: '#3b82f6',
     magenta: '#a855f7',
     cyan: '#06b6d4',
-    white: '#e2e8f0',
+    white: '#f4f4f5',
     brightBlack: '#475569',
     brightRed: '#fb7185',
     brightGreen: '#64bcff',
@@ -675,7 +675,7 @@ function applyThemeVariables(
     root.style.setProperty('--color-bg', chrome.background);
     root.style.setProperty('--color-surface', chrome.black);
     root.style.setProperty('--color-surface-hover', chrome.brightBlack);
-    root.style.setProperty('--color-border', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.07)');
+    root.style.setProperty('--color-border', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.08)');
     const accent = accentOverride ?? termTheme.cursor;
     root.style.setProperty('--color-accent', accent);
     // Keep the alpha-capable channel triplets in sync so Tailwind opacity

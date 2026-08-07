@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    --color-bg: #03060a;
-    --color-surface: #0a0c10;
-    --color-surface-hover: #11151a;
-    --color-border: rgba(255, 255, 255, 0.07);
-    --color-accent: #056fc7;
-    --color-accent-secondary: #3c95f0;
+    --color-bg: #08080a;
+    --color-surface: #0f1115;
+    --color-surface-hover: #181a20;
+    --color-border: rgba(255, 255, 255, 0.08);
+    --color-accent: #ffffff;
+    --color-accent-secondary: #ffffff;
     /* RGB channel triplets backing the alpha-capable Tailwind colors
        (forest*, surface, surface-hover, surfaceCard). Kept in sync with
        --color-accent/--color-surface by applyThemeVariables so opacity
        modifiers work. Defaults match the tailwind.config.ts fallbacks. */
-    --color-accent-rgb: 60 149 240;
+    --color-accent-rgb: 255 255 255;
     /* Comma-separated channels for legacy-safe rgba(var(--x), a) in plain CSS. */
-    --color-accent-rgba: 60, 149, 240;
-    --color-surface-rgb: 10 12 16;
-    --color-surface-hover-rgb: 17 21 26;
-    --color-fg: #e2e8f0;
+    --color-accent-rgba: 255, 255, 255;
+    --color-surface-rgb: 15 17 21;
+    --color-surface-hover-rgb: 24 26 32;
+    --color-fg: #f4f4f5;
     --color-muted: #8b93a1;
-    --color-selection: rgba(60, 149, 240, 0.3);
+    --color-selection: rgba(255, 255, 255, 0.25);
     color-scheme: dark;
   }
 
@@ -30,17 +30,29 @@
   }
 
   body {
-    background-color: #03060a;
+    background-color: #08080a;
     color: var(--color-fg);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
     font-weight: 400;
     user-select: none;
     -webkit-user-select: none;
     overflow: hidden;
   }
 
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  }
+
+  button, input, optgroup, select, textarea {
+    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  }
+
+  code, kbd, samp, pre {
+    font-family: 'JetBrains Mono', Menlo, monospace;
+  }
+
   ::selection {
-    background: var(--color-selection, rgba(97, 175, 239, 0.3));
+    background: var(--color-selection, rgba(255, 255, 255, 0.25));
     color: #ffffff;
   }
 
@@ -104,11 +116,11 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* Serif heading helper (Newsreader, as used on the site) */
+/* Serif heading helper (Instrument Serif, as used on the site) */
 .vg-serif {
   font-optical-sizing: auto;
-  font-family: 'Newsreader', Georgia, serif;
-  font-weight: 300;
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-weight: 400;
 }
 
 /* Text glow: azure accent (vg-text-glow) */
@@ -247,13 +259,8 @@
    the boundary visible even before JS runs.
    ================================================================ */
 .vg-pane-frame {
-  /* Solid, constant border — PLAIN PAINT ONLY. No box-shadow, no transition,
-     no z-index promotion on this element: WKWebView has known compositing
-     bugs where box-shadow/transition/z-index on adjacent bordered elements
-     make a neighbour's border fail to paint. Focus/hover never touch it, so
-     selecting a pane can never change another pane's border. */
-  border: 2px solid rgba(var(--color-accent-rgba, 60, 149, 240), 0.9);
-  background-color: var(--color-bg, #0b0d12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-color: #08080a;
 }
 /* Permanent colored identity rail: a solid 4px strip in this pane's badge
    color (--pane-accent set per pane index). Solid background paint only —
@@ -270,16 +277,14 @@
   z-index: 30;
   pointer-events: none;
 }
-/* Focused pane: a blue-tinted frame background (solid paint — safe). The
-   border itself stays identical; focus also shifts the toolbar bg. */
+/* Focused pane: active border with subtle white glow */
 .vg-pane-frame.vg-pane-focused {
-  background-color: #0e1a2e;
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.07);
 }
-/* Alternate pane tint: odd-indexed panes get a subtly different frame
-   background, so adjacent panes never look identical even where borders are
-   unseen (the 4px .xterm padding reveals this band around the terminal). */
+/* Alternate pane tint: subtle obsidian variation */
 .vg-pane-frame.vg-pane-alt {
-  background-color: #12161d;
+  background-color: #0c0c0f;
 }
 .vg-pane-frame.vg-pane-focused.vg-pane-alt {
   background-color: #152238;
@@ -321,15 +326,16 @@ html.vibegrid-light .text-white\/40 { color: rgba(13, 17, 23, 0.4); }
 html.vibegrid-light .text-white\/35 { color: rgba(13, 17, 23, 0.35); }
 html.vibegrid-light .text-white\/30 { color: rgba(13, 17, 23, 0.3); }
 html.vibegrid-light .text-white\/25 { color: rgba(13, 17, 23, 0.25); }
-html.vibegrid-light .bg-white\/\[0.02\] { background-color: rgba(13, 17, 23, 0.02); }
-html.vibegrid-light .bg-white\/\[0.03\] { background-color: rgba(13, 17, 23, 0.03); }
-html.vibegrid-light .bg-white\/\[0.04\] { background-color: rgba(13, 17, 23, 0.04); }
-html.vibegrid-light .bg-white\/\[0.05\] { background-color: rgba(13, 17, 23, 0.05); }
-html.vibegrid-light .bg-white\/\[0.06\] { background-color: rgba(13, 17, 23, 0.06); }
+html.vibegrid-light [class*="bg-white/[0.02]"] { background-color: rgba(13, 17, 23, 0.02); }
+html.vibegrid-light [class*="bg-white/[0.03]"] { background-color: rgba(13, 17, 23, 0.03); }
+html.vibegrid-light [class*="bg-white/[0.04]"] { background-color: rgba(13, 17, 23, 0.04); }
+html.vibegrid-light [class*="bg-white/[0.05]"] { background-color: rgba(13, 17, 23, 0.05); }
+html.vibegrid-light [class*="bg-white/[0.06]"] { background-color: rgba(13, 17, 23, 0.06); }
 html.vibegrid-light .bg-white\/5 { background-color: rgba(13, 17, 23, 0.05); }
 html.vibegrid-light .bg-white\/10 { background-color: rgba(13, 17, 23, 0.1); }
-html.vibegrid-light .border-white\/\[0.04\] { border-color: rgba(13, 17, 23, 0.04); }
-html.vibegrid-light .border-white\/\[0.06\] { border-color: rgba(13, 17, 23, 0.06); }
+html.vibegrid-light [class*="border-white/[0.04]"] { border-color: rgba(13, 17, 23, 0.04); }
+html.vibegrid-light [class*="border-white/[0.06]"] { border-color: rgba(13, 17, 23, 0.06); }
+html.vibegrid-light [class*="border-white/[0.08]"] { border-color: rgba(13, 17, 23, 0.08); }
 html.vibegrid-light .border-white\/10 { border-color: rgba(13, 17, 23, 0.14); }
 html.vibegrid-light .bg-black\/50 { background-color: rgba(255, 255, 255, 0.7); }
 html.vibegrid-light .bg-black\/40 { background-color: rgba(255, 255, 255, 0.65); }

@@ -456,16 +456,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           role="dialog"
           aria-modal="true"
           aria-label="Command palette"
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-24 animate-fade-in"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-start justify-center pt-24 animate-fade-in"
         >
           <div
             ref={panelRef}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col max-h-[70vh] backdrop-blur-md"
+            className="w-full max-w-xl bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[70vh] backdrop-blur-xl"
           >
             {/* Search Header */}
-            <div className="flex items-center px-4 py-3 border-b border-white/[0.06] bg-white/[0.03]">
-              <Search className="w-4 h-4 text-forest-bright mr-3 shrink-0" />
+            <div className="flex items-center px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+              <Search className="w-4 h-4 text-white/70 mr-3 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -477,34 +477,34 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                 onKeyDown={handleKeyDown}
                 placeholder="Type a command or search actions…"
                 aria-label="Search commands"
-                className="w-full bg-transparent text-sm text-white/90 placeholder-white/35 focus:outline-none"
+                className="w-full bg-transparent text-sm font-space font-bold text-white/90 placeholder-white/35 focus:outline-none"
               />
             </div>
 
             {/* Command List */}
-            <div className="flex-1 overflow-y-auto py-2">
+            <div className="flex-1 overflow-y-auto py-2 px-1">
               {filteredCommands.length === 0 ? (
-                <div className="py-8 text-center text-xs text-white/40">No matching commands found</div>
+                <div className="py-8 text-center text-xs font-mono text-zinc-500">No matching commands found</div>
               ) : (
                 filteredCommands.map((cmd, idx) => (
                   <div
                     key={cmd.id}
                     onClick={() => runCommand(cmd)}
                     onMouseEnter={() => setSelectedIndex(idx)}
-                    className={`px-4 py-2.5 flex items-center justify-between cursor-pointer text-xs transition-colors ${
-                      idx === selectedIndex ? 'bg-forest/[0.15] text-forest-light border-l-2 border-forest-bright' : 'text-white/65 hover:bg-white/5'
+                    className={`px-4 py-2.5 flex items-center justify-between cursor-pointer text-xs transition-colors rounded-xl mx-1 my-0.5 hover:bg-white/10 ${
+                      idx === selectedIndex ? 'bg-white/10 text-white' : 'text-zinc-300'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       {cmd.icon}
                       <div>
-                        <div className="font-medium">{cmd.label}</div>
-                        <div className="text-[10px] text-white/40">{cmd.category}</div>
+                        <div className="font-space font-bold text-white/90 tracking-tight">{cmd.label}</div>
+                        <div className="text-[10px] text-zinc-400 font-mono uppercase tracking-wider">{cmd.category}</div>
                       </div>
                     </div>
 
                     {cmd.shortcut && (
-                      <kbd className="px-2 py-0.5 text-[10px] font-mono bg-white/5 border border-white/10 rounded text-forest-light">{cmd.shortcut}</kbd>
+                      <kbd className="px-2 py-0.5 text-[10px] font-mono bg-white/5 border border-white/10 rounded-md text-zinc-300">{cmd.shortcut}</kbd>
                     )}
                   </div>
                 ))
@@ -512,11 +512,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
             </div>
 
             {/* Footer hints */}
-            <div className="flex items-center gap-4 px-4 py-2 border-t border-white/[0.06] bg-white/[0.02] text-[10px] text-white/40">
-              <span><kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">↑</kbd> <kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">↓</kbd> navigate</span>
-              <span><kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">↵</kbd> run</span>
-              <span><kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded">esc</kbd> close</span>
-              {query.trim() === '' && recents.length > 0 && <span className="ml-auto text-forest-light/70">Recently used first</span>}
+            <div className="flex items-center gap-4 px-5 py-3 border-t border-white/[0.08] bg-white/[0.02] text-[10px] font-mono text-zinc-400">
+              <span><kbd className="px-1.5 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-zinc-300">↑</kbd> <kbd className="px-1.5 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-zinc-300">↓</kbd> navigate</span>
+              <span><kbd className="px-1.5 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-zinc-300">↵</kbd> run</span>
+              <span><kbd className="px-1.5 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-zinc-300">esc</kbd> close</span>
+              {query.trim() === '' && recents.length > 0 && <span className="ml-auto text-zinc-400 font-mono text-[10px]">Recently used first</span>}
             </div>
           </div>
         </div>
@@ -562,40 +562,40 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           the palette). Add/run/delete commands that type into the focused pane. */}
       {showCmdModal && (
         <div
-          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center animate-fade-in"
+          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setShowCmdModal(false)}
         >
           <div
-            className="w-full max-w-md bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden"
+            className="w-full max-w-md bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Manage custom commands"
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] bg-white/[0.03]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
               <div className="flex items-center gap-2">
-                <TerminalIcon className="w-4 h-4 text-forest-bright" />
-                <span className="text-xs font-bold text-white/80">Custom Commands</span>
+                <TerminalIcon className="w-4 h-4 text-white/80" />
+                <span className="text-xs font-bold font-space text-white/90">Custom Commands</span>
               </div>
               <button
                 onClick={() => setShowCmdModal(false)}
-                className="p-1 rounded hover:bg-white/10 text-white/45 hover:text-white/80 transition-colors"
+                className="p-1 rounded-lg hover:bg-white/10 text-white/45 hover:text-white/80 transition-colors"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 space-y-3 max-h-[50vh] overflow-y-auto">
+            <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
               {/* Add form */}
-              <div className="space-y-2 rounded-lg border border-white/10 bg-black/30 p-3">
-                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-wider">New command</span>
+              <div className="space-y-3 rounded-xl border border-white/[0.08] bg-black/30 p-4">
+                <span className="text-[10px] font-mono font-semibold text-zinc-400 uppercase tracking-widest">New command</span>
                 <input
                   type="text"
                   value={cmdLabel}
                   onChange={(e) => setCmdLabel(e.target.value)}
                   placeholder="Label (e.g. Run tests)"
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/[0.08] text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-space font-medium"
                 />
                 <input
                   type="text"
@@ -608,12 +608,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                     }
                   }}
                   placeholder="Shell command (e.g. npm test)"
-                  className="w-full px-3 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright font-mono"
+                  className="w-full px-3 py-2 rounded-xl bg-black/40 border border-white/[0.08] text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-mono"
                 />
                 <button
                   onClick={addUserCommand}
                   disabled={!cmdLabel.trim() || !cmdCommand.trim()}
-                  className="w-full px-3 py-1.5 rounded-lg bg-forest hover:bg-forest-bright text-xs font-medium text-white transition-colors disabled:opacity-40 disabled:hover:bg-forest"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space transition-colors disabled:opacity-40 disabled:hover:bg-white"
                 >
                   Add Command
                 </button>
@@ -621,25 +621,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
 
               {/* Command list */}
               {userCommands.length === 0 ? (
-                <p className="text-[11px] text-white/35 text-center py-4">
+                <p className="text-[11px] text-zinc-500 font-mono text-center py-4">
                   No custom commands yet — add one above. It will appear in the palette under “Custom Commands”.
                 </p>
               ) : (
                 userCommands.map((uc) => (
                   <div
                     key={uc.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-black/30 px-3 py-2"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-white/[0.08] bg-black/30 px-3.5 py-2.5"
                   >
                     <div className="min-w-0">
-                      <div className="text-xs font-medium text-white/85 truncate">{uc.label}</div>
-                      <div className="text-[10px] text-white/40 font-mono truncate">$ {uc.command}</div>
+                      <div className="text-xs font-bold font-space text-white/90 truncate">{uc.label}</div>
+                      <div className="text-[10px] text-zinc-400 font-mono truncate">$ {uc.command}</div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => runUserCommand(uc)}
                         title="Run in focused pane"
                         aria-label={`Run ${uc.label}`}
-                        className="p-1 rounded hover:bg-forest/20 text-forest-light transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white/10 text-white/80 transition-colors"
                       >
                         <Play className="w-3.5 h-3.5" />
                       </button>
@@ -647,7 +647,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                         onClick={() => deleteUserCommand(uc.id)}
                         title="Delete command"
                         aria-label={`Delete ${uc.label}`}
-                        className="p-1 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
