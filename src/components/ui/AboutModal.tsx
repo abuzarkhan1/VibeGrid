@@ -117,17 +117,17 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
       role="dialog"
       aria-modal="true"
       aria-label="About VibeGrid"
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
     >
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-surfaceCard border border-white/10 rounded-xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col backdrop-blur-md"
+        className="w-full max-w-md bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-white/[0.03]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-[6px] bg-forest flex items-center justify-center shadow-[0_0_8px_rgba(11,107,196,0.35)]">
+            <div className="w-5 h-5 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center">
               <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
                 <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
                 <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
@@ -135,12 +135,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2"/>
               </svg>
             </div>
-            <span className="font-medium text-xs tracking-wider text-white/90 uppercase">About VibeGrid</span>
+            <span className="font-space font-bold text-xs tracking-wider text-white/90 uppercase">About VibeGrid</span>
           </div>
           <button
             onClick={onClose}
             aria-label="Close about dialog"
-            className="p-1 rounded hover:bg-white/5 text-white/50 hover:text-white/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -148,7 +148,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
 
         {/* Content */}
         <div className="p-6 text-center space-y-4">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-forest flex items-center justify-center shadow-[0_0_16px_rgba(60,149,240,0.3)]">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shadow-xl shadow-black/40">
             <svg width="32" height="32" viewBox="0 0 16 16" fill="none">
               <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
               <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
@@ -158,33 +158,33 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
           </div>
 
           <div>
-            <h3 className="vg-serif vg-glow-flare text-[34px] leading-none text-white vg-text-glow">VibeGrid</h3>
-            <p className="text-xs text-forest-bright font-mono mt-1">Version {appVersion}</p>
-            <p className="text-xs text-white/50 mt-2 max-w-xs mx-auto leading-relaxed">
+            <h3 className="font-space font-extrabold text-[32px] leading-none text-white tracking-tight">VibeGrid</h3>
+            <p className="text-xs text-zinc-400 font-mono mt-1">Version {appVersion}</p>
+            <p className="text-xs text-zinc-300 mt-2 max-w-xs mx-auto leading-relaxed font-sans">
               The free, open-source GPU-accelerated multi-pane terminal workspace built for vibe coding.
             </p>
-            <p className="text-[10px] text-white/30 mt-1.5 font-mono">MIT License · Tauri 2 + Rust + React</p>
+            <p className="text-[10px] text-zinc-500 mt-1.5 font-mono">MIT License · Tauri 2 + Rust + React</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-left pt-2 border-t border-white/[0.06]">
-            <div className="p-2.5 rounded-lg bg-black/40 border border-white/10">
-              <div className="text-[10px] text-white/35 font-semibold uppercase">Engine</div>
-              <div className="text-xs text-white/85 font-medium mt-0.5 flex items-center gap-1">
-                <Cpu className="w-3 h-3 text-forest-bright" />
+          <div className="grid grid-cols-2 gap-2 text-left pt-2 border-t border-white/[0.08]">
+            <div className="p-3 rounded-xl bg-black/30 border border-white/[0.08]">
+              <div className="text-[10px] text-zinc-400 font-mono font-semibold uppercase tracking-wider">Engine</div>
+              <div className="text-xs text-white/90 font-space font-bold mt-0.5 flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-white/70" />
                 <span>Tauri 2 + Rust</span>
               </div>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-black/40 border border-white/10">
-              <div className="text-[10px] text-white/35 font-semibold uppercase">License</div>
-              <div className="text-xs text-white/85 font-medium mt-0.5 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3 text-forest-light" />
+            <div className="p-3 rounded-xl bg-black/30 border border-white/[0.08]">
+              <div className="text-[10px] text-zinc-400 font-mono font-semibold uppercase tracking-wider">License</div>
+              <div className="text-xs text-white/90 font-space font-bold mt-0.5 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-white/70" />
                 <span>MIT Open Source</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-2 flex justify-center gap-3">
+          <div className="pt-1 flex justify-center gap-2">
             <a
               href={REPO_URL}
               target="_blank"
@@ -193,11 +193,11 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 e.preventDefault();
                 openExternal(REPO_URL);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 transition-colors"
             >
-              <Github className="w-3.5 h-3.5 text-white/50" />
+              <Github className="w-3.5 h-3.5 text-zinc-400" />
               <span>GitHub</span>
-              <ExternalLink className="w-3 h-3 text-white/35" />
+              <ExternalLink className="w-3 h-3 text-zinc-500" />
             </a>
             <a
               href={DOCS_URL}
@@ -207,11 +207,11 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 e.preventDefault();
                 openExternal(DOCS_URL);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 transition-colors"
             >
-              <BookOpen className="w-3.5 h-3.5 text-white/50" />
+              <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
               <span>Website</span>
-              <ExternalLink className="w-3 h-3 text-white/35" />
+              <ExternalLink className="w-3 h-3 text-zinc-500" />
             </a>
             <a
               href={CHANGELOG_URL}
@@ -221,37 +221,27 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 e.preventDefault();
                 openExternal(CHANGELOG_URL);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-forest/10 border border-white/10 text-xs text-white/70 transition-colors hover:border-forest/40"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 transition-colors"
             >
-              <FileText className="w-3.5 h-3.5 text-white/50" />
+              <FileText className="w-3.5 h-3.5 text-zinc-400" />
               <span>Changelog</span>
-              <ExternalLink className="w-3 h-3 text-white/35" />
+              <ExternalLink className="w-3 h-3 text-zinc-500" />
             </a>
           </div>
-          <p className="flex items-center justify-center gap-1 text-[10px] text-white/30">
+          <p className="flex items-center justify-center gap-1 text-[10px] text-zinc-500 font-mono">
             <HelpCircle className="w-3 h-3" />
             Need help? Open an issue on GitHub or read the website docs.
           </p>
 
-          {/* Audit: the Download & Install button was previously NESTED inside
-              the Check button (invalid HTML — browsers reparent it and break
-              focus/click semantics). They are now siblings inside a container.
-              aria-live lives on the status TEXT, not the container — a live
-              region wrapping interactive controls would make screen readers
-              re-announce the buttons on every state change. */}
-          <div className="flex w-full flex-col gap-2 rounded-lg border p-1.5 transition-colors ${
-              updateState === 'available' || updateState === 'downloading'
-                ? 'border-forest/40 bg-forest/10'
-                : 'border-transparent'
-            }"
-          >
+          {/* Download & Install / Check button */}
+          <div className="flex w-full flex-col gap-2 rounded-2xl border border-white/[0.08] p-2 bg-black/20">
             {updateState === 'available' || updateState === 'downloading' ? (
-              <div className="flex items-center justify-between gap-2 px-1.5 py-0.5">
+              <div className="flex items-center justify-between gap-2 px-2 py-1">
                 <span
                   aria-live="polite"
-                  className="flex items-center gap-1.5 text-xs text-forest-light"
+                  className="flex items-center gap-1.5 text-xs font-mono text-zinc-300"
                 >
-                  <Download className="w-3.5 h-3.5 text-forest-bright" />
+                  <Download className="w-3.5 h-3.5 text-white" />
                   {updateState === 'downloading'
                     ? 'Downloading update…'
                     : `Update available: v${updateVersion}`}
@@ -259,7 +249,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 <button
                   onClick={handleDownloadUpdate}
                   disabled={updateState === 'downloading'}
-                  className="shrink-0 rounded-md bg-forest px-2.5 py-1 text-[10px] font-semibold text-white transition-colors hover:bg-forest-bright disabled:opacity-50"
+                  className="shrink-0 rounded-2xl bg-white px-4 py-1.5 text-xs font-extrabold font-space text-black transition-colors hover:bg-zinc-200 disabled:opacity-50"
                 >
                   {updateState === 'downloading' ? 'Downloading…' : 'Download & Install'}
                 </button>
@@ -268,13 +258,9 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
               <button
                 onClick={handleCheckUpdates}
                 disabled={updateState === 'checking'}
-                className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs transition-colors w-full ${
-                  updateState === 'current'
-                    ? 'bg-white/[0.03] border-white/10 text-white/60'
-                    : 'bg-white/[0.03] hover:bg-forest/10 border-white/10 text-white/70 hover:border-forest/40'
-                }`}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space transition-colors w-full disabled:opacity-50"
               >
-                <Download className="w-3.5 h-3.5 text-forest-bright" />
+                <Download className="w-3.5 h-3.5 text-black" />
                 {updateState === 'checking' && <span>Checking for updates…</span>}
                 {updateState === 'current' && <span>You're on the latest version</span>}
                 {updateState === 'unconfigured' && <span>Updates not configured — see GitHub releases</span>}

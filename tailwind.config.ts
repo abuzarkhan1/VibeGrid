@@ -6,34 +6,34 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: 'var(--color-bg, #03060a)',
-        surface: 'rgb(var(--color-surface-rgb, 10 12 16) / <alpha-value>)',
-        'surface-hover': 'rgb(var(--color-surface-hover-rgb, 17 21 26) / <alpha-value>)',
-        border: 'var(--color-border, rgba(255,255,255,0.07))',
+        background: 'var(--color-bg, #08080a)',
+        surface: 'rgb(var(--color-surface-rgb, 15 17 21) / <alpha-value>)',
+        'surface-hover': 'rgb(var(--color-surface-hover-rgb, 24 26 32) / <alpha-value>)',
+        border: 'var(--color-border, rgba(255, 255, 255, 0.08))',
         // IMPORTANT: colors use the `rgb(var(--channel) / <alpha-value>)`
         // pattern so Tailwind can generate opacity modifiers (bg-forest/10,
         // border-forest/30…). Plain `var(--color-accent)` CANNOT take /opacity
         // — Tailwind silently drops those classes (found during the invisible-
         // pane-boundary bug hunt; the website config already used this pattern).
         forest: {
-          DEFAULT: 'rgb(var(--color-accent-rgb, 60 149 240) / <alpha-value>)',
-          bright: 'rgb(var(--color-accent-rgb, 60 149 240) / <alpha-value>)',
-          light: 'rgb(var(--color-accent-rgb, 60 149 240) / <alpha-value>)',
-          dark: 'rgb(var(--color-accent-rgb, 28 80 140) / <alpha-value>)',
+          DEFAULT: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
+          bright: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
+          light: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
+          dark: 'rgb(var(--color-accent-rgb, 200 200 200) / <alpha-value>)',
         },
-        surfaceCard: 'rgb(var(--color-surface-rgb, 15 18 22) / <alpha-value>)',
-        neon: 'var(--color-accent, #5cc2ff)',
-        bgDark: 'var(--color-bg, #03060a)',
-        'accent-primary': 'var(--color-accent, #056fc7)',
-        'accent-secondary': 'var(--color-accent, #3c95f0)',
+        surfaceCard: 'rgb(var(--color-surface-rgb, 15 17 21) / <alpha-value>)',
+        neon: 'var(--color-accent, #ffffff)',
+        bgDark: 'var(--color-bg, #08080a)',
+        'accent-primary': 'var(--color-accent, #ffffff)',
+        'accent-secondary': 'var(--color-accent, #ffffff)',
         'accent-glow': 'transparent',
-        foreground: 'var(--color-fg, #e2e8f0)',
+        foreground: 'var(--color-fg, #f4f4f5)',
         muted: 'var(--color-muted, #8b93a1)',
         pane: {
-          bg: 'var(--color-bg, #0b0d12)',
-          header: 'var(--color-surface, #0e1116)',
-          border: 'var(--color-border, rgba(255,255,255,0.07))',
-          activeBorder: 'var(--color-accent, #3c95f0)',
+          bg: 'var(--color-bg, #08080a)',
+          header: 'var(--color-surface, #0f1115)',
+          border: 'var(--color-border, rgba(255, 255, 255, 0.08))',
+          activeBorder: 'var(--color-accent, #ffffff)',
         },
       },
       fontFamily: {
@@ -41,6 +41,8 @@ const config: Config = {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         serif: ['Newsreader', 'Georgia', 'serif'],
         newsreader: ['Newsreader', 'Georgia', 'serif'],
+        space: ['"Space Grotesk"', 'sans-serif'],
+        grotesk: ['"Space Grotesk"', 'sans-serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.15s ease-out forwards',
