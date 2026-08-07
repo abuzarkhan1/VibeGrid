@@ -25,31 +25,31 @@ export default function LiveMap() {
   useScrollReveal();
 
   return (
-    <section className="relative bg-black px-6 py-16 md:py-20">
+    <section className="relative bg-[#08080a] px-6 py-16 md:py-20">
       <div className="mx-auto max-w-6xl">
         <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,360px)_1fr] lg:gap-12">
           {/* ── Live stats card ── */}
-          <div className="vg-hidden vg-in-rise rounded-2xl bg-white/[0.02] p-6 md:p-8">
+          <div className="vg-hidden vg-in-rise rounded-2xl border border-white/[0.08] bg-zinc-900/50 p-6 md:p-8 backdrop-blur-xl transition-all hover:border-white/[0.16]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-60" />
-                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-forest-bright" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white" />
                 </span>
-                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-white/50">
+                <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-zinc-400">
                   Live now
                 </span>
               </div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-white/35">
+              <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-zinc-400/80">
                 Top countries
               </span>
             </div>
 
             <div className="mt-6 flex items-end gap-3">
-              <span className="vg-text-glow font-mono text-5xl leading-none text-forest-bright md:text-6xl">
+              <span className="vg-text-glow font-mono text-5xl leading-none text-white md:text-6xl">
                 <CountUp target={4821} duration={1.8} />
               </span>
-              <span className="pb-1 text-sm leading-tight text-white/55">
+              <span className="pb-1 text-sm leading-tight text-zinc-400">
                 terminal panes
                 <br />
                 running right now
@@ -61,16 +61,16 @@ export default function LiveMap() {
                 <li key={c.code}>
                   <div className="flex items-center gap-3">
                     <span className="text-base leading-none">{flag(c.code)}</span>
-                    <span className="flex-1 truncate text-sm text-white/85">{c.name}</span>
-                    <span className="font-mono text-sm tabular-nums text-forest-bright">
+                    <span className="flex-1 truncate text-sm text-zinc-300">{c.name}</span>
+                    <span className="font-mono text-sm tabular-nums text-white">
                       {c.count.toLocaleString()}
                     </span>
                   </div>
-                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/[0.08]">
                     <motion.div
                       className="h-full rounded-full"
                       style={{
-                        background: 'linear-gradient(90deg, #056fc7, #3c95f0)',
+                        background: 'linear-gradient(90deg, #52525b, #ffffff)',
                       }}
                       initial={{ width: 0 }}
                       whileInView={{ width: `${(c.count / MAX_COUNT) * 100}%` }}
@@ -84,7 +84,7 @@ export default function LiveMap() {
 
             <a
               href="/#download"
-              className="mt-7 inline-flex items-center gap-1.5 text-[13px] text-white/45 transition-colors hover:text-white"
+              className="mt-7 inline-flex items-center gap-1.5 text-[13px] text-zinc-400 transition-colors hover:text-white cursor-pointer"
             >
               Get VibeGrid free
               <span aria-hidden="true">→</span>
@@ -92,7 +92,7 @@ export default function LiveMap() {
           </div>
 
           {/* ── World map with pulsing dots ── */}
-          <div className="vg-hidden vg-in-right overflow-hidden rounded-2xl border border-forest/15 bg-[#030d18] p-2 shadow-[0_40px_100px_-30px_rgba(0,0,0,0.9)]">
+          <div className="vg-hidden vg-in-right overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-900/50 p-2 backdrop-blur-xl transition-all hover:border-white/[0.16] shadow-2xl">
             <svg
               viewBox="0 0 1000 520"
               preserveAspectRatio="xMidYMid slice"
@@ -102,12 +102,12 @@ export default function LiveMap() {
             >
               <defs>
                 <pattern id="vg-map-grid" width="48" height="48" patternUnits="userSpaceOnUse">
-                  <path d="M48 0H0V48" fill="none" stroke="rgba(92,194,255,0.06)" strokeWidth="1" />
+                  <path d="M48 0H0V48" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
                 </pattern>
                 <linearGradient id="vg-ocean" x1="0" x2="1" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#030d18" />
-                  <stop offset="46%" stopColor="#041a26" />
-                  <stop offset="100%" stopColor="#01060a" />
+                  <stop offset="0%" stopColor="#08080a" />
+                  <stop offset="50%" stopColor="#111115" />
+                  <stop offset="100%" stopColor="#08080a" />
                 </linearGradient>
               </defs>
 
@@ -120,8 +120,8 @@ export default function LiveMap() {
                 <path
                   key={i}
                   d={d}
-              fill="rgba(11,107,196,0.22)"
-              stroke="rgba(60,149,240,0.28)"
+                  fill="rgba(255,255,255,0.06)"
+                  stroke="rgba(255,255,255,0.12)"
                   strokeWidth="0.8"
                 />
               ))}
@@ -134,8 +134,8 @@ export default function LiveMap() {
                     cx={dot.x}
                     cy={dot.y}
                     r={dot.r}
-                    fill="rgba(60,149,240,0.14)"
-                    stroke="rgba(60,149,240,0.48)"
+                    fill="rgba(255,255,255,0.1)"
+                    stroke="rgba(255,255,255,0.3)"
                     strokeWidth="1.8"
                     style={{ '--dur': `${dot.dur}s`, '--delay': `${dot.delay}s` } as React.CSSProperties}
                   />
@@ -143,7 +143,7 @@ export default function LiveMap() {
                     cx={dot.x}
                     cy={dot.y}
                     r={Math.max(2.2, dot.r / 4)}
-                    fill="#5CC2FF"
+                    fill="#ffffff"
                     stroke="rgba(255,255,255,0.82)"
                     strokeWidth="1.2"
                   />
@@ -155,13 +155,16 @@ export default function LiveMap() {
                         width={dot.count.length * 10 + 18}
                         height="24"
                         rx="5"
-                        fill="rgba(0,0,0,0.66)"
-                        stroke="rgba(255,255,255,0.14)"
+                        fill="rgba(8,8,10,0.85)"
+                        stroke="rgba(255,255,255,0.16)"
                       />
                       <text
                         x={dot.x + dot.r + 12}
                         y={dot.y + 4}
-                        className="fill-white font-mono text-[15px] font-medium"
+                        fill="#ffffff"
+                        fontSize="13"
+                        fontFamily="monospace"
+                        fontWeight="500"
                       >
                         {dot.count}
                       </text>
@@ -176,3 +179,4 @@ export default function LiveMap() {
     </section>
   );
 }
+

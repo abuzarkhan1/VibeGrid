@@ -8,30 +8,30 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // VibeGrid brand palette — azure blue (was green). The primary accent
-        // is oklch(0.66 0.16 252); the <alpha-value> placeholder keeps
-        // Tailwind opacity modifiers (bg-forest/10, border-forest/30) working.
-        forest: {
-          DEFAULT: 'oklch(0.52 0.15 252 / <alpha-value>)',
-          bright: 'oklch(0.66 0.16 252 / <alpha-value>)',
-          light: 'oklch(0.78 0.13 252 / <alpha-value>)',
-          dark: 'oklch(0.44 0.13 252 / <alpha-value>)',
+        obsidian: {
+          DEFAULT: '#08080a',
+          light: '#121215',
+          dark: '#050507',
+          card: '#111115',
+          border: 'rgba(255, 255, 255, 0.08)',
         },
-        bgDark: '#03060a',
-        surface: '#0a0a0b',
-        surfaceCard: 'rgba(11, 12, 14, 0.95)',
+
+        bgDark: '#08080a',
+        surface: '#08080a',
+        surfaceCard: 'rgba(24, 24, 27, 0.5)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        serif: ['Newsreader', 'Georgia', 'serif'],
-        mono: ['JetBrains Mono', 'Menlo', 'monospace'],
-        newsreader: ['Newsreader', 'Georgia', 'serif'],
+        sans: ['var(--font-space)', 'Space Grotesk', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Instrument Serif', 'Georgia', 'serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'Menlo', 'monospace'],
+        space: ['var(--font-space)', 'Space Grotesk', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
-        'sky-gradient': 'linear-gradient(to bottom, #03060a 0%, #060c12 24%, #101f23 44%, #172a29 57%, #121a1a 71%, #070a0b 86%, #000000 100%)',
-        'footer-gradient': 'linear-gradient(to bottom, #000000 0%, #04070c 42%, #080d16 72%, #0b1422 100%)',
+        'sky-gradient': 'linear-gradient(to bottom, #08080a 0%, #0c0c10 24%, #111115 44%, #121218 57%, #0f0f14 71%, #08080a 86%, #08080a 100%)',
+        'footer-gradient': 'linear-gradient(to bottom, #08080a 0%, #08080a 100%)',
       },
     },
   },
   plugins: [],
 };
+
