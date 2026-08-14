@@ -37,13 +37,7 @@ tempfile = "3.8"
 tauri = { version = "2.0.0", features = ["test"] }
 
 [profile.release]
-# panic = "unwind" (default) — a panic in any thread must not take down the
-# whole app. With `abort` (previous value), a single poisoned mutex unwrap
-# would hard-kill VibeGrid instead of letting the error surface.
-codegen-units = 1
-lto = true
-# opt-level "3" (was "z"): the PTY reader → batcher → IPC flush loop is hot
-# code — the size-optimized build cost real keystroke latency / throughput.
-# Release-binary size stays modest thanks to lto + strip.
+codegen-units = 16
+lto = "thin"
 opt-level = 3
 strip = true
