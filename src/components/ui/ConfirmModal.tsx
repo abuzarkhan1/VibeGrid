@@ -55,29 +55,29 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
+        className="w-full max-w-sm bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center gap-2 text-amber-400">
             <AlertTriangle className="w-4 h-4" />
-            <h3 className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">{title}</h3>
+            <h3 className="text-xs font-bold font-space text-foreground/90 uppercase tracking-wider">{title}</h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close confirmation dialog"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-border/10 text-foreground/50 hover:text-foreground/80 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-5 space-y-4">
-          <p className="text-xs text-zinc-300 leading-relaxed">{message}</p>
+          <p className="text-xs text-foreground/80 leading-relaxed">{message}</p>
 
           <div className="flex justify-end gap-2.5 pt-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+              className="px-4 py-2 rounded-2xl border border-border/10 text-xs font-mono uppercase tracking-wider text-muted hover:text-foreground hover:bg-border/5 transition-colors"
             >
               Cancel
             </button>
@@ -90,7 +90,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               className={`px-5 py-2 rounded-2xl text-xs font-extrabold font-space transition-colors focus:outline-none focus-visible:ring-2 ${
                 isDanger
                   ? 'bg-rose-600 hover:bg-rose-500 text-white focus-visible:ring-rose-400'
-                  : 'bg-white text-black hover:bg-zinc-200 focus-visible:ring-white/70'
+                  : 'bg-foreground text-background hover:bg-foreground/90 focus-visible:ring-foreground/70'
               }`}
             >
               {confirmLabel}

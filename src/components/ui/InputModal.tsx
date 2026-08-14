@@ -75,15 +75,15 @@ export const InputModal: React.FC<InputModalProps> = ({
         ref={panelRef}
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
+        className="w-full max-w-md bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
-          <h3 className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">{title}</h3>
+          <h3 className="text-xs font-bold font-space text-foreground/90 uppercase tracking-wider">{title}</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-border/10 text-foreground/50 hover:text-foreground/80 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -98,7 +98,7 @@ export const InputModal: React.FC<InputModalProps> = ({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={placeholder}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] text-xs font-space font-medium text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-background/40 border border-border/[0.08] text-xs font-space font-medium text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-border/30"
             />
             {onBrowse && (
               <button
@@ -106,7 +106,7 @@ export const InputModal: React.FC<InputModalProps> = ({
                 onClick={handleBrowse}
                 title="Browse folders…"
                 aria-label="Browse folders"
-                className="shrink-0 px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white/60 hover:text-white hover:border-white/30 transition-colors"
+                className="shrink-0 px-3.5 py-2.5 rounded-xl bg-border/[0.04] border border-border/10 text-foreground/60 hover:text-foreground hover:border-border/30 transition-colors"
               >
                 <FolderOpen className="w-3.5 h-3.5" />
               </button>
@@ -117,14 +117,14 @@ export const InputModal: React.FC<InputModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/5 transition-colors"
+              className="px-4 py-2 rounded-2xl border border-border/10 text-xs font-mono uppercase tracking-wider text-muted hover:text-foreground hover:bg-border/5 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!value.trim()}
-              className="px-5 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 disabled:opacity-40 text-xs font-extrabold font-space transition-colors"
+              className="px-5 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 text-xs font-extrabold font-space transition-colors"
             >
               Save
             </button>

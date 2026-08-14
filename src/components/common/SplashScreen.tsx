@@ -44,7 +44,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ ready }) => {
   return (
     <div
       aria-hidden="true"
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#08080a] transition-opacity duration-300 ${
+      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background transition-opacity duration-300 ${
         // While fading, the splash must NEVER intercept clicks — it is
         // invisible but still mounted, so pointer-events: none guarantees the
         // app underneath stays fully interactive during the fade.

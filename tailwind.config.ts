@@ -6,33 +6,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: 'var(--color-bg, #08080a)',
+        background: 'rgb(var(--color-bg-rgb, 8 8 10) / <alpha-value>)',
         surface: 'rgb(var(--color-surface-rgb, 15 17 21) / <alpha-value>)',
         'surface-hover': 'rgb(var(--color-surface-hover-rgb, 24 26 32) / <alpha-value>)',
-        border: 'var(--color-border, rgba(255, 255, 255, 0.08))',
-        // IMPORTANT: colors use the `rgb(var(--channel) / <alpha-value>)`
-        // pattern so Tailwind can generate opacity modifiers (bg-forest/10,
-        // border-forest/30…). Plain `var(--color-accent)` CANNOT take /opacity
-        // — Tailwind silently drops those classes (found during the invisible-
-        // pane-boundary bug hunt; the website config already used this pattern).
+        surfaceCard: 'rgb(var(--color-surface-card-rgb, 15 17 21) / <alpha-value>)',
+        border: 'rgb(var(--color-border-rgb, 255 255 255) / <alpha-value>)',
         forest: {
           DEFAULT: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
           bright: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
           light: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
           dark: 'rgb(var(--color-accent-rgb, 200 200 200) / <alpha-value>)',
         },
-        surfaceCard: 'rgb(var(--color-surface-rgb, 15 17 21) / <alpha-value>)',
         neon: 'var(--color-accent, #ffffff)',
-        bgDark: 'var(--color-bg, #08080a)',
+        bgDark: 'rgb(var(--color-bg-rgb, 8 8 10) / <alpha-value>)',
         'accent-primary': 'var(--color-accent, #ffffff)',
         'accent-secondary': 'var(--color-accent, #ffffff)',
         'accent-glow': 'transparent',
-        foreground: 'var(--color-fg, #f4f4f5)',
-        muted: 'var(--color-muted, #8b93a1)',
+        foreground: 'rgb(var(--color-fg-rgb, 244 244 245) / <alpha-value>)',
+        muted: 'rgb(var(--color-muted-rgb, 139 147 161) / <alpha-value>)',
         pane: {
-          bg: 'var(--color-bg, #08080a)',
-          header: 'var(--color-surface, #0f1115)',
-          border: 'var(--color-border, rgba(255, 255, 255, 0.08))',
+          bg: 'rgb(var(--color-bg-rgb, 8 8 10) / <alpha-value>)',
+          header: 'rgb(var(--color-surface-rgb, 15 17 21) / <alpha-value>)',
+          border: 'rgb(var(--color-border-rgb, 255 255 255) / <alpha-value>)',
           activeBorder: 'var(--color-accent, #ffffff)',
         },
       },

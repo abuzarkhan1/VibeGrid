@@ -42,7 +42,7 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
       ref={ref}
       role="menu"
       aria-label="Terminal actions"
-      className="fixed z-[60] min-w-[190px] py-1.5 rounded-xl bg-zinc-900/95 border border-white/[0.08] shadow-2xl backdrop-blur-xl font-mono text-xs animate-fade-in"
+      className="fixed z-[60] min-w-[190px] py-1.5 rounded-xl bg-surface/95 border border-white/[0.08] shadow-2xl backdrop-blur-xl font-mono text-xs animate-fade-in"
       style={{ left: x, top: y }}
       onClick={(e) => e.stopPropagation()}
     >

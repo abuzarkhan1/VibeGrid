@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
   const presets: PresetCount[] = [1, 2, 3, 4, 5, 6, 8, 9, 12, 16];
 
   return (
-    <header className="h-9 w-full bg-[#08080a] backdrop-blur-md border-b border-white/[0.08] px-3 flex items-center justify-between select-none z-20">
+    <header className="h-9 w-full bg-background backdrop-blur-md border-b border-border/[0.08] px-3 flex items-center justify-between select-none z-20">
       {/* Left: Sidebar Toggle, Brand logo & Workspace selector */}
       <div className="flex items-center gap-3">
         {onToggleSidebar && (
@@ -79,7 +79,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
             title={`${isSidebarOpen ? 'Collapse' : 'Expand'} Sidebar (Cmd/Ctrl+B)`}
             aria-label={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             className={`p-1 rounded-lg border transition-colors ${
-              isSidebarOpen ? 'bg-zinc-800 border-white/20 text-zinc-100' : 'bg-[#08080a] hover:bg-zinc-900 border-white/[0.08] text-zinc-400 hover:text-zinc-200'
+              isSidebarOpen ? 'bg-surface border-border/20 text-foreground' : 'bg-background hover:bg-surface border-border/[0.08] text-muted hover:text-foreground'
             }`}
           >
             <PanelLeft className="w-4 h-4" />
@@ -87,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         )}
 
         <div className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity" onClick={onOpenAbout} title="About VibeGrid">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#08080a] border border-white/[0.12] text-white shadow-[0_0_12px_rgba(255,255,255,0.08)]">
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-background border border-border/[0.12] text-white shadow-[0_0_12px_rgba(var(--color-accent-rgba),0.08)]">
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
               <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.95"/>
               <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.55"/>
@@ -105,18 +105,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         <div className="relative">
           <button
             onClick={() => setIsWsDropdownOpen(!isWsDropdownOpen)}
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#08080a] hover:bg-zinc-900 border border-white/[0.08] text-xs font-['Space_Grotesk'] font-bold text-zinc-200 hover:text-white transition-colors shadow-sm"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background hover:bg-surface border border-border/[0.08] text-xs font-['Space_Grotesk'] font-bold text-foreground/90 hover:text-foreground transition-colors shadow-sm"
           >
             <span className="max-w-[120px] truncate">{activeWs?.name || 'Default Workspace'}</span>
-            <ChevronDown className="w-3 h-3 text-zinc-400" />
+            <ChevronDown className="w-3 h-3 text-muted" />
           </button>
 
           {isWsDropdownOpen && (
             <div
               onMouseLeave={() => setIsWsDropdownOpen(false)}
-              className="absolute top-8 left-0 z-50 w-56 bg-[#08080a] border border-white/[0.08] rounded-xl shadow-2xl py-1 text-xs animate-fade-in backdrop-blur-md"
+              className="absolute top-8 left-0 z-50 w-56 bg-background border border-border/[0.08] rounded-xl shadow-2xl py-1 text-xs animate-fade-in backdrop-blur-md"
             >
-              <div className="px-3 py-1.5 text-[10px] font-['Space_Grotesk'] font-bold text-zinc-500 uppercase">Workspaces</div>
+              <div className="px-3 py-1.5 text-[10px] font-['Space_Grotesk'] font-bold text-muted/80 uppercase">Workspaces</div>
               {workspaces.map((ws) => {
                 const running = ws.id === activeWorkspaceId
                   ? getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length
@@ -144,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                   }}
                   title={ws.id === activeWorkspaceId ? `${ws.name} (double-click to rename)` : `Switch to ${ws.name} (double-click to rename)`}
                   className={`px-3 py-1.5 flex items-center justify-between cursor-pointer transition-colors focus:outline-none focus-visible:bg-white/10 ${
-                    ws.id === activeWorkspaceId ? 'bg-zinc-800/80 text-white font-semibold' : 'text-zinc-300 hover:bg-zinc-900'
+                    ws.id === activeWorkspaceId ? 'bg-surface/80 text-foreground font-semibold' : 'text-foreground/80 hover:bg-surface'
                   }`}
                 >
                   <span className="truncate flex items-center gap-1.5 font-['Space_Grotesk']">
@@ -189,13 +189,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
                 </div>
                 );
               })}
-              <div className="border-t border-white/[0.06] mt-1 pt-1">
+              <div className="border-t border-border/[0.06] mt-1 pt-1">
                 <button
                   onClick={() => {
                     setShowCreateModal(true);
                     setIsWsDropdownOpen(false);
                   }}
-                  className="w-full px-3 py-1.5 flex items-center gap-2 text-zinc-200 hover:bg-zinc-900 font-['Space_Grotesk'] font-bold transition-colors"
+                  className="w-full px-3 py-1.5 flex items-center gap-2 text-foreground/90 hover:bg-surface font-['Space_Grotesk'] font-bold transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>New Workspace</span>
@@ -207,9 +207,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
       </div>
 
       {/* Center: Preset Grid Tabs (1, 2, 3, 4, 5, 6, 8, 9, 12, 16) */}
-      <div className="flex items-center gap-1 bg-[#08080a] p-1 rounded-lg border border-white/[0.08] backdrop-blur-md">
-        <div className="flex items-center gap-1 px-1.5 text-[10px] font-['Space_Grotesk'] font-bold text-zinc-400 uppercase tracking-wider">
-          <Grid className="w-3 h-3 text-zinc-300" />
+      <div className="flex items-center gap-1 bg-background p-1 rounded-lg border border-border/[0.08] backdrop-blur-md">
+        <div className="flex items-center gap-1 px-1.5 text-[10px] font-['Space_Grotesk'] font-bold text-muted uppercase tracking-wider">
+          <Grid className="w-3 h-3 text-foreground/80" />
           <span className="hidden md:inline">Grid:</span>
         </div>
 
@@ -223,7 +223,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
               onClick={() => requestSetLayoutPreset(p)}
               title={`Set Equal Grid to ${p} Pane${p > 1 ? 's' : ''}`}
               className={`px-2 py-0.5 text-xs font-['Space_Grotesk'] font-bold rounded-md transition-all ${
-                isActive ? 'bg-zinc-800 text-white shadow-sm border border-white/10' : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                isActive ? 'bg-surface text-foreground shadow-sm border border-border/10' : 'text-muted hover:text-foreground hover:bg-white/[0.04]'
               }`}
             >
               {p}
@@ -234,12 +234,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
 
       {/* Right Controls: Quick Split, Settings, Command Palette */}
       <div className="flex items-center gap-1.5">
-        <div className="hidden sm:flex items-center gap-1 border-r border-white/[0.08] pr-2">
+        <div className="hidden sm:flex items-center gap-1 border-r border-border/[0.08] pr-2">
           <button
             onClick={handleSplitH}
             title="Split Horizontally (Cmd/Ctrl+D)"
             aria-label="Split horizontally"
-            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 hover:text-white transition-colors"
+            className="p-1 rounded-lg bg-background hover:bg-surface border border-border/[0.08] text-foreground/80 hover:text-foreground transition-colors"
           >
             <Columns className="w-3.5 h-3.5" />
           </button>
@@ -248,7 +248,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
             onClick={handleSplitV}
             title="Split Vertically (Cmd/Ctrl+Shift+D)"
             aria-label="Split vertically"
-            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-300 hover:text-white transition-colors"
+            className="p-1 rounded-lg bg-background hover:bg-surface border border-border/[0.08] text-foreground/80 hover:text-foreground transition-colors"
           >
             <Rows className="w-3.5 h-3.5" />
           </button>
@@ -259,7 +259,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
             onClick={requestResetLayout}
             title="Reset to 1 Pane"
             aria-label="Reset layout to one pane"
-            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-400 hover:text-amber-400 transition-colors"
+            className="p-1 rounded-lg bg-background hover:bg-surface border border-border/[0.08] text-muted hover:text-amber-400 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -270,7 +270,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
             onClick={onOpenAbout}
             title="About VibeGrid"
             aria-label="About VibeGrid"
-            className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="p-1 rounded-lg bg-background hover:bg-surface border border-border/[0.08] text-muted hover:text-foreground/80 transition-colors"
           >
             <Info className="w-3.5 h-3.5" />
           </button>
@@ -280,7 +280,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
           onClick={toggleSettings}
           title="Settings (Cmd/Ctrl+,)"
           aria-label="Open settings"
-          className="p-1 rounded-lg bg-[#08080a] hover:bg-zinc-800 border border-white/[0.08] text-zinc-400 hover:text-zinc-200 transition-colors"
+          className="p-1 rounded-lg bg-background hover:bg-surface border border-border/[0.08] text-muted hover:text-foreground/80 transition-colors"
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
@@ -288,9 +288,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         <button
           onClick={toggleCommandPalette}
           aria-label="Open command palette"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-white/[0.08] text-xs font-['Space_Grotesk'] font-bold text-zinc-200 hover:text-white transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface hover:bg-surface-hover border border-border/[0.08] text-xs font-['Space_Grotesk'] font-bold text-foreground/90 hover:text-foreground transition-all shadow-sm"
         >
-          <Command className="w-3.5 h-3.5 text-zinc-300" />
+          <Command className="w-3.5 h-3.5 text-foreground/70" />
           <span className="hidden sm:inline">Palette</span>
         </button>
       </div>

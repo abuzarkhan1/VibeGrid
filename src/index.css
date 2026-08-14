@@ -5,22 +5,27 @@
 @layer base {
   :root {
     --color-bg: #08080a;
+    --color-bg-rgb: 8 8 10;
     --color-surface: #0f1115;
+    --color-surface-rgb: 15 17 21;
+    --color-surface-card-rgb: 15 17 21;
     --color-surface-hover: #181a20;
+    --color-surface-hover-rgb: 24 26 32;
     --color-border: rgba(255, 255, 255, 0.08);
+    --color-border-rgb: 255 255 255;
     --color-accent: #ffffff;
     --color-accent-secondary: #ffffff;
     /* RGB channel triplets backing the alpha-capable Tailwind colors
-       (forest*, surface, surface-hover, surfaceCard). Kept in sync with
-       --color-accent/--color-surface by applyThemeVariables so opacity
-       modifiers work. Defaults match the tailwind.config.ts fallbacks. */
+       (forest*, surface, surface-hover, surfaceCard, background, foreground,
+       muted, border). Kept in sync by applyThemeVariables on every theme change
+       so opacity modifiers work for ALL components, not just the terminal. */
     --color-accent-rgb: 255 255 255;
     /* Comma-separated channels for legacy-safe rgba(var(--x), a) in plain CSS. */
     --color-accent-rgba: 255, 255, 255;
-    --color-surface-rgb: 15 17 21;
-    --color-surface-hover-rgb: 24 26 32;
     --color-fg: #f4f4f5;
+    --color-fg-rgb: 244 244 245;
     --color-muted: #8b93a1;
+    --color-muted-rgb: 139 147 161;
     --color-selection: rgba(255, 255, 255, 0.25);
     color-scheme: dark;
   }
@@ -30,8 +35,8 @@
   }
 
   body {
-    background-color: #08080a;
-    color: var(--color-fg);
+    background-color: var(--color-bg, #08080a);
+    color: var(--color-fg, #f4f4f5);
     font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
     font-weight: 400;
     user-select: none;
@@ -151,10 +156,10 @@
    hashed-class dependency): the 1px separator line, the sash hover
    highlight, the 8px drag hit-area and the 5px hover bar. */
 .vibegrid-allotment {
-  /* Separator line between split panes: clearly visible azure so the pane
-     boundary reads at a glance (was 0.22 — too faint to notice). */
-  --separator-border: rgba(60, 149, 240, 0.5);
-  --focus-border: #3c95f0;
+  /* Separator and focus border now follow --color-accent so custom themes
+     change divider colors too. Fallback to azure when JS hasn't run yet. */
+  --separator-border: rgba(var(--color-accent-rgba, 60, 149, 240), 0.5);
+  --focus-border: var(--color-accent, #3c95f0);
   --sash-size: 8px;
   --sash-hover-size: 5px;
 }
@@ -171,10 +176,8 @@
   min-width: 0 !important;
 }
 
-/* Sash (draggable divider): subtle rest state, azure fill on hover/active.
-   [class*="sash"] is a stable match across allotment versions (CSS-module
-   hashes change between releases); the pointer-events:none sash container
-   never receives :hover, so only the real divider highlights. */
+/* Sash (draggable divider): subtle rest state, accent fill on hover/active.
+   [class*="sash"] is a stable match across allotment versions. */
 .vibegrid-allotment [class*="sash"] {
   background-color: transparent !important;
   transition: background-color 0.12s ease;
@@ -182,15 +185,15 @@
 
 .vibegrid-allotment [class*="sash"]:hover,
 .vibegrid-allotment [class*="sash-active"] {
-  background-color: rgba(60, 149, 240, 0.4) !important;
+  background-color: rgba(var(--color-accent-rgba, 60, 149, 240), 0.4) !important;
 }
 
 /* Crisp center handle on the drag line while hovering/active */
 .vibegrid-allotment [class*="sash"]:hover:before,
 .vibegrid-allotment [class*="sash-active"]:before {
-  background: #3c95f0 !important;
+  background: var(--color-accent, #3c95f0) !important;
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(60, 149, 240, 0.55);
+  box-shadow: 0 0 10px rgba(var(--color-accent-rgba, 60, 149, 240), 0.55);
 }
 
 /* Custom thin dark scrollbars (neutral, professional) */
@@ -259,8 +262,8 @@
    the boundary visible even before JS runs.
    ================================================================ */
 .vg-pane-frame {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background-color: #08080a;
+  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
+  background-color: var(--color-bg, #08080a);
 }
 /* Permanent colored identity rail: a solid 4px strip in this pane's badge
    color (--pane-accent set per pane index). Solid background paint only —
@@ -273,35 +276,34 @@
   right: 0;
   height: 4px;
   border-radius: 7px 7px 0 0;
-  background-color: var(--pane-accent, #3c95f0);
+  background-color: var(--pane-accent, var(--color-accent, #3c95f0));
   z-index: 30;
   pointer-events: none;
 }
-/* Focused pane: active border with subtle white glow */
+/* Focused pane: accent border with subtle accent glow */
 .vg-pane-frame.vg-pane-focused {
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.07);
+  border-color: rgba(var(--color-accent-rgba, 255, 255, 255), 0.3);
+  box-shadow: 0 0 15px rgba(var(--color-accent-rgba, 255, 255, 255), 0.07);
 }
-/* Alternate pane tint: subtle obsidian variation */
+/* Alternate pane tint: slightly lighter than bg (derived via opacity) */
 .vg-pane-frame.vg-pane-alt {
-  background-color: #0c0c0f;
+  background-color: rgb(var(--color-surface-rgb, 12 12 15));
 }
 .vg-pane-frame.vg-pane-focused.vg-pane-alt {
-  background-color: #152238;
+  background-color: rgb(var(--color-surface-hover-rgb, 21 34 56));
 }
-/* Light chrome: keep the frame visible on light surfaces (channel var already
-   flips to the light theme's accent via applyThemeVariables). */
+/* Light chrome: keep the frame visible on light surfaces */
 html.vibegrid-light .vg-pane-frame {
   border-color: rgba(var(--color-accent-rgba, 9, 105, 218), 0.75);
 }
 html.vibegrid-light .vg-pane-frame.vg-pane-focused {
-  background-color: #eef3fb;
+  background-color: rgba(var(--color-accent-rgba, 9, 105, 218), 0.08);
 }
 html.vibegrid-light .vg-pane-frame.vg-pane-alt {
-  background-color: #f4f6fa;
+  background-color: rgba(var(--color-border-rgb, 0, 0, 0), 0.03);
 }
 html.vibegrid-light .vg-pane-frame.vg-pane-focused.vg-pane-alt {
-  background-color: #e6eefb;
+  background-color: rgba(var(--color-accent-rgba, 9, 105, 218), 0.1);
 }
 
 /* ================================================================

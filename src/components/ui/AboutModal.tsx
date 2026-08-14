@@ -122,7 +122,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
+        className="w-full max-w-md bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
@@ -135,12 +135,12 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2"/>
               </svg>
             </div>
-            <span className="font-space font-bold text-xs tracking-wider text-white/90 uppercase">About VibeGrid</span>
+            <span className="font-space font-bold text-xs tracking-wider text-foreground/90 uppercase">About VibeGrid</span>
           </div>
           <button
             onClick={onClose}
             aria-label="Close about dialog"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-border/10 text-foreground/50 hover:text-foreground/80 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -159,26 +159,26 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
 
           <div>
             <h3 className="font-space font-extrabold text-[32px] leading-none text-white tracking-tight">VibeGrid</h3>
-            <p className="text-xs text-zinc-400 font-mono mt-1">Version {appVersion}</p>
-            <p className="text-xs text-zinc-300 mt-2 max-w-xs mx-auto leading-relaxed font-sans">
+            <p className="text-xs text-muted font-mono mt-1">Version {appVersion}</p>
+            <p className="text-xs text-foreground/80 mt-2 max-w-xs mx-auto leading-relaxed font-sans">
               The free, open-source GPU-accelerated multi-pane terminal workspace built for vibe coding.
             </p>
-            <p className="text-[10px] text-zinc-500 mt-1.5 font-mono">MIT License · Tauri 2 + Rust + React</p>
+            <p className="text-[10px] text-muted/60 mt-1.5 font-mono">MIT License · Tauri 2 + Rust + React</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-left pt-2 border-t border-white/[0.08]">
-            <div className="p-3 rounded-xl bg-black/30 border border-white/[0.08]">
-              <div className="text-[10px] text-zinc-400 font-mono font-semibold uppercase tracking-wider">Engine</div>
-              <div className="text-xs text-white/90 font-space font-bold mt-0.5 flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5 text-white/70" />
+            <div className="p-3 rounded-xl bg-background/30 border border-border/[0.08]">
+              <div className="text-[10px] text-muted font-mono font-semibold uppercase tracking-wider">Engine</div>
+              <div className="text-xs text-foreground/90 font-space font-bold mt-0.5 flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-foreground/70" />
                 <span>Tauri 2 + Rust</span>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-black/30 border border-white/[0.08]">
-              <div className="text-[10px] text-zinc-400 font-mono font-semibold uppercase tracking-wider">License</div>
-              <div className="text-xs text-white/90 font-space font-bold mt-0.5 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-white/70" />
+            <div className="p-3 rounded-xl bg-background/30 border border-border/[0.08]">
+              <div className="text-[10px] text-muted font-mono font-semibold uppercase tracking-wider">License</div>
+              <div className="text-xs text-foreground/90 font-space font-bold mt-0.5 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-foreground/70" />
                 <span>MIT Open Source</span>
               </div>
             </div>
@@ -193,11 +193,11 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 e.preventDefault();
                 openExternal(REPO_URL);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-border/5 hover:bg-border/10 border border-border/10 text-xs font-mono text-foreground/80 transition-colors"
             >
-              <Github className="w-3.5 h-3.5 text-zinc-400" />
+              <Github className="w-3.5 h-3.5 text-muted" />
               <span>GitHub</span>
-              <ExternalLink className="w-3 h-3 text-zinc-500" />
+              <ExternalLink className="w-3 h-3 text-muted/60" />
             </a>
             <a
               href={DOCS_URL}
@@ -207,11 +207,11 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
                 e.preventDefault();
                 openExternal(DOCS_URL);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-zinc-300 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-border/5 hover:bg-border/10 border border-border/10 text-xs font-mono text-foreground/80 transition-colors"
             >
-              <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
+              <BookOpen className="w-3.5 h-3.5 text-muted" />
               <span>Website</span>
-              <ExternalLink className="w-3 h-3 text-zinc-500" />
+              <ExternalLink className="w-3 h-3 text-muted/60" />
             </a>
             <a
               href={CHANGELOG_URL}

@@ -481,7 +481,7 @@ export const SettingsModal: React.FC = () => {
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-zinc-900/95 border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[85vh] backdrop-blur-xl"
+        className="w-full max-w-2xl bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[85vh] backdrop-blur-xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-white/[0.02]">
@@ -496,13 +496,13 @@ export const SettingsModal: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-white/[0.08] bg-black/40 px-4 overflow-x-auto">
+        <div className="flex border-b border-border/[0.08] bg-background/40 px-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('font')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'font'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <Type className="w-3.5 h-3.5" />
@@ -513,8 +513,8 @@ export const SettingsModal: React.FC = () => {
             onClick={() => setActiveTab('theme')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'theme'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
@@ -525,8 +525,8 @@ export const SettingsModal: React.FC = () => {
             onClick={() => setActiveTab('terminal')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'terminal'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <TerminalIcon className="w-3.5 h-3.5" />
@@ -537,8 +537,8 @@ export const SettingsModal: React.FC = () => {
             onClick={() => setActiveTab('workspaces')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'workspaces'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <Layout className="w-3.5 h-3.5" />
@@ -549,8 +549,8 @@ export const SettingsModal: React.FC = () => {
             onClick={() => setActiveTab('limits')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'limits'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
@@ -561,8 +561,8 @@ export const SettingsModal: React.FC = () => {
             onClick={() => setActiveTab('appearance')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'appearance'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
@@ -573,8 +573,8 @@ export const SettingsModal: React.FC = () => {
             onClick={() => setActiveTab('keyboard')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'keyboard'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <KeyboardIcon className="w-3.5 h-3.5" />
@@ -585,8 +585,8 @@ export const SettingsModal: React.FC = () => {
             onClick={() => setActiveTab('profiles')}
             className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'profiles'
-                ? 'border-white text-white bg-white/5'
-                : 'border-transparent text-zinc-400 hover:text-white'
+                ? 'border-foreground text-foreground bg-border/5'
+                : 'border-transparent text-muted hover:text-foreground'
             }`}
           >
             <UserRound className="w-3.5 h-3.5" />
@@ -607,7 +607,7 @@ export const SettingsModal: React.FC = () => {
                   value={fontFamily}
                   onChange={(e) => setFontFamily(e.target.value)}
                   placeholder="e.g. 'Fira Code', monospace"
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono"
                 />
                 <datalist id="vg-font-quickpicks">
                   <option value="JetBrains Mono, monospace" />
@@ -688,7 +688,7 @@ export const SettingsModal: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowCreateThemeModal(true)}
-                    className="px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
                     title="Create a new theme based on the current one"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -696,7 +696,7 @@ export const SettingsModal: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setThemeImportOpen(!themeImportOpen)}
-                    className="px-3.5 py-1.5 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-300 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-1.5 rounded-2xl border border-border/10 text-xs font-mono uppercase tracking-wider text-foreground/80 hover:bg-border/5 flex items-center gap-1.5 transition-colors"
                     title="Import a theme from JSON"
                   >
                     <Upload className="w-3.5 h-3.5" />
@@ -706,20 +706,20 @@ export const SettingsModal: React.FC = () => {
               </div>
 
               {themeImportOpen && (
-                <div className="rounded-xl border border-white/[0.08] bg-black/40 p-4 space-y-3 animate-fade-in">
-                  <label className="block text-[10px] font-mono text-zinc-400">Paste a theme palette as JSON (a raw palette object, or {'{ name, ...palette }'}):</label>
+                <div className="rounded-xl border border-border/[0.08] bg-background/40 p-4 space-y-3 animate-fade-in">
+                  <label className="block text-[10px] font-mono text-muted">Paste a theme palette as JSON (a raw palette object, or {'{ name, ...palette }'}):</label>
                   <textarea
                     value={themeImportText}
                     onChange={(e) => setThemeImportText(e.target.value)}
                     rows={4}
                     placeholder='{"name":"My Theme","background":"#0b0d12","foreground":"#e2e8f0","cursor":"#3c95f0",...}'
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/[0.08] text-xs font-mono text-white/90 placeholder-white/25 focus:outline-none focus:border-white/30 resize-y"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-background/60 border border-border/[0.08] text-xs font-mono text-foreground/90 placeholder-muted/25 focus:outline-none focus:border-border/30 resize-y"
                   />
                   <div className="flex justify-end">
                     <button
                       onClick={handleImportTheme}
                       disabled={!themeImportText.trim()}
-                      className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 disabled:opacity-40 text-xs font-extrabold font-space transition-colors"
+                      className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 text-xs font-extrabold font-space transition-colors"
                     >
                       Import Theme
                     </button>
@@ -744,7 +744,7 @@ export const SettingsModal: React.FC = () => {
                           ? 'border-forest-bright bg-forest/10'
                           : isSelected
                             ? 'border-forest/60 bg-white/[0.03]'
-                            : 'border-white/10 bg-black/40 hover:border-forest/40'
+                            : 'border-border/10 bg-background/40 hover:border-forest/40'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -845,7 +845,7 @@ export const SettingsModal: React.FC = () => {
                   value={defaultShell}
                   onChange={(e) => setDefaultShell(e.target.value.trim())}
                   placeholder="/bin/zsh (empty = system default)"
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright"
                 />
                 <span className="block text-[10px] text-white/40 mt-0.5">Used for new panes unless a pane has its own shell override (right-click → Set Shell).</span>
               </div>
@@ -857,7 +857,7 @@ export const SettingsModal: React.FC = () => {
                   value={defaultCwd}
                   onChange={(e) => updateSettings({ defaultCwd: e.target.value.trim() })}
                   placeholder="/Users/you/projects (empty = session directory)"
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono"
                 />
                 <span className="block text-[10px] text-white/40 mt-0.5">New panes open here unless the pane you split already has its own working directory.</span>
               </div>
@@ -870,7 +870,7 @@ export const SettingsModal: React.FC = () => {
                   value={shellArgs}
                   onChange={(e) => updateSettings({ shellArgs: e.target.value })}
                   placeholder="--login (space-separated; empty = none)"
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright font-mono"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono"
                 />
                 <span className="block text-[10px] text-white/40 mt-0.5">Passed to the default shell on every new pane. Skipped when a pane overrides the shell (right-click → Set Shell).</span>
               </div>
@@ -882,7 +882,7 @@ export const SettingsModal: React.FC = () => {
                   onChange={(e) => updateSettings({ shellEnv: e.target.value })}
                   placeholder={'EDITOR=nvim\nGIT_EDITOR=nvim\nMY_VAR=value'}
                   rows={3}
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright font-mono resize-y"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono resize-y"
                 />
                 <span className="block text-[10px] text-white/40 mt-0.5">One KEY=VALUE per line. Merged into every new pane; built-in TERM/COLORTERM/LANG/VIBEGRID always win.</span>
               </div>
@@ -896,7 +896,7 @@ export const SettingsModal: React.FC = () => {
                   step={500}
                   value={scrollback}
                   onChange={(e) => setScrollback(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                 />
               </div>
 
@@ -905,7 +905,7 @@ export const SettingsModal: React.FC = () => {
                 <select
                   value={cursorStyle}
                   onChange={(e) => setCursorStyle(e.target.value as CursorStyle)}
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                 >
                   <option value="block">Block</option>
                   <option value="bar">Bar (Beam)</option>
@@ -949,7 +949,7 @@ export const SettingsModal: React.FC = () => {
                 />
               </div>
 
-              <div className="border-t border-white/[0.06] pt-4">
+              <div className="border-t border-border/[0.06] pt-4">
                 <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Startup &amp; Tray</span>
                 <div className="space-y-4 mt-3">
                   <div className="flex items-center justify-between">
@@ -1011,7 +1011,7 @@ export const SettingsModal: React.FC = () => {
                   <select
                     value={voiceLanguage}
                     onChange={(e) => updateSettings({ voiceLanguage: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                    className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                   >
                     <option value="auto">Auto-detect</option>
                     <option value="en">English</option>
@@ -1035,7 +1035,7 @@ export const SettingsModal: React.FC = () => {
                   <select
                     value={voiceModelSize}
                     onChange={(e) => updateSettings({ voiceModelSize: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                    className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                   >
                     <option value="tiny">Tiny (~75 MB) — fastest</option>
                     <option value="base">Base (~142 MB) — balanced</option>
@@ -1071,7 +1071,7 @@ export const SettingsModal: React.FC = () => {
                       onClick={handleMicTest}
                       disabled={micTesting}
                       title="Record for 1.6s and check the input level"
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-space disabled:opacity-50 transition-colors"
                     >
                       <Mic className="w-3 h-3 text-black" />
                       {micTesting ? 'Listening…' : 'Test Microphone'}
@@ -1080,7 +1080,7 @@ export const SettingsModal: React.FC = () => {
                   <select
                     value={voiceInputDevice}
                     onChange={(e) => setVoiceInputDevice(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                    className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                   >
                     <option value="">System Default</option>
                     {micDevices.map((d) => (
@@ -1097,7 +1097,7 @@ export const SettingsModal: React.FC = () => {
                 Esc to cancel, or just stop talking and it auto-inserts after a short pause. You run the command yourself.
               </p>
 
-              <div className="border-t border-white/[0.06] pt-4">
+              <div className="border-t border-border/[0.06] pt-4">
                 <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Terminal Behavior</span>
                 <div className="space-y-4 mt-3">
                   <div className="flex items-center justify-between">
@@ -1122,7 +1122,7 @@ export const SettingsModal: React.FC = () => {
                       <select
                         value={linkModifier}
                         onChange={(e) => updateSettings({ linkModifier: e.target.value as 'click' | 'meta' | 'ctrl' | 'alt' })}
-                        className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                        className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                       >
                         <option value="click">Plain click</option>
                         <option value="meta">Cmd / Win key</option>
@@ -1178,7 +1178,7 @@ export const SettingsModal: React.FC = () => {
                       value={wordSeparators}
                       onChange={(e) => updateSettings({ wordSeparators: e.target.value })}
                       placeholder=" "
-                      className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 font-mono placeholder-white/30 focus:outline-none focus:border-forest-bright"
+                      className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 font-mono placeholder-muted/30 focus:outline-none focus:border-forest-bright"
                     />
                     <span className="block text-[10px] text-white/40 mt-0.5">Characters treated as word boundaries when double-clicking to select text.</span>
                   </div>
@@ -1196,7 +1196,7 @@ export const SettingsModal: React.FC = () => {
                   step={1}
                   value={ipcBatchIntervalMs}
                   onChange={(e) => setIpcBatchIntervalMs(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                 />
                 <div className="flex items-center gap-1.5 mt-2">
                   {[8, 16, 33, 66].map((preset) => (
@@ -1206,7 +1206,7 @@ export const SettingsModal: React.FC = () => {
                       className={`px-2 py-1 rounded-md border text-[10px] font-mono transition-colors ${
                         ipcBatchIntervalMs === preset
                           ? 'border-forest-bright bg-forest/15 text-forest-light'
-                          : 'border-white/10 bg-white/[0.03] text-white/50 hover:border-forest/40 hover:text-white/80'
+                          : 'border-border/10 bg-border/[0.03] text-foreground/50 hover:border-forest/40 hover:text-foreground/80'
                       }`}
                     >
                       {preset} ms
@@ -1224,7 +1224,7 @@ export const SettingsModal: React.FC = () => {
                 <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Active Workspaces ({workspaces.length})</span>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create Workspace</span>
@@ -1241,7 +1241,7 @@ export const SettingsModal: React.FC = () => {
                 const setOv = (patch: WorkspaceOverrides) =>
                   setWorkspaceOverrides(activeWorkspaceId, cleanOverrides({ ...ov, ...patch }));
                 return (
-                  <div className="rounded-lg border border-white/10 bg-black/20 p-4 space-y-3">
+                  <div className="rounded-lg border border-border/10 bg-background/20 p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Workspace Overrides</span>
@@ -1252,7 +1252,7 @@ export const SettingsModal: React.FC = () => {
                       {hasOverrides && (
                         <button
                           onClick={() => setWorkspaceOverrides(activeWorkspaceId, null)}
-                          className="shrink-0 px-2 py-1 rounded-md border border-white/10 text-[10px] text-white/50 hover:border-rose-500/40 hover:text-rose-300 transition-colors"
+                          className="shrink-0 px-2 py-1 rounded-md border border-border/10 text-[10px] text-foreground/50 hover:border-rose-500/40 hover:text-rose-300 transition-colors"
                         >
                           Clear all
                         </button>
@@ -1265,7 +1265,7 @@ export const SettingsModal: React.FC = () => {
                         <select
                           value={ov.themeName ?? ''}
                           onChange={(e) => setOv({ themeName: e.target.value || undefined })}
-                          className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                         >
                           <option value="">— inherit global —</option>
                           {Object.entries(allThemes).map(([key, t]) => (
@@ -1281,7 +1281,7 @@ export const SettingsModal: React.FC = () => {
                           max={fontSizeMax}
                           value={ov.fontSize ?? ''}
                           onChange={(e) => setOv({ fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
-                          className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                         />
                       </div>
                       <div className="col-span-2">
@@ -1291,7 +1291,7 @@ export const SettingsModal: React.FC = () => {
                           value={ov.fontFamily ?? ''}
                           onChange={(e) => setOv({ fontFamily: e.target.value || undefined })}
                           placeholder="empty = inherit global"
-                          className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright font-mono"
+                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright font-mono"
                         />
                       </div>
                       <div>
@@ -1301,7 +1301,7 @@ export const SettingsModal: React.FC = () => {
                           value={ov.defaultShell ?? ''}
                           onChange={(e) => setOv({ defaultShell: e.target.value.trim() || undefined })}
                           placeholder="empty = inherit"
-                          className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright font-mono"
+                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright font-mono"
                         />
                       </div>
                       <div>
@@ -1311,7 +1311,7 @@ export const SettingsModal: React.FC = () => {
                           value={ov.defaultCwd ?? ''}
                           onChange={(e) => setOv({ defaultCwd: e.target.value.trim() || undefined })}
                           placeholder="empty = inherit"
-                          className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright font-mono"
+                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright font-mono"
                         />
                       </div>
                       <div className="col-span-2">
@@ -1676,7 +1676,7 @@ export const SettingsModal: React.FC = () => {
                       <select
                         value={confirmations[key]}
                         onChange={(e) => updateSettings({ confirmations: { ...confirmations, [key]: e.target.value as 'always' | 'never' } })}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                       >
                         <option value="always">Always ask</option>
                         <option value="never">Never ask (act immediately)</option>
@@ -1885,14 +1885,14 @@ export const SettingsModal: React.FC = () => {
                           value={macro.name}
                           onChange={(e) => updateMacro(macro.id, { name: e.target.value.slice(0, 60) })}
                           placeholder="Macro name"
-                          className="flex-1 min-w-0 px-2 py-1 rounded bg-black/40 border border-white/10 text-xs text-white/90 placeholder-white/30 focus:outline-none focus:border-forest-bright"
+                          className="flex-1 min-w-0 px-2 py-1 rounded bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright"
                         />
                         <input
                           type="text"
                           value={macro.keybinding}
                           onChange={(e) => updateMacro(macro.id, { keybinding: e.target.value.trim() })}
                           placeholder="Keybinding (Mod+Alt+1)"
-                          className="w-40 shrink-0 px-2 py-1 font-mono rounded bg-black/40 border border-white/10 text-[11px] text-forest-light placeholder-white/30 focus:outline-none focus:border-forest-bright"
+                          className="w-40 shrink-0 px-2 py-1 font-mono rounded bg-background/40 border border-border/10 text-[11px] text-forest-light placeholder-muted/30 focus:outline-none focus:border-forest-bright"
                         />
                         <button
                           onClick={() => runMacro(macro)}
@@ -1921,7 +1921,7 @@ export const SettingsModal: React.FC = () => {
                                 if (v === 'delay') setMacroStep(macro.id, si, { type: 'delay', ms: 300 });
                                 else setMacroStep(macro.id, si, { type: 'action', actionId: v });
                               }}
-                              className="flex-1 min-w-0 px-2 py-1 rounded bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                              className="flex-1 min-w-0 px-2 py-1 rounded bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                             >
                               <option value="delay">— pause —</option>
                               {MACRO_ACTIONS.map((a) => (
@@ -1936,7 +1936,7 @@ export const SettingsModal: React.FC = () => {
                                 step={50}
                                 value={step.ms ?? 300}
                                 onChange={(e) => setMacroStep(macro.id, si, { ms: Number(e.target.value) })}
-                                className="w-24 shrink-0 px-2 py-1 rounded bg-black/40 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-forest-bright"
+                                className="w-24 shrink-0 px-2 py-1 rounded bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
                               />
                             ) : (
                               <span className="w-24 shrink-0 text-right text-[10px] text-white/35 truncate">

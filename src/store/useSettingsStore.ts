@@ -672,32 +672,57 @@ function applyThemeVariables(
   const chrome = light ? THEMES.vibeLight : termTheme;
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
+
+    // ── Background ──────────────────────────────────────────────────────────
     root.style.setProperty('--color-bg', chrome.background);
+    const bgChannels = colorToRgbChannels(chrome.background);
+    if (bgChannels) root.style.setProperty('--color-bg-rgb', bgChannels);
+
+    // ── Surface (panel / card backgrounds) ──────────────────────────────────
     root.style.setProperty('--color-surface', chrome.black);
+    const surfaceChannels = colorToRgbChannels(chrome.black);
+    if (surfaceChannels) {
+      root.style.setProperty('--color-surface-rgb', surfaceChannels);
+      root.style.setProperty('--color-surface-card-rgb', surfaceChannels);
+    }
+
+    // ── Surface hover ────────────────────────────────────────────────────────
     root.style.setProperty('--color-surface-hover', chrome.brightBlack);
+    const surfaceHoverChannels = colorToRgbChannels(chrome.brightBlack);
+    if (surfaceHoverChannels) root.style.setProperty('--color-surface-hover-rgb', surfaceHoverChannels);
+
+    // ── Border ───────────────────────────────────────────────────────────────
+    // Store both a raw CSS value for legacy usage and an RGB triplet so the
+    // Tailwind `border` token (rgb(var(--color-border-rgb) / <alpha>)) works.
     root.style.setProperty('--color-border', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.08)');
+    // Border uses white-on-dark / black-on-light at low opacity — we derive
+    // the pure channel triplet from the extreme (black or white) so
+    // border/opacity modifiers produce the right colour.
+    root.style.setProperty('--color-border-rgb', light ? '0 0 0' : '255 255 255');
+
+    // ── Accent (cursor / highlight) ──────────────────────────────────────────
     const accent = accentOverride ?? termTheme.cursor;
     root.style.setProperty('--color-accent', accent);
-    // Keep the alpha-capable channel triplets in sync so Tailwind opacity
-    // modifiers (border-forest/30, bg-surface/90, bg-surfaceCard/95 …) keep
-    // working after a theme switch — even for custom-theme cursors in exotic
-    // formats (rgba/oklch/named), which the probe-element parser resolves.
     const accentChannels = colorToRgbChannels(accent);
     if (accentChannels) {
       root.style.setProperty('--color-accent-rgb', accentChannels);
       root.style.setProperty('--color-accent-rgba', accentChannels.replace(/ /g, ', '));
     }
-    const surfaceChannels = colorToRgbChannels(chrome.black);
-    if (surfaceChannels) {
-      root.style.setProperty('--color-surface-rgb', surfaceChannels);
-    }
-    const surfaceHoverChannels = colorToRgbChannels(chrome.brightBlack);
-    if (surfaceHoverChannels) {
-      root.style.setProperty('--color-surface-hover-rgb', surfaceHoverChannels);
-    }
+
+    // ── Foreground ───────────────────────────────────────────────────────────
     root.style.setProperty('--color-fg', chrome.foreground);
-    root.style.setProperty('--color-muted', light ? '#57606a' : '#8b93a1');
+    const fgChannels = colorToRgbChannels(chrome.foreground);
+    if (fgChannels) root.style.setProperty('--color-fg-rgb', fgChannels);
+
+    // ── Muted ────────────────────────────────────────────────────────────────
+    const mutedHex = light ? '#57606a' : '#8b93a1';
+    root.style.setProperty('--color-muted', mutedHex);
+    const mutedChannels = colorToRgbChannels(mutedHex);
+    if (mutedChannels) root.style.setProperty('--color-muted-rgb', mutedChannels);
+
+    // ── Selection ────────────────────────────────────────────────────────────
     root.style.setProperty('--color-selection', termTheme.selectionBackground);
+
     // Light chrome remaps the white-alpha text/surface utilities via
     // html.vibegrid-light (index.css) and flips the native color-scheme so
     // scrollbars/inputs follow.

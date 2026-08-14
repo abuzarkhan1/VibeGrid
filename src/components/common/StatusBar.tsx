@@ -32,7 +32,7 @@ export const StatusBar: React.FC = () => {
   const isWebglActive = focusedPaneId ? activeWebglPanes.includes(focusedPaneId) : true;
 
   return (
-    <footer className="h-6 w-full bg-[#08080a] backdrop-blur-md border-t border-white/[0.08] px-3 flex items-center justify-between font-mono text-xs text-zinc-400 select-none z-20">
+    <footer className="h-6 w-full bg-background backdrop-blur-md border-t border-border/[0.08] px-3 flex items-center justify-between font-mono text-xs text-muted select-none z-20">
       {/* Left info: Workspace Name & Focused Pane ID with pulse indicator */}
       <div className="flex items-center gap-4">
         {badges.workspace && (
@@ -41,15 +41,15 @@ export const StatusBar: React.FC = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
-            <Layout className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="font-semibold text-xs text-zinc-200">{activeWs?.name || 'Default Workspace'}</span>
+            <Layout className="w-3.5 h-3.5 text-muted" />
+            <span className="font-semibold text-xs text-foreground/90">{activeWs?.name || 'Default Workspace'}</span>
           </div>
         )}
 
         {focusedPaneId && badges.workspace && (
-          <div className="flex items-center gap-1.5 text-zinc-400">
-            <Terminal className="w-3 h-3 text-zinc-500" />
-            <span className="text-xs text-zinc-400">
+          <div className="flex items-center gap-1.5 text-muted">
+            <Terminal className="w-3 h-3 text-muted/70" />
+            <span className="text-xs text-muted">
               {focusedNode?.title || focusedPaneId}
               {focusedNode?.cwd ? ` (${focusedNode.cwd})` : ''}
             </span>
@@ -60,14 +60,14 @@ export const StatusBar: React.FC = () => {
       {/* Right status badges: GPU WebGL with pulse & Pane count badge */}
       <div className="flex items-center gap-3.5">
         {isLoading && (
-          <div className="flex items-center gap-1.5 text-zinc-300">
-            <Loader2 className="w-3 h-3 text-zinc-200 animate-spin" />
+          <div className="flex items-center gap-1.5 text-foreground/80">
+            <Loader2 className="w-3 h-3 text-foreground/70 animate-spin" />
             <span className="text-xs">Restoring workspaces…</span>
           </div>
         )}
         {badges.font && (
-          <div className="flex items-center gap-1.5 text-zinc-400" title="Terminal font size (Cmd/Ctrl +/- to adjust)">
-            <Type className="w-3 h-3 text-zinc-500" />
+          <div className="flex items-center gap-1.5 text-muted" title="Terminal font size (Cmd/Ctrl +/- to adjust)">
+            <Type className="w-3 h-3 text-muted/70" />
             <span className="text-xs">{fontSize}px</span>
           </div>
         )}
@@ -77,14 +77,14 @@ export const StatusBar: React.FC = () => {
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-60 ${isWebglActive ? 'bg-emerald-400' : 'bg-amber-400'}`} />
               <span className={`relative inline-flex h-2 w-2 rounded-full ${isWebglActive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
             </span>
-            <Cpu className={`w-3.5 h-3.5 ${isWebglActive ? 'text-zinc-300' : 'text-amber-400'}`} />
+            <Cpu className={`w-3.5 h-3.5 ${isWebglActive ? 'text-foreground/80' : 'text-amber-400'}`} />
             <span className="text-xs">{isWebglActive ? 'GPU (WebGL 60FPS)' : 'CPU (Canvas Fallback)'}</span>
           </div>
         )}
 
         {badges.panes && (
-          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-zinc-900/90 border border-white/[0.08] text-xs text-zinc-300">
-            <Layers className="w-3 h-3 text-zinc-400" />
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface/90 border border-border/[0.08] text-xs text-foreground/80">
+            <Layers className="w-3 h-3 text-muted" />
             <span>
               {paneCount}/{maxPanes} Panes
             </span>

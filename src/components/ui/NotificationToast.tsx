@@ -32,19 +32,19 @@ const ToastItem: React.FC<{ toast: ToastMessage; onClose: () => void }> = ({ toa
   };
 
   return (
-    <div className="pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-full bg-zinc-900 border border-white/10 text-white text-xs font-bold shadow-2xl backdrop-blur-xl animate-fade-in">
+    <div className="pointer-events-auto flex items-center gap-3 px-4 py-2.5 rounded-full bg-surface border border-border/10 text-foreground text-xs font-bold shadow-2xl backdrop-blur-xl animate-fade-in">
       {getIcon()}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-space font-bold text-white leading-tight truncate">{toast.title}</span>
           {toast.description && (
-            <span className="text-[11px] text-zinc-400 font-mono font-normal truncate hidden sm:inline">
+            <span className="text-[11px] text-muted font-mono font-normal truncate hidden sm:inline">
               · {toast.description}
             </span>
           )}
         </div>
         {toast.description && (
-          <p className="text-[10px] text-zinc-400 font-mono font-normal mt-0.5 leading-tight sm:hidden">
+          <p className="text-[10px] text-muted font-mono font-normal mt-0.5 leading-tight sm:hidden">
             {toast.description}
           </p>
         )}
