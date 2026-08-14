@@ -127,13 +127,8 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
-                <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-                <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-                <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2"/>
-              </svg>
+            <div className="w-5 h-5 rounded-lg bg-white/10 border border-white/10 flex items-center justify-center overflow-hidden p-0.5">
+              <img src="/logo.png" alt="VibeGrid Logo" className="w-full h-full object-contain rounded" />
             </div>
             <span className="font-space font-bold text-xs tracking-wider text-foreground/90 uppercase">About VibeGrid</span>
           </div>
@@ -148,13 +143,8 @@ export const AboutModal: React.FC<AboutModalProps> = ({ onClose }) => {
 
         {/* Content */}
         <div className="p-6 text-center space-y-4">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shadow-xl shadow-black/40">
-            <svg width="32" height="32" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.9"/>
-              <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-              <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.5"/>
-              <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.2"/>
-            </svg>
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-white/10 border border-white/10 flex items-center justify-center shadow-xl shadow-black/40 overflow-hidden p-2">
+            <img src="/logo.png" alt="VibeGrid Logo" className="w-10 h-10 object-contain rounded-xl" />
           </div>
 
           <div>

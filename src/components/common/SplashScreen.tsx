@@ -54,13 +54,8 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ ready }) => {
       <div className="relative mb-6">
         {/* Glowing white halo pulse */}
         <div className="absolute inset-0 rounded-2xl bg-white/20 blur-xl animate-pulse" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 border border-white/20 text-white shadow-[0_0_32px_rgba(255,255,255,0.25)]">
-          <svg width="36" height="36" viewBox="0 0 16 16" fill="none">
-            <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.95" />
-            <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.6" />
-            <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.6" />
-            <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.3" />
-          </svg>
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 border border-white/20 shadow-[0_0_32px_rgba(255,255,255,0.25)] overflow-hidden p-2">
+          <img src="/logo.png" alt="VibeGrid Logo" className="w-12 h-12 object-contain rounded-xl" />
         </div>
       </div>
       <h1 className="font-['Space_Grotesk'] font-bold text-4xl text-white tracking-tight">VibeGrid</h1>

@@ -87,13 +87,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAbout, isSidebarOpen = tru
         )}
 
         <div className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity" onClick={onOpenAbout} title="About VibeGrid">
-          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-background border border-border/[0.12] text-white shadow-[0_0_12px_rgba(var(--color-accent-rgba),0.08)]">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.95"/>
-              <rect x="9" y="1" width="6" height="6" rx="1" fill="white" fillOpacity="0.55"/>
-              <rect x="1" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.55"/>
-              <rect x="9" y="9" width="6" height="6" rx="1" fill="white" fillOpacity="0.25"/>
-            </svg>
+          <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-background border border-border/[0.12] overflow-hidden p-0.5 shadow-[0_0_12px_rgba(var(--color-accent-rgba),0.08)]">
+            <img src="/logo.png" alt="VibeGrid Logo" className="w-full h-full object-contain rounded" />
           </div>
           <div className="flex items-center tracking-tight text-sm">
             <span className="font-['Space_Grotesk'] font-black text-white">Vibe</span>
