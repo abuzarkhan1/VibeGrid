@@ -85,35 +85,6 @@ const TIMELINE_ITEMS: TimelineItem[] = [
   },
 ];
 
-/* ─── Install command chip with copy button ─── */
-function InstallCmd({ cmd }: { cmd: string }) {
-  const [copied, setCopied] = React.useState(false);
-  return (
-    <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-zinc-900/50 px-4 py-3.5 font-mono text-xs text-white/60 hover:border-white/[0.16] transition-all">
-      <span className="text-white font-bold">$</span>
-      <span className="truncate">{cmd}</span>
-      <button
-        className="shrink-0 transition-colors hover:text-white/80 cursor-pointer ml-auto"
-        aria-label={`Copy ${cmd}`}
-        onClick={() => {
-          navigator.clipboard?.writeText(cmd).catch(() => {});
-          setCopied(true);
-          setTimeout(() => setCopied(false), 2000);
-        }}
-      >
-        {copied ? (
-          <span className="text-white font-bold">✓</span>
-        ) : (
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="9" y="9" width="13" height="13" rx="2" />
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-          </svg>
-        )}
-      </button>
-    </div>
-  );
-}
-
 /* ─── Parallax hook ─── */
 function useParallax() {
   const skyRef   = useRef<HTMLImageElement>(null);
@@ -171,7 +142,7 @@ const FAQS = [
   { q: 'Is VibeGrid really free?', a: 'Yes. VibeGrid is completely free — no subscriptions, no API keys required. Download and run locally on macOS or Windows.' },
   { q: 'Why choose VibeGrid over BridgeSpace for Vibe Coding?', a: 'VibeGrid is completely agnostic. While BridgeSpace locks you into their walled garden of supported agents, VibeGrid lets you orchestrate ANY AI agent locally. It\'s true vibe coding without restrictions.' },
   { q: 'What makes VibeGrid different from other terminals?', a: 'VibeGrid uses WebGL GPU-accelerated rendering for 60 FPS across up to 16 live panes simultaneously, with a Rust PTY backend for <10ms keystroke latency.' },
-  { q: 'Which platforms are supported?', a: 'macOS (Apple Silicon & Intel) and Windows (x64). Linux support is coming soon.' },
+  { q: 'Which platforms are supported?', a: 'macOS (Apple Silicon) is available today. Windows support is currently in development and coming soon.' },
   { q: 'How do workspaces work?', a: 'Create named workspaces with Cmd+Shift+N, switch between them instantly. Each workspace remembers your exact pane layout and restores it on launch.' },
   { q: 'Can I customize themes and keybindings?', a: 'Yes. VibeGrid ships with 8 built-in themes (VibeDark, One Dark Pro, Nord, Tokyo Night, Catppuccin, Gruvbox Dark, Solarized Dark, GitHub Dark) and a full keybinding editor.' },
 ];
@@ -231,21 +202,14 @@ export default function Home() {
               </svg>
               Download for macOS
             </a>
-            <a href="/#download"
-               className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-zinc-900/50 px-6 py-3.5 text-sm font-extrabold tracking-tight text-white/70 transition-all hover:border-white/[0.16] hover:bg-zinc-800 hover:text-white cursor-pointer"
+            <div
+               className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-zinc-900/50 px-5 py-3.5 text-sm font-extrabold tracking-tight text-white/60 select-none"
                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" className="opacity-60">
                 <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
               </svg>
-              Windows
-            </a>
-            <div className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-zinc-900/50 px-4 py-3 font-mono text-xs text-zinc-400">
-              curl -fsSL https://vibegrid.vercel.app/install.sh | sh
-              <button className="transition-colors hover:text-white cursor-pointer ml-1" onClick={() => navigator.clipboard?.writeText('curl -fsSL https://vibegrid.vercel.app/install.sh | sh')}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                </svg>
-              </button>
+              <span>Windows</span>
+              <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 font-normal">Coming Soon</span>
             </div>
           </div>
 
@@ -472,32 +436,13 @@ export default function Home() {
                 Five pillars. One native engine.
               </p>
               <span className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-500">
-                macOS · Windows
+                macOS · Windows (Coming Soon)
               </span>
             </div>
           </div>
         </section>
 
-        {/* ── CLI Section ── */}
-        <section id="cli" className="relative scroll-mt-24 bg-[#08080a] px-6 py-24 md:py-32 border-t border-white/[0.06]">
-          <div className="mx-auto max-w-4xl">
-            <div className="vg-hidden vg-in-rise mb-12 text-center">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6 text-center">
-                One-Line Installer
-              </p>
-              <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.08]">
-                One command to <span className="text-white vg-text-glow font-serif italic font-normal">install</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal">
-                Pipe the official installer script — it detects your OS and architecture and grabs the right build.
-              </p>
-            </div>
 
-            <div className="vg-hidden vg-in-rise mx-auto flex max-w-xl flex-col gap-3">
-              <InstallCmd cmd="curl -fsSL https://vibegrid.vercel.app/install.sh | sh" />
-            </div>
-          </div>
-        </section>
 
         {/* ── Workspaces Section ── */}
         <section id="workspaces" className="relative scroll-mt-24 bg-[#08080a] px-6 py-24 md:py-32 border-t border-white/[0.06]">
@@ -682,25 +627,30 @@ export default function Home() {
                 <div className="absolute inset-0 animate-scan-line pointer-events-none">
                   <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
                 </div>
-                <div className="mb-6 flex items-center h-10"><AppleHoverIcon size={32} /></div>
+                <div className="mb-6 flex items-center justify-between h-10">
+                  <AppleHoverIcon size={32} />
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    Latest Release
+                  </span>
+                </div>
                 <h3 className="mb-1 text-[18px] font-extrabold tracking-tight text-white font-sans">macOS</h3>
-                <p className="mb-6 font-mono text-xs uppercase tracking-widest text-white/40">Apple Silicon & Intel · macOS 12+</p>
+                <p className="mb-6 font-mono text-xs uppercase tracking-widest text-white/40">Apple Silicon · macOS 11+</p>
                 <div className="flex flex-col gap-2">
                   <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/latest"
                     target="_blank"
                     rel="noreferrer"
                     className="vg-install-glow flex items-center justify-center gap-2 rounded-2xl border border-white/[0.12] bg-white text-black px-6 py-3.5 text-sm font-extrabold tracking-tight transition-all hover:bg-zinc-200 hover:shadow-[0_0_28px_rgba(255,255,255,0.2)] cursor-pointer font-sans"
                   >
-                    Download for Apple Silicon
+                    Download DMG (Apple Silicon)
                   </a>
                   <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases/tag/v1"
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases"
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-extrabold tracking-tight text-white/60 transition-all hover:bg-white/10 hover:text-white font-sans"
                   >
-                    Intel (x86)
+                    View All GitHub Releases
                   </a>
                 </div>
               </div>
@@ -709,18 +659,20 @@ export default function Home() {
               <div className="vg-hidden vg-in-pop group relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-8 transition-all hover:border-white/15"
                    style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
                 <div className="shine-layer" aria-hidden="true" />
-                <div className="mb-6 flex items-center h-10"><WindowHoverIcon size={32} /></div>
+                <div className="mb-6 flex items-center justify-between h-10">
+                  <WindowHoverIcon size={32} />
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-white/10 border border-white/15 text-zinc-300">
+                    Coming Soon
+                  </span>
+                </div>
                 <h3 className="mb-1 text-[18px] font-extrabold tracking-tight text-white font-sans">Windows</h3>
-                <p className="mb-6 font-mono text-xs uppercase tracking-widest text-white/40">Windows 10/11 · x64</p>
+                <p className="mb-6 font-mono text-xs uppercase tracking-widest text-white/40">Windows 10 / 11 · x64 & ARM64</p>
                 <div className="flex flex-col gap-2">
-                  <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases/tag/v1"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-extrabold tracking-tight text-white/60 transition-all hover:bg-white/10 hover:text-white font-sans"
+                  <div
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3.5 text-sm font-extrabold tracking-tight text-white/40 select-none font-sans"
                   >
-                    Download for Windows
-                  </a>
+                    In Active Development · Coming Soon
+                  </div>
                 </div>
               </div>
             </div>

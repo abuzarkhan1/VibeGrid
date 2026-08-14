@@ -9,7 +9,6 @@ export interface NavbarProps {
 
 const NAV_LINKS = [
   { label: 'Desktop', href: '/#desktop' },
-  { label: 'CLI', href: '/#cli' },
   { label: 'Workspaces', href: '/#workspaces' },
   { label: 'Themes', href: '/#themes' },
   { label: 'About', href: '/about' },
