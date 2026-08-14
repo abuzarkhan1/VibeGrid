@@ -97,12 +97,17 @@ export function Navbar({ active }: NavbarProps) {
         <div className="max-w-6xl mx-auto px-6 sm:px-8 flex items-center justify-between h-12">
           <a
             href="/"
-            className="text-2xl sm:text-3xl font-black text-white tracking-tight select-none flex items-center gap-1 hover:opacity-90 transition-opacity"
+            className="text-2xl sm:text-3xl font-black text-white tracking-tight select-none flex items-center gap-3 hover:opacity-90 transition-opacity"
           >
-            <span className="font-black tracking-tight text-white">Vibe</span>
-            <em className="italic font-serif font-bold text-zinc-100 text-2xl sm:text-3xl">
-              Grid
-            </em>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 border border-white/15 overflow-hidden p-1 shadow-sm">
+              <img src="/logo.png" alt="VibeGrid Logo" className="w-full h-full object-contain rounded" />
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="font-black tracking-tight text-white">Vibe</span>
+              <em className="italic font-serif font-bold text-zinc-100 text-2xl sm:text-3xl">
+                Grid
+              </em>
+            </div>
           </a>
 
           <nav aria-label="Main navigation" className="hidden md:flex items-center gap-10">
