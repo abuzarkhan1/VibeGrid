@@ -134,9 +134,9 @@ export default function AboutContent() {
               <Github size={16} />
               Follow on GitHub
             </a>
-            <a href="/#download"
+            <a href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
               className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-[14px] font-extrabold tracking-tight text-white/70 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white cursor-pointer font-sans">
-              Try VibeGrid
+              Download DMG
               <ArrowRight size={15} />
             </a>
           </div>

@@ -68,10 +68,10 @@ export function SiteFooter({ active }: SiteFooterProps) {
               About
             </a>
             <a
-              href="/#download"
+              href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
               className="font-mono text-xs uppercase tracking-widest text-zinc-400 hover:text-zinc-200 transition-colors"
             >
-              Download
+              Download (.dmg)
             </a>
           </div>
 

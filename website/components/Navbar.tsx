@@ -124,10 +124,10 @@ export function Navbar({ active }: NavbarProps) {
 
           <div className="hidden md:flex items-center">
             <a
-              href="/#download"
+              href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
               className="text-base font-black tracking-tight px-7 py-3 rounded-full bg-white text-black hover:bg-zinc-200 transition-all duration-200 shadow-2xl shadow-white/30 active:scale-[0.98] inline-flex items-center justify-center cursor-pointer select-none border-2 border-white"
             >
-              Download
+              Download (.dmg)
             </a>
           </div>
 
@@ -176,11 +176,11 @@ export function Navbar({ active }: NavbarProps) {
             </a>
           ))}
           <a
-            href="/#download"
+            href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
             className="text-lg font-black tracking-tight px-8 py-4 rounded-full bg-white text-black hover:bg-zinc-200 transition-all mt-4 w-full text-center shadow-2xl active:scale-[0.98] border-2 border-white"
             onClick={() => setMenuOpen(false)}
           >
-            Download VibeGrid
+            Download VibeGrid (.dmg)
           </a>
         </nav>
       )}

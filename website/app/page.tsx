@@ -309,8 +309,8 @@ export default function Home() {
                   Run coding agents in parallel on your machine — each in its own workspace.
                 </p>
                 <div className="mt-8 flex flex-wrap gap-3">
-                  <a href="/#download" className="vg-install-glow inline-flex items-center gap-2 rounded-2xl border border-white/[0.12] bg-white text-black px-6 py-3.5 text-sm font-extrabold transition-all hover:bg-zinc-200 hover:shadow-[0_0_28px_rgba(255,255,255,0.2)] cursor-pointer">
-                    Download free →
+                  <a href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg" className="vg-install-glow inline-flex items-center gap-2 rounded-2xl border border-white/[0.12] bg-white text-black px-6 py-3.5 text-sm font-extrabold transition-all hover:bg-zinc-200 hover:shadow-[0_0_28px_rgba(255,255,255,0.2)] cursor-pointer">
+                    Download DMG free →
                   </a>
                 </div>
               </div>
