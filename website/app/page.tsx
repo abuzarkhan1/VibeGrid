@@ -194,13 +194,15 @@ export default function Home() {
           {/* CTA buttons */}
           <div className="vg-hidden vg-in-rise mt-10 flex flex-wrap items-center justify-center gap-3"
                style={{ '--vg-delay': '0.18s' } as React.CSSProperties}>
-            <a href="/#download"
+            <a href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
+               target="_blank"
+               rel="noreferrer"
                className="vg-install-glow group flex items-center gap-2 rounded-2xl border border-white/[0.12] bg-white text-black px-6 py-3.5 text-sm font-extrabold tracking-tight transition-all hover:bg-zinc-200 hover:shadow-[0_0_28px_rgba(255,255,255,0.2)] cursor-pointer"
                style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 5v14M5 12l7 7 7-7"/>
               </svg>
-              Download for macOS
+              Download for macOS (v1)
             </a>
             <div
                className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-zinc-900/50 px-5 py-3.5 text-sm font-extrabold tracking-tight text-white/60 select-none"
@@ -637,20 +639,20 @@ export default function Home() {
                 <p className="mb-6 font-mono text-xs uppercase tracking-widest text-white/40">Apple Silicon · macOS 11+</p>
                 <div className="flex flex-col gap-2">
                   <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases/latest"
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
                     target="_blank"
                     rel="noreferrer"
                     className="vg-install-glow flex items-center justify-center gap-2 rounded-2xl border border-white/[0.12] bg-white text-black px-6 py-3.5 text-sm font-extrabold tracking-tight transition-all hover:bg-zinc-200 hover:shadow-[0_0_28px_rgba(255,255,255,0.2)] cursor-pointer font-sans"
                   >
-                    Download DMG (Apple Silicon)
+                    Download DMG (Apple Silicon · v1)
                   </a>
                   <a
-                    href="https://github.com/abuzarkhan1/VibeGrid/releases"
+                    href="https://github.com/abuzarkhan1/VibeGrid/releases/tag/v1"
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-extrabold tracking-tight text-white/60 transition-all hover:bg-white/10 hover:text-white font-sans"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-extrabold tracking-tight text-white/80 transition-all hover:bg-white/10 hover:text-white font-sans"
                   >
-                    View All GitHub Releases
+                    View Release on GitHub (v1)
                   </a>
                 </div>
               </div>
