@@ -38,8 +38,7 @@ export function SiteFooter({ active }: SiteFooterProps) {
       className="relative border-t border-white/[0.08] bg-[#08080a] pt-16 pb-12 text-white overflow-hidden select-none"
     >
       <div className="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
-
-        {/* Bushes landscape wrapper with mouse-following radial gradient giant brand text */}
+        {/* Giant Mouse-following Glow Brand */}
         <div className="relative flex items-center justify-center my-8 py-10 overflow-hidden pointer-events-none min-h-[180px] sm:min-h-[240px]">
           <div
             className="text-6xl sm:text-9xl lg:text-[13rem] font-extrabold tracking-tighter text-transparent bg-clip-text leading-none transition-all duration-300 drop-shadow-2xl text-center"
@@ -53,7 +52,7 @@ export function SiteFooter({ active }: SiteFooterProps) {
           </div>
         </div>
 
-        {/* Bottom bar */}
+        {/* Clean bottom bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/[0.08]">
           <div className="flex items-center gap-5 flex-wrap">
             <div className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
