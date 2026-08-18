@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Header } from '@/components/common/Header';
 import { WorkspaceSidebar } from '@/components/common/WorkspaceSidebar';
 import { GridRenderer } from '@/components/layout/GridRenderer';
-import { StatusBar } from '@/components/common/StatusBar';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { SettingsModal } from '@/components/ui/SettingsModal';
 import { AboutModal } from '@/components/ui/AboutModal';
@@ -13,12 +11,24 @@ import { InputModal } from '@/components/ui/InputModal';
 import { SplashScreen } from '@/components/common/SplashScreen';
 import { FirstRunHint } from '@/components/common/FirstRunHint';
 import { VoiceIndicator } from '@/components/ui/VoiceIndicator';
+import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
+import { LayoutStudioModal } from '@/components/studio/LayoutStudioModal';
+import { AgentLauncherModal } from '@/components/agent/AgentLauncherModal';
+import { WorkspaceCustomizerModal } from '@/components/customizer/WorkspaceCustomizerModal';
+import { RetroCrtOverlay } from '@/components/terminal/RetroCrtOverlay';
+import { ContentAwareDiffViewer } from '@/components/terminal/ContentAwareDiffViewer';
+import { AgentConversationPanel } from '@/components/chat/AgentConversationPanel';
+import { CentralPromptCard } from '@/components/home/CentralPromptCard';
 
 import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import { useAgentStore } from '@/store/useAgentStore';
+import { useCustomizationStore } from '@/store/useCustomizationStore';
+import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useKeybindingsStore, matchesAccel } from '@/store/useKeybindingsStore';
+
 import { useVoiceToTerminal } from '@/hooks/useVoiceToTerminal';
 import { runMacro } from '@/lib/macros';
 import { useShallow } from 'zustand/react/shallow';
@@ -39,6 +49,7 @@ const LayoutView: React.FC = () => {
   return (
     <div className="flex-1 h-full overflow-hidden relative">
       <GridRenderer key={gridVersion} node={root} />
+      <RetroCrtOverlay />
     </div>
   );
 };
@@ -72,6 +83,10 @@ export const App: React.FC = () => {
       openCreateWsModal: s.openCreateWsModal,
       closeCreateWsModal: s.closeCreateWsModal,
       requestCreateWorkspace: s.requestCreateWorkspace,
+      isDiffViewerOpen: s.isDiffViewerOpen,
+      setDiffViewerOpen: s.setDiffViewerOpen,
+      isChatOpen: s.isChatOpen,
+      setChatOpen: s.setChatOpen,
     }))
   );
   const {
@@ -89,6 +104,10 @@ export const App: React.FC = () => {
     openCreateWsModal,
     closeCreateWsModal,
     requestCreateWorkspace,
+    isDiffViewerOpen,
+    setDiffViewerOpen,
+    isChatOpen,
+    setChatOpen,
   } = ui;
   const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore(
     useShallow((s) => ({
@@ -567,21 +586,54 @@ export const App: React.FC = () => {
     pendingQuit ? getTerminalNodes(s.root).filter((t) => t.paneId).length : 0
   );
 
+  const activeViewMode = useUIStore((s) => s.activeViewMode);
+
   return (
     <div
-      className="h-screen w-screen flex flex-col bg-bgDark text-foreground overflow-hidden select-none"
+      className="h-screen w-screen flex flex-col text-ink-primary overflow-hidden select-none font-sans bg-[#1A1B26]"
       style={{ zoom: uiZoom / 100 }}
     >
-      <Header
-        onOpenAbout={() => setIsAboutOpen(true)}
-        isSidebarOpen={isSidebarOpen}
-        onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
-      />
+
       <main className="flex-1 w-full overflow-hidden relative flex">
         <WorkspaceSidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen((prev) => !prev)} />
-        <LayoutView />
+
+        {/* Hub View — Full-Screen Pure Black Canvas with Ambient Glow */}
+        {activeViewMode === 'hub' && (
+          <div
+            className="flex-1 h-full flex items-center justify-center animate-fade-in overflow-hidden"
+            style={{
+              background: '#000000',
+              backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 20% 80%, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 40%)',
+            }}
+          >
+            <CentralPromptCard />
+          </div>
+        )}
+
+        {/* Grid View: Active Multi-Pane Terminal Workspace */}
+        {activeViewMode === 'grid' && (
+          <div className="flex-1 h-full flex gap-0 animate-fade-in overflow-hidden">
+            {/* Main Terminal Grid Island */}
+            <div className="flex-1 h-full overflow-hidden relative flex">
+              <LayoutView />
+            </div>
+
+            {/* Floating Diff Viewer Island */}
+            {isDiffViewerOpen && (
+              <div className="w-[440px] max-w-[50vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
+                <ContentAwareDiffViewer onClose={() => setDiffViewerOpen(false)} />
+              </div>
+            )}
+
+            {/* Floating Agent Conversation Island */}
+            {isChatOpen && (
+              <div className="w-[400px] max-w-[45vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
+                <AgentConversationPanel onClose={() => setChatOpen(false)} />
+              </div>
+            )}
+          </div>
+        )}
       </main>
-      <StatusBar />
       <VoiceIndicator />
       <CommandPalette onOpenAbout={() => setIsAboutOpen(true)} />
       <SettingsModal />
@@ -591,8 +643,12 @@ export const App: React.FC = () => {
       {/* Audit: the splash is tied to the real workspace-restore load, not a
           fixed timer — on a slow disk it stays until loadWorkspaces resolves.
           Customization audit: users can disable the splash entirely. */}
-      {showSplash && <SplashScreen ready={!isLoading} />}
+      {showSplash && !useOnboardingStore.getState().isOpen && <SplashScreen ready={!isLoading} />}
       <FirstRunHint />
+      <OnboardingWizard />
+      <LayoutStudioModal onProceedToAgents={() => useAgentStore.getState().openLauncher()} />
+      <AgentLauncherModal onProceedToCustomizer={() => useCustomizationStore.getState().openCustomizer()} />
+      <WorkspaceCustomizerModal />
 
       {/* Guarded: quit with running processes (UX audit P0 #1) */}
       {pendingQuit && (
