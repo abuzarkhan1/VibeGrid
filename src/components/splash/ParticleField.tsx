@@ -14,8 +14,6 @@ export const ParticleField: React.FC<{ isAssembled?: boolean }> = ({ isAssembled
     }
     if (!ctx) return;
 
-
-    // Check prefers-reduced-motion, test environment, or global animation disable
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     const prefersReducedMotion =
       mediaQuery.matches ||
@@ -43,12 +41,11 @@ export const ParticleField: React.FC<{ isAssembled?: boolean }> = ({ isAssembled
     const handleResize = () => setupCanvasSize();
     window.addEventListener('resize', handleResize);
 
-    // Quadrant chromatic ambient particles
+    // B&W Stealth Particle Colors
     const colors = [
-      '#6366f1', // Indigo Accent
-      '#818cf8', // Electric Indigo
-      '#3fb950', // Emerald Success
-      '#a3a3ab', // Platinum Silver
+      'rgba(255, 255, 255, 0.8)', // Bright White
+      'rgba(255, 255, 255, 0.4)', // Mid White
+      'rgba(255, 255, 255, 0.15)', // Dim White
     ];
 
     const count = prefersReducedMotion ? 24 : 48;
@@ -77,7 +74,6 @@ export const ParticleField: React.FC<{ isAssembled?: boolean }> = ({ isAssembled
       });
     }
 
-    // Static render for reduced motion
     if (prefersReducedMotion) {
       ctx.clearRect(0, 0, width, height);
       for (const p of particles) {
@@ -105,7 +101,6 @@ export const ParticleField: React.FC<{ isAssembled?: boolean }> = ({ isAssembled
         const dy = cy - p.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
 
-        // Gentle gravitational pull towards central emblem
         if (dist > 40) {
           const force = isAssembled ? 0.03 : 0.012;
           p.vx += (dx / dist) * force;
@@ -115,11 +110,9 @@ export const ParticleField: React.FC<{ isAssembled?: boolean }> = ({ isAssembled
         p.x += p.vx;
         p.y += p.vy;
 
-        // Fluid damping
         p.vx *= 0.985;
         p.vy *= 0.985;
 
-        // Soft screen bounce
         if (p.x < 0) {
           p.x = 0;
           p.vx *= -1;
@@ -156,6 +149,5 @@ export const ParticleField: React.FC<{ isAssembled?: boolean }> = ({ isAssembled
     };
   }, [isAssembled]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-0 opacity-80" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none z-0 opacity-60" />;
 };
-

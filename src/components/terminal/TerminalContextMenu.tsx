@@ -20,7 +20,7 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
   const ref = useRef<HTMLDivElement>(null);
 
   // Keep the menu inside the viewport
-  useEffect(() => {
+  useEffect(() => {  
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -42,13 +42,13 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
       ref={ref}
       role="menu"
       aria-label="Terminal actions"
-      className="fixed z-[60] min-w-[200px] py-1.5 rounded-2xl bg-[#1A1B26] border border-white/10 shadow-2xl  font-sans text-xs animate-fade-in select-none"
+      className="fixed z-[60] min-w-[200px] py-1.5 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl font-sans text-xs animate-fade-in select-none"
       style={{ left: x, top: y }}
       onClick={(e) => e.stopPropagation()}
     >
       {items.map((item, idx) =>
         item.divider ? (
-          <div key={`div-${idx}`} className="my-1 h-px bg-white/[0.08]" />
+          <div key={`div-${idx}`} className="my-1 h-px bg-white/10" />
         ) : (
           <button
             key={item.id || idx}
@@ -61,17 +61,17 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
             }}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
               item.disabled
-                ? 'text-white/40 cursor-not-allowed opacity-50'
-                : 'text-white/90 hover:bg-white/10 hover:text-white'
+                ? 'text-white/30 cursor-not-allowed opacity-50'
+                : 'text-white/80 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <span className="w-4 flex justify-center text-white/70">{item.icon}</span>
+            <span className="w-4 flex justify-center text-white/60">{item.icon}</span>
             <span className="font-medium">{item.label}</span>
           </button>
         )
       )}
-      <div className="my-1 h-px bg-white/[0.08]" />
-      <div className="px-3 py-1 text-[10px] font-mono text-white/40">Right-click actions · drag &amp; drop paths</div>
+      <div className="my-1 h-px bg-white/10" />
+      <div className="px-3 py-1 text-[10px] font-mono text-white/30">Right-click actions · drag &amp; drop paths</div>
     </div>
   );
 };

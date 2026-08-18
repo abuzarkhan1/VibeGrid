@@ -92,10 +92,10 @@ export const IdentitySection: React.FC = () => {
   return (
     <div className="space-y-6 text-white/90 font-sans">
       {/* Live Badge Preview Header Card */}
-      <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between">
+      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div
-            className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-[#1A1B26] border-2 transition-all duration-300 shadow-lg text-2xl"
+            className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-black/40 border-2 transition-all duration-300 shadow-lg text-2xl"
             style={{
               borderColor: colorRingHex,
               boxShadow: `0 0 20px ${colorRingHex}30`,
@@ -113,11 +113,11 @@ export const IdentitySection: React.FC = () => {
               <h3 className="font-sans font-bold text-base text-white/90">
                 {effectiveWorkspaceName || 'Untitled Workspace'}
               </h3>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.07] rounded-md text-white/70 border-white/10">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/60">
                 Active Identity
               </span>
             </div>
-            <p className="text-xs text-white/70 font-sans mt-0.5 flex items-center gap-1.5">
+            <p className="text-xs text-white/40 font-sans mt-0.5 flex items-center gap-1.5">
               <Folder className="w-3 h-3 text-white/40" />
               <span className="font-mono truncate max-w-sm">
                 {effectiveCwd || 'Default Session Root'}
@@ -129,7 +129,7 @@ export const IdentitySection: React.FC = () => {
         <button
           type="button"
           onClick={handleAutoDetectName}
-          className="px-3 py-1.5 rounded-lg bg-violet-400/10 hover:bg-violet-400/15 border border-violet-400/20 flex items-center gap-1.5 text-xs text-violet-400 hover:text-white transition-all cursor-pointer"
+          className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-all cursor-pointer"
           title="Auto-detect workspace name from project folder"
         >
           <Wand2 className="w-3.5 h-3.5" />
@@ -139,7 +139,7 @@ export const IdentitySection: React.FC = () => {
 
       {/* Workspace Name Input */}
       <div>
-        <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block mb-2 font-mono">
+        <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block mb-2 font-mono">
           Workspace Name
         </label>
         <div className="relative">
@@ -148,7 +148,7 @@ export const IdentitySection: React.FC = () => {
             value={effectiveWorkspaceName}
             onChange={(e) => handleNameChange(e.target.value)}
             placeholder="e.g. Fullstack AI Agent Lab"
-            className="w-full bg-[#1A1B26] border border-white/10 focus:border-violet-400 rounded-xl px-4 py-2.5 text-sm text-white/90 placeholder:text-white/40 focus:outline-none transition-colors"
+            className="w-full bg-black/40 border border-white/10 focus:border-white/40 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder:text-white/30 focus:outline-none transition-colors"
           />
         </div>
       </div>
@@ -156,7 +156,7 @@ export const IdentitySection: React.FC = () => {
       {/* Emoji & Emblem Badge Picker */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block font-mono">
+          <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block font-mono">
             Workspace Emblem / Badge
           </label>
           <span className="text-[10px] font-mono text-white/40">
@@ -164,10 +164,10 @@ export const IdentitySection: React.FC = () => {
           </span>
         </div>
 
-        <div className="space-y-3 p-4 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+        <div className="space-y-3 p-4 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-md">
           {EMOJI_CATEGORIES.map((category) => (
             <div key={category.name}>
-              <div className="text-[10px] font-mono font-bold text-white/70 uppercase tracking-wider mb-1.5">
+              <div className="text-[10px] font-mono font-bold text-white/60 uppercase tracking-wider mb-1.5">
                 {category.name}
               </div>
               <div className="grid grid-cols-8 gap-2">
@@ -178,8 +178,8 @@ export const IdentitySection: React.FC = () => {
                     onClick={() => handleIconChange({ type: 'emoji', value: emoji })}
                     className={`w-10 h-10 rounded-xl text-lg flex items-center justify-center transition-all ${
                       effectiveWorkspaceIcon.value === emoji
-                        ? 'bg-[#1A1B26] border-2 border-violet-400 shadow-none scale-105'
-                        : 'bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.08]'
+                        ? 'bg-white/10 border-2 border-white/80 scale-105'
+                        : 'bg-white/[0.02] border border-white/10 hover:bg-white/[0.04]'
                     }`}
                   >
                     {emoji}
@@ -194,13 +194,13 @@ export const IdentitySection: React.FC = () => {
       {/* Color Identity Ring Swatches */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block font-mono">
+          <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block font-mono">
             Color Identity Ring
           </label>
-          <span className="text-xs font-mono text-white/70">{colorRingHex}</span>
+          <span className="text-xs font-mono text-white/60">{colorRingHex}</span>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap p-3 bg-white/[0.03] border border-white/[0.06] rounded-xl">
+        <div className="flex items-center gap-2.5 flex-wrap p-3 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-md">
           {COLOR_RINGS.map((ring) => (
             <button
               key={ring.hex}
@@ -229,7 +229,7 @@ export const IdentitySection: React.FC = () => {
               className="w-8 h-8 rounded-full cursor-pointer bg-transparent border-0"
               title="Custom Hex Color"
             />
-            <span className="text-[10px] font-mono text-white/70 uppercase">Custom</span>
+            <span className="text-[10px] font-mono text-white/60 uppercase">Custom</span>
           </div>
         </div>
       </div>

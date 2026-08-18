@@ -43,27 +43,27 @@ export const EnvVariableVault: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl bg-zinc-900/60 border border-white/10">
+    <div className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs font-semibold text-zinc-300 uppercase tracking-wider font-mono">
-          <Key className="w-4 h-4 text-emerald-400" />
+        <div className="flex items-center gap-2 text-xs font-semibold text-white/80 uppercase tracking-wider font-mono">
+          <Key className="w-4 h-4 text-white/60" />
           <span>Environment & API Keys Vault</span>
         </div>
-        <span className="flex items-center gap-1 text-[10px] text-zinc-400 font-mono">
-          <ShieldCheck className="w-3 h-3 text-emerald-400" />
+        <span className="flex items-center gap-1 text-[10px] text-white/40 font-mono">
+          <ShieldCheck className="w-3 h-3 text-white/60" />
           <span>Injected to spawned PTYs</span>
         </span>
       </div>
 
       {/* Quick Add Chips */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[11px] text-zinc-400">Quick add:</span>
+        <span className="text-[11px] text-white/40">Quick add:</span>
         {COMMON_KEYS.map((k) => (
           <button
             key={k}
             type="button"
             onClick={() => handleQuickAdd(k)}
-            className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-zinc-300 text-[10px] font-mono border border-white/5 transition-colors"
+            className="px-2 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-white/60 text-[10px] font-mono border border-white/10 transition-colors"
           >
             + {k}
           </button>
@@ -78,7 +78,7 @@ export const EnvVariableVault: React.FC = () => {
               type="text"
               readOnly
               value={k}
-              className="w-1/2 px-2.5 py-1.5 rounded-lg bg-zinc-950/80 border border-white/10 text-xs font-mono text-zinc-300"
+              className="w-1/2 px-2.5 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs font-mono text-white/80"
             />
             <input
               type="password"
@@ -90,12 +90,12 @@ export const EnvVariableVault: React.FC = () => {
                 })
               }
               placeholder="Value / Secret..."
-              className="w-1/2 px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+              className="w-1/2 px-2.5 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-white/40"
             />
             <button
               type="button"
               onClick={() => handleRemove(k)}
-              className="p-1.5 rounded hover:bg-red-500/10 text-zinc-400 hover:text-red-400 transition-colors"
+              className="p-1.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -104,25 +104,25 @@ export const EnvVariableVault: React.FC = () => {
       </div>
 
       {/* Add New Key-Value Row */}
-      <div className="flex items-center gap-2 pt-1 border-t border-white/5">
+      <div className="flex items-center gap-2 pt-1 border-t border-white/10">
         <input
           type="text"
           value={newKey}
           onChange={(e) => setNewKey(e.target.value)}
           placeholder="VARIABLE_NAME"
-          className="w-1/2 px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+          className="w-1/2 px-2.5 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-white/40"
         />
         <input
           type="password"
           value={newVal}
           onChange={(e) => setNewVal(e.target.value)}
           placeholder="Secret value..."
-          className="w-1/2 px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+          className="w-1/2 px-2.5 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-white/40"
         />
         <button
           type="button"
           onClick={handleAdd}
-          className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30 transition-colors"
+          className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-white/20 border border-white/20 transition-colors"
           title="Add environment variable"
         >
           <Plus className="w-4 h-4" />

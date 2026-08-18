@@ -21,9 +21,9 @@ export const QuickInstallDrawer: React.FC = () => {
   };
 
   return (
-    <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] flex flex-col gap-3">
-      <div className="flex items-center gap-2 text-xs font-semibold text-white/90 font-mono uppercase tracking-wider">
-        <DownloadCloud className="w-4 h-4 text-violet-400" />
+    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] flex flex-col gap-3 backdrop-blur-md">
+      <div className="flex items-center gap-2 text-xs font-semibold text-white/80 font-mono uppercase tracking-wider">
+        <DownloadCloud className="w-4 h-4 text-white/60" />
         <span>1-Click Missing Agent Setup</span>
       </div>
 
@@ -31,20 +31,20 @@ export const QuickInstallDrawer: React.FC = () => {
         {missingAgents.map((agent) => (
           <div
             key={agent.id}
-            className="flex items-center justify-between p-2.5 rounded-xl bg-[#1A1B26] border border-white/10 text-xs font-mono"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/10 text-xs font-mono"
           >
             <div className="truncate mr-2">
-              <span className="text-white/70 mr-2">{agent.name}:</span>
-              <span className="text-violet-400">{agent.installCommand}</span>
+              <span className="text-white/80 mr-2">{agent.name}:</span>
+              <span className="text-white/60">{agent.installCommand}</span>
             </div>
             <button
               onClick={() => handleCopy(agent.id, agent.installCommand!)}
-              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-white/70 hover:text-white/90 transition-colors shrink-0 cursor-pointer"
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white transition-colors shrink-0 cursor-pointer"
               aria-label={`Copy install command for ${agent.name}`}
               title="Copy install command"
             >
               {copiedId === agent.id ? (
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                <Check className="w-3.5 h-3.5 text-white/90" /> // Changed from emerald to pure white
               ) : (
                 <Copy className="w-3.5 h-3.5" />
               )}

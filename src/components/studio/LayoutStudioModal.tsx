@@ -129,14 +129,15 @@ export const LayoutStudioModal: React.FC<LayoutStudioModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="layout-studio-title"
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6 bg-black/75  animate-fade-in select-none font-sans"
+      className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-fade-in select-none font-sans"
     >
-      <div className="relative w-full max-w-6xl max-h-[90vh] bg-[#1A1B26] border border-white/15 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+      {/* Main Transparent Black Glass Panel */}
+      <div className="relative w-full max-w-6xl max-h-[90vh] bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden">
         {/* Top Studio Header */}
-        <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-transparent">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-500/15 border border-violet-400/30 text-violet-400 shadow-none">
-              <Layers className="w-4 h-4 text-violet-400" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/40 border border-white/10 text-white/80 shadow-none">
+              <Layers className="w-4 h-4" />
             </div>
             <div>
               <h2
@@ -144,24 +145,24 @@ export const LayoutStudioModal: React.FC<LayoutStudioModalProps> = ({
                 className="font-sans font-semibold text-base text-white/90 tracking-tight flex items-center gap-2"
               >
                 Layout Selection Studio
-                <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs !px-1.5 !py-0.5 text-[11px] font-mono font-medium !text-violet-400 !border-violet-400/30 !bg-accent/15">
+                <span className="px-1.5 py-0.5 rounded-md bg-white/5 border border-white/10 text-[11px] font-mono font-medium text-white/60">
                   v2.0
                 </span>
               </h2>
-              <p className="text-xs text-white/70 font-sans">
+              <p className="text-xs text-white/40 font-sans">
                 Choose a structured preset or craft an infinite custom matrix canvas
               </p>
             </div>
           </div>
 
           {/* Tab Switcher: Presets vs Custom Matrix */}
-          <div className="bg-white/[0.04] p-1 rounded-xl border border-white/[0.06] flex items-center gap-1">
+          <div className="bg-black/40 p-1 rounded-xl border border-white/10 flex items-center gap-1">
             <button
               onClick={() => setActiveTab('presets')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-medium transition-all ${
                 activeTab === 'presets'
-                  ? 'px-3 py-1 rounded-md bg-white/[0.10] text-white font-medium text-xs'
-                  : 'px-3 py-1 rounded-md text-white/60 hover:bg-white/[0.06] hover:text-white/90 text-xs transition-colors'
+                  ? 'bg-white/15 text-white'
+                  : 'text-white/40 hover:bg-white/10 hover:text-white'
               }`}
             >
               <Grid className="w-3.5 h-3.5" />
@@ -171,8 +172,8 @@ export const LayoutStudioModal: React.FC<LayoutStudioModalProps> = ({
               onClick={() => setActiveTab('custom')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-medium transition-all ${
                 activeTab === 'custom'
-                  ? 'px-3 py-1 rounded-md bg-white/[0.10] text-white font-medium text-xs'
-                  : 'px-3 py-1 rounded-md text-white/60 hover:bg-white/[0.06] hover:text-white/90 text-xs transition-colors'
+                  ? 'bg-white/15 text-white'
+                  : 'text-white/40 hover:bg-white/10 hover:text-white'
               }`}
             >
               <Sliders className="w-3.5 h-3.5" />
@@ -184,14 +185,14 @@ export const LayoutStudioModal: React.FC<LayoutStudioModalProps> = ({
           <button
             onClick={closeStudio}
             aria-label="Close layout studio"
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Studio Content Body (Scrollable) */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[#1A1B26]/50">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-transparent custom-scrollbar">
           {activeTab === 'presets' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {PRESET_GALLERY.map((preset) => (
@@ -209,16 +210,16 @@ export const LayoutStudioModal: React.FC<LayoutStudioModalProps> = ({
         </div>
 
         {/* Bottom Studio Action Bar */}
-        <div className="px-6 py-3.5 border-t border-white/10 bg-white/[0.02] flex items-center justify-between">
-          <div className="flex items-center gap-4 text-xs text-white/70 font-mono">
+        <div className="px-6 py-3.5 border-t border-white/5 bg-transparent flex items-center justify-between">
+          <div className="flex items-center gap-4 text-xs text-white/40 font-mono">
             <span className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] font-mono text-[11px] text-white/90">
+              <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono text-[11px] text-white/80">
                 1-9
               </kbd>{' '}
               Preset Shortcuts
             </span>
             <span className="flex items-center gap-1.5">
-              <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] font-mono text-[11px] text-white/90">
+              <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono text-[11px] text-white/80">
                 Enter
               </kbd>{' '}
               Apply & Deploy
@@ -228,13 +229,13 @@ export const LayoutStudioModal: React.FC<LayoutStudioModalProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={closeStudio}
-              className="px-4 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] text-xs text-white/70 hover:text-white/90 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-xs text-white/60 hover:text-white transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleApplyLayout}
-              className="flex items-center gap-2 px-5 py-2 rounded-full bg-violet-500 hover:bg-violet-500/90 text-white text-xs font-sans font-medium shadow-none transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2 rounded-full bg-white hover:bg-white/90 text-black text-xs font-sans font-medium shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               <span>Deploy Layout</span>
               <ArrowRight className="w-3.5 h-3.5" />

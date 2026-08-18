@@ -639,7 +639,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         }
 
         // On Data from xterm -> write to PTY. If the process already exited,
-        // writes fail — surface a one-time toast so the user knows why input
+        // writes fail—surface a one-time toast so the user knows why input
         // is no longer reaching the shell (audit: error surfacing).
         // Copy-on-select (audit: was MISSING). onSelectionChange fires on every
         // drag increment, so debounce: after the selection settles (~300 ms) we
@@ -954,7 +954,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     {
       id: 'close',
       label: 'Close Pane',
-      icon: <X className="w-3.5 h-3.5 text-rose-400" />,
+      icon: <X className="w-3.5 h-3.5 text-white/60" />,
       action: () => requestClosePane(id),
     },
   ];
@@ -964,10 +964,10 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   return (
     <div
-      className={`relative h-full w-full bg-[#131420] p-1.5 overflow-hidden border transition-all ${
+      className={`relative h-full w-full bg-black p-1.5 overflow-hidden border transition-all ${
         isFocused
-          ? 'border-violet-400/50 shadow-[0_0_20px_var(--accent-glow)]'
-          : 'border-white/[0.08]'
+          ? 'border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.05)]'
+          : 'border-white/10'
       } ${fontLigatures ? 'font-ligatures' : ''}`}
       style={{ opacity: effOpacity }}
       onContextMenu={handleContextMenu}
@@ -979,8 +979,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
       {/* Drag-over highlight: dashed accent border while files hover the pane */}
       {isDragOver && (
-        <div className="pointer-events-none absolute inset-1 z-30 rounded-xl border-2 border-dashed border-violet-400 bg-violet-500/10 flex items-center justify-center  animate-fade-in">
-          <span className="px-3 py-1.5 rounded-lg text-xs text-white bg-black/80 border border-white/[0.10] shadow-xl">
+        <div className="pointer-events-none absolute inset-1 z-30 rounded-xl border-2 border-dashed border-white/50 bg-white/5 flex items-center justify-center animate-fade-in">
+          <span className="px-3 py-1.5 rounded-lg text-xs text-white bg-black/80 border border-white/10 shadow-xl">
             Release to insert path(s)
           </span>
         </div>
@@ -988,7 +988,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
       {/* Shell override notice */}
       {showShellModal && Boolean(ptyPaneIdRef.current) && (
-        <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-xl bg-[#1A1B26] border border-white/[0.06] p-2.5 text-[10px] text-white/70 shadow-lg">
+        <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-xl bg-black/80 backdrop-blur-xl border border-white/10 p-2.5 text-[10px] text-white/60 shadow-lg">
           This pane is already running a shell — the new shell applies to the
           next session (Relaunch after the process exits, or reopen the pane).
         </div>
@@ -996,23 +996,23 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
       {/* Process exited banner — relaunch or close */}
       {hasExited && (
-        <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-[#1a1408]/90 px-3 py-1.5 text-[11px] text-amber-300 shadow-lg  animate-fade-in-up">
+        <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl px-3 py-1.5 text-[11px] text-white/80 shadow-lg animate-fade-in-up">
           <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-white/80" />
           </span>
           <span className="truncate font-medium">Process exited</span>
           <button
             onClick={relaunch}
             title="Start a new shell in this pane"
-            className="px-2.5 py-0.5 rounded-md bg-violet-400/10 hover:bg-violet-400/20 border border-violet-400/20 text-violet-400 text-xs"
+            className="px-2.5 py-0.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs"
           >
             Relaunch
           </button>
           <button
             onClick={() => requestClosePane(id)}
             title="Close this terminal"
-            className="px-2.5 py-0.5 rounded-md bg-red-400/10 hover:bg-red-400/20 border border-red-400/20 text-red-400 text-xs"
+            className="px-2.5 py-0.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs"
           >
             Close
           </button>
@@ -1044,14 +1044,14 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         <>
           <div className="fixed inset-0 z-[59]" onClick={() => setShowAppearanceMenu(false)} />
           <div
-            className="fixed z-[60] w-[230px] rounded-xl bg-surface/95 border border-border/[0.08] shadow-2xl  p-3 text-xs space-y-2.5 animate-fade-in font-mono"
+            className="fixed z-[60] w-[230px] rounded-xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl p-3 text-xs space-y-2.5 animate-fade-in font-mono"
             style={{ left: appearancePos.x, top: appearancePos.y }}
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">Pane Appearance</span>
               <button
                 onClick={() => setShowAppearanceMenu(false)}
-                className="p-0.5 rounded hover:bg-white/10 text-white/45 hover:text-white/80"
+                className="p-0.5 rounded hover:bg-white/10 text-white/40 hover:text-white/80"
                 aria-label="Close pane appearance"
               >
                 <X className="w-3.5 h-3.5" />
@@ -1063,7 +1063,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
               <select
                 value={paneAppearance?.themeName ?? ''}
                 onChange={(e) => setPaneAppearance(id, { themeName: e.target.value || undefined })}
-                className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/[0.08] text-xs text-foreground/90 focus:outline-none focus:border-border/30"
+                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/80 focus:outline-none focus:border-white/30"
               >
                 <option value="">— inherit workspace/global —</option>
                 {Object.entries(getAllThemes(useSettingsStore.getState())).map(([key, t]) => (
@@ -1079,7 +1079,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                 value={paneAppearance?.fontSize ?? ''}
                 onChange={(e) => setPaneAppearance(id, { fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
                 placeholder="inherit"
-                className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/[0.08] text-xs text-foreground/90 focus:outline-none focus:border-border/30"
+                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/80 focus:outline-none focus:border-white/30"
               />
             </div>
 
@@ -1092,7 +1092,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                 step={0.05}
                 value={paneAppearance?.terminalOpacity ?? 1}
                 onChange={(e) => setPaneAppearance(id, { terminalOpacity: Number(e.target.value) })}
-                className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
+                className="w-full accent-white bg-black/40 h-2 rounded cursor-pointer"
               />
             </div>
 
@@ -1102,7 +1102,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                   clearPaneAppearance(id);
                   setShowAppearanceMenu(false);
                 }}
-                className="w-full px-2 py-1.5 rounded-lg border border-border/[0.08] text-[10px] text-foreground/55 hover:border-rose-500/40 hover:text-rose-300 transition-colors"
+                className="w-full px-2 py-1.5 rounded-lg border border-white/10 text-[10px] text-white/50 hover:bg-white/10 hover:text-white transition-colors"
               >
                 Clear overrides (inherit workspace/global)
               </button>

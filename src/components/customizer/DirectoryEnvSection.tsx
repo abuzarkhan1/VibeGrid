@@ -105,7 +105,7 @@ export const DirectoryEnvSection: React.FC = () => {
       {/* 1. CWD Folder Picker with Native Dialog */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block font-mono">
+          <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block font-mono">
             Working Directory (CWD)
           </label>
           <span className="text-[10px] font-mono text-white/40">
@@ -121,39 +121,39 @@ export const DirectoryEnvSection: React.FC = () => {
               value={defaultCwd}
               onChange={(e) => setDefaultCwd(e.target.value)}
               placeholder="e.g. /Users/abuzar/Desktop/VibeGrid"
-              className="w-full bg-[#1A1B26] border border-white/10 focus:border-violet-400 rounded-xl pl-10 pr-4 py-2.5 text-xs font-mono text-white/90 placeholder:text-white/40 focus:outline-none transition-colors"
+              className="w-full bg-black/40 border border-white/10 focus:border-white/40 rounded-xl pl-10 pr-4 py-2.5 text-xs font-mono text-white/80 placeholder:text-white/30 focus:outline-none transition-colors"
             />
           </div>
 
           <button
             type="button"
             onClick={handlePickFolder}
-            className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs px-4 py-2.5 flex items-center gap-1.5 text-white/70 hover:text-white/90 text-xs font-sans font-bold transition-colors shrink-0 cursor-pointer"
+            className="px-4 py-2.5 rounded-md bg-white/[0.05] border border-white/10 flex items-center gap-1.5 text-white/60 hover:text-white hover:bg-white/10 text-xs font-sans font-bold transition-colors shrink-0 cursor-pointer"
           >
-            <FolderOpen className="w-4 h-4 text-violet-400" />
+            <FolderOpen className="w-4 h-4 text-white/60" />
             <span>Browse</span>
           </button>
         </div>
       </div>
 
       {/* 2. Git Branch Detection Status Card */}
-      <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-between">
+      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/80">
             <GitBranch className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-sans font-bold text-white/90">
-                Git Branch: <span className="text-emerald-400 font-mono">{gitBranch || 'main'}</span>
+                Git Branch: <span className="text-white font-mono">{gitBranch || 'main'}</span>
               </span>
               <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
-                isGitDirty ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                isGitDirty ? 'bg-white/10 text-white/80 border border-white/20' : 'bg-white/10 text-white/80 border border-white/20'
               }`}>
                 {isGitDirty ? '● Uncommitted Changes' : '✓ Clean Working Tree'}
               </span>
             </div>
-            <p className="text-[11px] text-white/70 font-sans mt-0.5">
+            <p className="text-[11px] text-white/40 font-sans mt-0.5">
               Detected from active workspace working directory
             </p>
           </div>
@@ -162,7 +162,7 @@ export const DirectoryEnvSection: React.FC = () => {
         <button
           type="button"
           onClick={() => setGitBranch(gitBranch === 'main' ? 'feature/agentic' : 'main', !isGitDirty)}
-          className="text-xs font-mono text-white/70 hover:text-white px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.07] rounded-md transition-colors cursor-pointer"
+          className="text-xs font-mono text-white/60 hover:text-white px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 transition-colors cursor-pointer"
         >
           Rescan Git
         </button>
@@ -172,10 +172,10 @@ export const DirectoryEnvSection: React.FC = () => {
       <div>
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider font-mono">
+            <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider font-mono">
               Environment Variable & Secret Vault
             </label>
-            <span className="flex items-center gap-1 text-[10px] font-mono text-emerald-400">
+            <span className="flex items-center gap-1 text-[10px] font-mono text-white/60">
               <ShieldCheck className="w-3 h-3" />
               <span>In-Memory Injection</span>
             </span>
@@ -184,14 +184,14 @@ export const DirectoryEnvSection: React.FC = () => {
         </div>
 
         {/* Quick Add Chips */}
-        <div className="flex items-center gap-1.5 flex-wrap mb-3 p-2.5 bg-white/[0.03] border border-white/[0.06] rounded-xl">
-          <span className="text-[11px] text-white/70 font-mono">Quick add:</span>
+        <div className="flex items-center gap-1.5 flex-wrap mb-3 p-2.5 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-md">
+          <span className="text-[11px] text-white/40 font-mono">Quick add:</span>
           {QUICK_VAULT_KEYS.map((k) => (
             <button
               key={k}
               type="button"
               onClick={() => handleQuickAdd(k)}
-              className="px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.07] text-white/70 hover:text-violet-400 text-[10px] font-mono transition-colors cursor-pointer"
+              className="px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/10 text-white/60 hover:text-white hover:bg-white/10 text-[10px] font-mono transition-colors cursor-pointer"
             >
               + {k}
             </button>
@@ -201,7 +201,7 @@ export const DirectoryEnvSection: React.FC = () => {
         {/* Existing keys list */}
         <div className="space-y-2 mb-3 max-h-48 overflow-y-auto">
           {Object.keys(envVars).length === 0 ? (
-            <div className="p-4 rounded-xl bg-[#1A1B26] border border-white/10 text-center text-xs text-white/40 font-mono">
+            <div className="p-4 rounded-xl bg-black/40 border border-white/10 text-center text-xs text-white/40 font-mono">
               No custom environment variables stored. Add API keys or secrets below.
             </div>
           ) : (
@@ -211,10 +211,10 @@ export const DirectoryEnvSection: React.FC = () => {
               return (
                 <div
                   key={k}
-                  className="flex items-center gap-2 p-2.5 rounded-xl bg-[#1A1B26] border border-white/10"
+                  className="flex items-center gap-2 p-2.5 rounded-xl bg-black/40 border border-white/10"
                 >
-                  <Key className="w-3.5 h-3.5 text-violet-400 shrink-0" />
-                  <span className="text-xs font-mono font-bold text-violet-400 shrink-0 min-w-[140px] truncate">
+                  <Key className="w-3.5 h-3.5 text-white/60 shrink-0" />
+                  <span className="text-xs font-mono font-bold text-white/80 shrink-0 min-w-[140px] truncate">
                     {k}
                   </span>
 
@@ -249,7 +249,7 @@ export const DirectoryEnvSection: React.FC = () => {
                     className="p-1 rounded text-white/40 hover:text-white transition-colors"
                   >
                     {copiedKey === k ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="w-3.5 h-3.5 text-white" />
                     ) : (
                       <Copy className="w-3.5 h-3.5" />
                     )}
@@ -258,7 +258,7 @@ export const DirectoryEnvSection: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleRemoveEnv(k)}
-                    className="p-1 rounded text-white/40 hover:text-red-400 hover:bg-rose-500/10 transition-colors"
+                    className="p-1 rounded text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -275,19 +275,19 @@ export const DirectoryEnvSection: React.FC = () => {
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
             placeholder="VARIABLE_NAME (e.g. ANTHROPIC_API_KEY)"
-            className="flex-1 bg-[#1A1B26] border border-white/10 focus:border-violet-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white/90 placeholder:text-white/40 focus:outline-none"
+            className="flex-1 bg-black/40 border border-white/10 focus:border-white/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white/80 placeholder:text-white/30 focus:outline-none"
           />
           <input
             type="password"
             value={newVal}
             onChange={(e) => setNewVal(e.target.value)}
             placeholder="Value / Secret"
-            className="flex-1 bg-[#1A1B26] border border-white/10 focus:border-violet-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white/90 placeholder:text-white/40 focus:outline-none"
+            className="flex-1 bg-black/40 border border-white/10 focus:border-white/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white/80 placeholder:text-white/30 focus:outline-none"
           />
           <button
             type="button"
             onClick={handleAddEnv}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-violet-500 hover:bg-violet-500/90 text-white text-xs font-sans font-bold shadow-sm transition-colors shrink-0 cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-white hover:bg-white/90 text-black text-xs font-sans font-bold shadow-sm transition-colors shrink-0 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Add Secret</span>

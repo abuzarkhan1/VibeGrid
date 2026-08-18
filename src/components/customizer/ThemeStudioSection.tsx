@@ -150,22 +150,22 @@ export const ThemeStudioSection: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8 text-[#e8e8ea]">
+    <div className="space-y-8 text-white/90">
       {/* ── Top Header & Action Cluster ─────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#333338]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#6366f1]/15 border border-[#6366f1]/30 text-[#6366f1]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-black/40 border border-white/10 text-white/80">
               <Palette className="w-4 h-4" />
             </div>
-            <h3 className="font-sans font-bold text-sm text-[#e8e8ea] uppercase tracking-wider">
+            <h3 className="font-sans font-bold text-sm text-white/90 uppercase tracking-wider">
               3-Role Theme Studio
             </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#232327] border border-[#333338] text-[#a3a3ab]">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.02] border border-white/10 text-white/40">
               codex-theme-v1
             </span>
           </div>
-          <p className="text-xs text-[#a3a3ab] font-sans mt-1">
+          <p className="text-xs text-white/40 font-sans mt-1">
             Independent Background, Surface, Accent, and Ink roles + Contrast multiplier & Dual Font engines
           </p>
         </div>
@@ -175,18 +175,18 @@ export const ThemeStudioSection: React.FC = () => {
           <div
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all ${
               wcagResult.isAccessible
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                : 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                ? 'bg-white/10 border-white/20 text-white/80'
+                : 'bg-white/5 border-white/10 text-white/40'
             }`}
             title={`WCAG 2.1 Contrast Ratio: ${wcagResult.formattedRatio} (${wcagResult.rating})`}
           >
             {wcagResult.isAccessible ? (
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <ShieldCheck className="w-3.5 h-3.5 text-white/80 shrink-0" />
             ) : (
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <AlertTriangle className="w-3.5 h-3.5 text-white/40 shrink-0" />
             )}
             <span className="font-bold">{wcagResult.formattedRatio}</span>
-            <span className="text-[10px] px-1 py-0.2 rounded bg-[#1a1a1e] border border-[#333338] font-bold">
+            <span className="text-[10px] px-1 py-0.2 rounded bg-black/40 border border-white/10 font-bold">
               {wcagResult.rating}
             </span>
           </div>
@@ -197,11 +197,11 @@ export const ThemeStudioSection: React.FC = () => {
             onClick={() => setShowIoDrawer(showIoDrawer === 'export' ? null : 'export')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold border transition-colors ${
               showIoDrawer === 'export'
-                ? 'bg-[#2a2a2f] border-[#6366f1] text-white'
-                : 'bg-[#232327] hover:bg-[#2a2a2f] border-[#333338] text-[#e8e8ea]'
+                ? 'bg-white/[0.06] border-white/40 text-white'
+                : 'bg-white/[0.02] hover:bg-white/[0.04] border-white/10 text-white/80'
             }`}
           >
-            <Download className="w-3.5 h-3.5 text-[#6366f1]" />
+            <Download className="w-3.5 h-3.5 text-white/60" />
             <span>Export</span>
           </button>
 
@@ -210,11 +210,11 @@ export const ThemeStudioSection: React.FC = () => {
             onClick={() => setShowIoDrawer(showIoDrawer === 'import' ? null : 'import')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold border transition-colors ${
               showIoDrawer === 'import'
-                ? 'bg-[#2a2a2f] border-[#6366f1] text-white'
-                : 'bg-[#232327] hover:bg-[#2a2a2f] border-[#333338] text-[#e8e8ea]'
+                ? 'bg-white/[0.06] border-white/40 text-white'
+                : 'bg-white/[0.02] hover:bg-white/[0.04] border-white/10 text-white/80'
             }`}
           >
-            <Upload className="w-3.5 h-3.5 text-[#6366f1]" />
+            <Upload className="w-3.5 h-3.5 text-white/60" />
             <span>Import</span>
           </button>
         </div>
@@ -222,10 +222,10 @@ export const ThemeStudioSection: React.FC = () => {
 
       {/* ── codex-theme-v1 Import / Export Drawer ───────────────────────── */}
       {showIoDrawer === 'export' && (
-        <div className="p-4 rounded-xl bg-[#232327] border border-[#333338] space-y-3 animate-fade-in">
+        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3 animate-fade-in backdrop-blur-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-[#6366f1]" />
+              <FileCode className="w-4 h-4 text-white/60" />
               <span className="text-xs font-sans font-bold text-white">
                 Export Portable `codex-theme-v1` JSON
               </span>
@@ -233,23 +233,23 @@ export const ThemeStudioSection: React.FC = () => {
             <button
               type="button"
               onClick={handleCopyExportJson}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#6366f1] hover:bg-[#5558e6] text-white text-xs font-sans font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-white/90 text-black text-xs font-sans font-bold transition-all shadow-sm"
             >
               {copiedExport ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedExport ? 'Copied JSON!' : 'Copy to Clipboard'}</span>
             </button>
           </div>
-          <pre className="p-3 rounded-lg bg-[#1a1a1e] border border-[#333338] font-mono text-[11px] text-[#e8e8ea] max-h-48 overflow-y-auto leading-relaxed select-all">
+          <pre className="p-3 rounded-lg bg-black/40 border border-white/10 font-mono text-[11px] text-white/80 max-h-48 overflow-y-auto leading-relaxed select-all">
             {exportCodexThemeJson()}
           </pre>
         </div>
       )}
 
       {showIoDrawer === 'import' && (
-        <div className="p-4 rounded-xl bg-[#232327] border border-[#333338] space-y-3 animate-fade-in">
+        <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3 animate-fade-in backdrop-blur-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Upload className="w-4 h-4 text-[#6366f1]" />
+              <Upload className="w-4 h-4 text-white/60" />
               <span className="text-xs font-sans font-bold text-white">
                 Import `codex-theme-v1` JSON
               </span>
@@ -257,7 +257,7 @@ export const ThemeStudioSection: React.FC = () => {
             <button
               type="button"
               onClick={handleExecuteImport}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#6366f1] hover:bg-[#5558e6] text-white text-xs font-sans font-bold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white hover:bg-white/90 text-black text-xs font-sans font-bold transition-all shadow-sm"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Validate & Apply</span>
@@ -268,14 +268,14 @@ export const ThemeStudioSection: React.FC = () => {
             onChange={(e) => setImportJsonText(e.target.value)}
             placeholder='Paste {"version":"codex-theme-v1", "colors":{...}} here...'
             rows={4}
-            className="w-full bg-[#1a1a1e] border border-[#333338] focus:border-[#6366f1] rounded-lg p-3 text-xs font-mono text-white placeholder-[#6f6f78] focus:outline-none"
+            className="w-full bg-black/40 border border-white/10 focus:border-white/40 rounded-lg p-3 text-xs font-mono text-white placeholder-white/30 focus:outline-none"
           />
           {importStatus && (
             <div
               className={`text-xs font-mono px-3 py-1.5 rounded-lg border ${
                 importStatus.ok
-                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                  ? 'bg-white/10 border-white/20 text-white/80'
+                  : 'bg-white/5 border-white/10 text-white/40'
               }`}
             >
               {importStatus.msg}
@@ -287,11 +287,11 @@ export const ThemeStudioSection: React.FC = () => {
       {/* ── 1. 3-Role Independent Color Model ────────────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-sans font-bold text-[#e8e8ea] uppercase tracking-wider block">
+          <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block">
             Three Semantic Color Roles
           </label>
-          <div className="flex items-center gap-1.5 bg-[#232327] p-1 rounded-lg border border-[#333338]">
-            <span className="text-[11px] font-sans text-[#a3a3ab] px-2">Mode:</span>
+          <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-lg border border-white/10">
+            <span className="text-[11px] font-sans text-white/40 px-2">Mode:</span>
             {(['dark', 'light', 'system'] as ThemeMode[]).map((mode) => (
               <button
                 key={mode}
@@ -299,8 +299,8 @@ export const ThemeStudioSection: React.FC = () => {
                 onClick={() => setDraftThemeMode(mode)}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-sans font-bold capitalize transition-all ${
                   themeMode === mode
-                    ? 'bg-[#6366f1] text-white shadow-sm'
-                    : 'text-[#a3a3ab] hover:text-white'
+                    ? 'bg-white/15 text-white'
+                    : 'text-white/40 hover:text-white'
                 }`}
               >
                 {mode === 'dark' && <Moon className="w-3 h-3" />}
@@ -314,12 +314,12 @@ export const ThemeStudioSection: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           {/* Role 1: Background */}
-          <div className="p-3 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
             <div className="flex items-center justify-between">
               <span className="text-xs font-sans font-bold text-white">
                 Role 1: Background
               </span>
-              <span className="text-[10px] font-mono text-[#a3a3ab]">{themeBackground}</span>
+              <span className="text-[10px] font-mono text-white/40">{themeBackground}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -333,19 +333,19 @@ export const ThemeStudioSection: React.FC = () => {
                 value={themeBackground}
                 onChange={(e) => setDraftThemeBackground(e.target.value)}
                 placeholder="#1a1a1e"
-                className="flex-1 bg-[#1a1a1e] border border-[#333338] focus:border-[#6366f1] rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
+                className="flex-1 bg-black/40 border border-white/10 focus:border-white/40 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
               />
             </div>
-            <span className="text-[10px] text-[#6f6f78] block">Shell & modal canvas</span>
+            <span className="text-[10px] text-white/30 block">Shell & modal canvas</span>
           </div>
 
           {/* Role 1b: Surface */}
-          <div className="p-3 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
             <div className="flex items-center justify-between">
               <span className="text-xs font-sans font-bold text-white">
                 Role 1b: Surface
               </span>
-              <span className="text-[10px] font-mono text-[#a3a3ab]">{themeSurface}</span>
+              <span className="text-[10px] font-mono text-white/40">{themeSurface}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -359,19 +359,19 @@ export const ThemeStudioSection: React.FC = () => {
                 value={themeSurface}
                 onChange={(e) => setDraftThemeSurface(e.target.value)}
                 placeholder="#232327"
-                className="flex-1 bg-[#1a1a1e] border border-[#333338] focus:border-[#6366f1] rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
+                className="flex-1 bg-black/40 border border-white/10 focus:border-white/40 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
               />
             </div>
-            <span className="text-[10px] text-[#6f6f78] block">Cards, panels & rows</span>
+            <span className="text-[10px] text-white/30 block">Cards, panels & rows</span>
           </div>
 
           {/* Role 2: Ink / Text */}
-          <div className="p-3 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
             <div className="flex items-center justify-between">
               <span className="text-xs font-sans font-bold text-white">
                 Role 2: Ink (Text)
               </span>
-              <span className="text-[10px] font-mono text-[#a3a3ab]">{themeInk}</span>
+              <span className="text-[10px] font-mono text-white/40">{themeInk}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -385,19 +385,19 @@ export const ThemeStudioSection: React.FC = () => {
                 value={themeInk}
                 onChange={(e) => setDraftThemeInk(e.target.value)}
                 placeholder="#e8e8ea"
-                className="flex-1 bg-[#1a1a1e] border border-[#333338] focus:border-[#6366f1] rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
+                className="flex-1 bg-black/40 border border-white/10 focus:border-white/40 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
               />
             </div>
-            <span className="text-[10px] text-[#6f6f78] block">Primary typography content</span>
+            <span className="text-[10px] text-white/30 block">Primary typography content</span>
           </div>
 
           {/* Role 3: Accent */}
-          <div className="p-3 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
             <div className="flex items-center justify-between">
               <span className="text-xs font-sans font-bold text-white">
                 Role 3: Accent
               </span>
-              <span className="text-[10px] font-mono text-[#a3a3ab]">{themeAccent}</span>
+              <span className="text-[10px] font-mono text-white/40">{themeAccent}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -411,7 +411,7 @@ export const ThemeStudioSection: React.FC = () => {
                 value={themeAccent}
                 onChange={(e) => setDraftThemeAccent(e.target.value)}
                 placeholder="#6366f1"
-                className="flex-1 bg-[#1a1a1e] border border-[#333338] focus:border-[#6366f1] rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
+                className="flex-1 bg-black/40 border border-white/10 focus:border-white/40 rounded-lg px-2.5 py-1 text-xs font-mono text-white focus:outline-none"
               />
             </div>
             <div className="flex items-center gap-1 pt-1">
@@ -434,15 +434,15 @@ export const ThemeStudioSection: React.FC = () => {
         {/* Contrast Slider & Semantic Diff Colors */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
           {/* Contrast Slider */}
-          <div className="p-3 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-[#6366f1]" />
+                <Sliders className="w-3.5 h-3.5 text-white/60" />
                 <span className="text-xs font-sans font-bold text-white">
                   Contrast Multiplier
                 </span>
               </div>
-              <span className="text-xs font-mono text-[#6366f1] font-bold">
+              <span className="text-xs font-mono text-white/80 font-bold">
                 {contrast.toFixed(2)}x
               </span>
             </div>
@@ -453,9 +453,9 @@ export const ThemeStudioSection: React.FC = () => {
               step="0.05"
               value={contrast}
               onChange={(e) => setDraftContrast(parseFloat(e.target.value))}
-              className="w-full accent-[#6366f1] h-1.5 bg-[#1a1a1e] rounded-lg cursor-pointer"
+              className="w-full accent-white h-1.5 bg-black/40 rounded-lg cursor-pointer"
             />
-            <div className="flex items-center justify-between text-[10px] font-mono text-[#6f6f78]">
+            <div className="flex items-center justify-between text-[10px] font-mono text-white/30">
               <span>Soft (0.8x)</span>
               <span>Default (1.0x)</span>
               <span>High (1.5x)</span>
@@ -463,12 +463,12 @@ export const ThemeStudioSection: React.FC = () => {
           </div>
 
           {/* Semantic Diff Add */}
-          <div className="p-3 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-sans font-bold text-emerald-400">
+              <span className="text-xs font-sans font-bold text-white/80">
                 Diff Add (+ Line)
               </span>
-              <span className="text-[10px] font-mono text-[#a3a3ab]">{diffAddColor}</span>
+              <span className="text-[10px] font-mono text-white/40">{diffAddColor}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -481,19 +481,19 @@ export const ThemeStudioSection: React.FC = () => {
                 type="text"
                 value={diffAddColor}
                 onChange={(e) => setDraftDiffAddColor(e.target.value)}
-                className="flex-1 bg-[#1a1a1e] border border-[#333338] rounded-lg px-2.5 py-1 text-xs font-mono text-emerald-400 focus:outline-none"
+                className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2.5 py-1 text-xs font-mono text-white/80 focus:outline-none"
               />
             </div>
-            <span className="text-[10px] text-[#6f6f78] block">Audit additions & patches</span>
+            <span className="text-[10px] text-white/30 block">Audit additions & patches</span>
           </div>
 
           {/* Semantic Diff Remove */}
-          <div className="p-3 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
+          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-sans font-bold text-rose-400">
+              <span className="text-xs font-sans font-bold text-white/80">
                 Diff Remove (- Line)
               </span>
-              <span className="text-[10px] font-mono text-[#a3a3ab]">{diffRemoveColor}</span>
+              <span className="text-[10px] font-mono text-white/40">{diffRemoveColor}</span>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -506,10 +506,10 @@ export const ThemeStudioSection: React.FC = () => {
                 type="text"
                 value={diffRemoveColor}
                 onChange={(e) => setDraftDiffRemoveColor(e.target.value)}
-                className="flex-1 bg-[#1a1a1e] border border-[#333338] rounded-lg px-2.5 py-1 text-xs font-mono text-rose-400 focus:outline-none"
+                className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2.5 py-1 text-xs font-mono text-white/80 focus:outline-none"
               />
             </div>
-            <span className="text-[10px] text-[#6f6f78] block">Audit removals & deletions</span>
+            <span className="text-[10px] text-white/30 block">Audit removals & deletions</span>
           </div>
         </div>
       </div>
@@ -517,10 +517,10 @@ export const ThemeStudioSection: React.FC = () => {
       {/* ── 2. Built-in Theme Presets Library ────────────────────────────── */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-sans font-bold text-[#e8e8ea] uppercase tracking-wider block">
+          <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block">
             Built-in Presets & Palettes
           </label>
-          <span className="text-[11px] font-mono text-[#a3a3ab]">1-Click apply</span>
+          <span className="text-[11px] font-mono text-white/40">1-Click apply</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -533,15 +533,15 @@ export const ThemeStudioSection: React.FC = () => {
                 onClick={() => applyCodexPreset(key)}
                 className={`p-2.5 rounded-xl text-left border transition-all ${
                   isSelected
-                    ? 'bg-[#2a2a2f] border-[#6366f1] shadow-[0_0_16px_rgba(99,102,241,0.25)] scale-[1.02]'
-                    : 'bg-[#232327] border-[#333338] hover:border-[#6f6f78]'
+                    ? 'bg-white/[0.06] border-white/80 shadow-[0_0_16px_rgba(255,255,255,0.05)] scale-[1.02]'
+                    : 'bg-white/[0.02] border-white/10 hover:border-white/30'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-sans font-bold text-white truncate">
                     {preset.name}
                   </span>
-                  {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-[#6366f1] shrink-0" />}
+                  {isSelected && <CheckCircle2 className="w-3.5 h-3.5 text-white shrink-0" />}
                 </div>
 
                 <div className="flex items-center gap-1">
@@ -573,7 +573,7 @@ export const ThemeStudioSection: React.FC = () => {
 
         {/* Legacy Terminal Palettes */}
         <div className="pt-2">
-          <span className="text-[11px] font-sans font-bold text-[#a3a3ab] block mb-2">
+          <span className="text-[11px] font-sans font-bold text-white/40 block mb-2">
             Terminal ANSI Palettes:
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -586,8 +586,8 @@ export const ThemeStudioSection: React.FC = () => {
                   onClick={() => setDraftTheme(id)}
                   className={`p-2 rounded-xl text-left border transition-all ${
                     isSelected
-                      ? 'bg-[#2a2a2f] border-[#6366f1]'
-                      : 'bg-[#1a1a1e] border-[#333338] hover:border-[#6f6f78]'
+                      ? 'bg-white/[0.06] border-white/80'
+                      : 'bg-black/40 border-white/10 hover:border-white/30'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
@@ -615,12 +615,12 @@ export const ThemeStudioSection: React.FC = () => {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Eye className="w-3.5 h-3.5 text-[#6366f1]" />
-            <label className="text-xs font-sans font-bold text-[#e8e8ea] uppercase tracking-wider block">
+            <Eye className="w-3.5 h-3.5 text-white/60" />
+            <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block">
               Live Semantic Diff & Buffer Preview
             </label>
           </div>
-          <span className="text-[10px] font-mono text-[#a3a3ab]">
+          <span className="text-[10px] font-mono text-white/40">
             UI: {uiFont.split(',')[0]} · Code: {fontFamily.split(',')[0]}
           </span>
         </div>
@@ -637,9 +637,9 @@ export const ThemeStudioSection: React.FC = () => {
           {/* Chrome titlebar */}
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/10">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
+              <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
               <span className="text-xs font-sans font-bold text-white ml-2">
                 Codex Diff Viewer · session/supervisor.ts
               </span>
@@ -727,8 +727,8 @@ export const ThemeStudioSection: React.FC = () => {
       {/* ── 4. Dual Font Pickers & Typography Engine ─────────────────────── */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <Type className="w-4 h-4 text-[#6366f1]" />
-          <label className="text-xs font-sans font-bold text-[#e8e8ea] uppercase tracking-wider">
+          <Type className="w-4 h-4 text-white/60" />
+          <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider">
             Dual Typography & Cursor Engines
           </label>
         </div>
@@ -736,13 +736,13 @@ export const ThemeStudioSection: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* UI Font Picker */}
           <div>
-            <label className="text-[11px] font-sans font-bold text-[#a3a3ab] block mb-1.5">
+            <label className="text-[11px] font-sans font-bold text-white/40 block mb-1.5">
               UI Chrome Font (Menus, Headers, Chat)
             </label>
             <select
               value={uiFont}
               onChange={(e) => setDraftUiFont(e.target.value)}
-              className="w-full bg-[#232327] border border-[#333338] focus:border-[#6366f1] rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+              className="w-full bg-black/40 border border-white/10 focus:border-white/40 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
             >
               {UI_FONT_OPTIONS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -754,13 +754,13 @@ export const ThemeStudioSection: React.FC = () => {
 
           {/* Code Font Picker */}
           <div>
-            <label className="text-[11px] font-sans font-bold text-[#a3a3ab] block mb-1.5">
+            <label className="text-[11px] font-sans font-bold text-white/40 block mb-1.5">
               Code & Diff Font (Monospace)
             </label>
             <select
               value={fontFamily}
               onChange={(e) => setDraftFontFamily(e.target.value)}
-              className="w-full bg-[#232327] border border-[#333338] focus:border-[#6366f1] rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none"
+              className="w-full bg-black/40 border border-white/10 focus:border-white/40 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none"
             >
               {CODE_FONT_OPTIONS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -773,10 +773,10 @@ export const ThemeStudioSection: React.FC = () => {
           {/* Font Size */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-sans font-bold text-[#a3a3ab]">
+              <label className="text-[11px] font-sans font-bold text-white/40">
                 Code Font Size
               </label>
-              <span className="text-xs font-mono text-[#6366f1]">{fontSize}px</span>
+              <span className="text-xs font-mono text-white/80">{fontSize}px</span>
             </div>
             <input
               type="range"
@@ -785,17 +785,17 @@ export const ThemeStudioSection: React.FC = () => {
               step="1"
               value={fontSize}
               onChange={(e) => setDraftFontSize(parseInt(e.target.value, 10))}
-              className="w-full accent-[#6366f1] h-1.5 bg-[#1a1a1e] rounded-lg cursor-pointer"
+              className="w-full accent-white h-1.5 bg-black/40 rounded-lg cursor-pointer"
             />
           </div>
 
           {/* Line Height */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-sans font-bold text-[#a3a3ab]">
+              <label className="text-[11px] font-sans font-bold text-white/40">
                 Line Height
               </label>
-              <span className="text-xs font-mono text-[#6366f1]">{lineHeight.toFixed(2)}x</span>
+              <span className="text-xs font-mono text-white/80">{lineHeight.toFixed(2)}x</span>
             </div>
             <input
               type="range"
@@ -804,16 +804,16 @@ export const ThemeStudioSection: React.FC = () => {
               step="0.05"
               value={lineHeight}
               onChange={(e) => setDraftLineHeight(parseFloat(e.target.value))}
-              className="w-full accent-[#6366f1] h-1.5 bg-[#1a1a1e] rounded-lg cursor-pointer"
+              className="w-full accent-white h-1.5 bg-black/40 rounded-lg cursor-pointer"
             />
           </div>
 
           {/* Cursor Shape */}
           <div>
-            <label className="text-[11px] font-sans font-bold text-[#a3a3ab] block mb-1.5">
+            <label className="text-[11px] font-sans font-bold text-white/40 block mb-1.5">
               Cursor Shape
             </label>
-            <div className="flex items-center gap-1 bg-[#232327] p-1 rounded-xl border border-[#333338]">
+            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
               {[
                 { id: 'bar', label: 'Beam (|)' },
                 { id: 'block', label: 'Block (█)' },
@@ -825,8 +825,8 @@ export const ThemeStudioSection: React.FC = () => {
                   onClick={() => setDraftCursorStyle(style.id as 'bar' | 'block' | 'underline')}
                   className={`flex-1 py-1 text-[11px] font-mono rounded-lg transition-all ${
                     cursorStyle === style.id
-                      ? 'bg-[#6366f1] text-white shadow-sm font-bold'
-                      : 'text-[#a3a3ab] hover:text-white'
+                      ? 'bg-white/15 text-white font-bold'
+                      : 'text-white/40 hover:text-white'
                   }`}
                 >
                   {style.label}
@@ -838,10 +838,10 @@ export const ThemeStudioSection: React.FC = () => {
           {/* Window Opacity */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-[11px] font-sans font-bold text-[#a3a3ab]">
+              <label className="text-[11px] font-sans font-bold text-white/40">
                 Window Opacity
               </label>
-              <span className="text-xs font-mono text-[#6366f1]">
+              <span className="text-xs font-mono text-white/80">
                 {Math.round(terminalOpacity * 100)}%
               </span>
             </div>
@@ -852,7 +852,7 @@ export const ThemeStudioSection: React.FC = () => {
               step="0.05"
               value={terminalOpacity}
               onChange={(e) => setDraftOpacity(parseFloat(e.target.value))}
-              className="w-full accent-[#6366f1] h-1.5 bg-[#1a1a1e] rounded-lg cursor-pointer"
+              className="w-full accent-white h-1.5 bg-black/40 rounded-lg cursor-pointer"
             />
           </div>
         </div>
@@ -864,9 +864,9 @@ export const ThemeStudioSection: React.FC = () => {
               type="checkbox"
               checked={fontLigatures}
               onChange={(e) => setDraftFontLigatures(e.target.checked)}
-              className="w-4 h-4 accent-[#6366f1] rounded"
+              className="w-4 h-4 accent-white rounded"
             />
-            <span className="text-xs font-sans text-[#e8e8ea]">
+            <span className="text-xs font-sans text-white/80">
               Code Ligatures (==&gt;, !=)
             </span>
           </label>
@@ -876,9 +876,9 @@ export const ThemeStudioSection: React.FC = () => {
               type="checkbox"
               checked={cursorBlink}
               onChange={(e) => setDraftCursorBlink(e.target.checked)}
-              className="w-4 h-4 accent-[#6366f1] rounded"
+              className="w-4 h-4 accent-white rounded"
             />
-            <span className="text-xs font-sans text-[#e8e8ea]">
+            <span className="text-xs font-sans text-white/80">
               Blinking Cursor Animation
             </span>
           </label>
@@ -886,23 +886,23 @@ export const ThemeStudioSection: React.FC = () => {
       </div>
 
       {/* ── 5. WebGL Retro CRT Shader Studio ──────────────────────────────── */}
-      <div className="space-y-4 pt-4 border-t border-[#333338]">
+      <div className="space-y-4 pt-4 border-t border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Tv className="w-4 h-4 text-cyan-400" />
-            <label className="text-xs font-sans font-bold text-[#e8e8ea] uppercase tracking-wider">
+            <Tv className="w-4 h-4 text-white/60" />
+            <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider">
               WebGL Retro CRT Shader Overlay
             </label>
           </div>
 
-          <label className="flex items-center gap-2 cursor-pointer bg-[#232327] px-3 py-1.5 rounded-xl border border-[#333338]">
+          <label className="flex items-center gap-2 cursor-pointer bg-black/40 px-3 py-1.5 rounded-xl border border-white/10">
             <input
               type="checkbox"
               checked={retroShader.enabled}
               onChange={(e) => setRetroShader({ enabled: e.target.checked })}
-              className="w-4 h-4 accent-cyan-400 rounded cursor-pointer"
+              className="w-4 h-4 accent-white rounded cursor-pointer"
             />
-            <span className="text-xs font-sans font-bold text-cyan-300">
+            <span className="text-xs font-sans font-bold text-white/80">
               {retroShader.enabled ? 'CRT Overlay Enabled' : 'CRT Overlay Disabled'}
             </span>
           </label>
@@ -910,13 +910,13 @@ export const ThemeStudioSection: React.FC = () => {
 
         {/* Shader Presets */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[11px] font-mono text-[#a3a3ab]">Shader Presets:</span>
+          <span className="text-[11px] font-mono text-white/40">Shader Presets:</span>
           {SHADER_PRESETS.map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={() => applyShaderPreset(p.id)}
-              className="px-3 py-1 rounded-lg bg-[#232327] hover:bg-[#2a2a2f] text-[#e8e8ea] hover:text-cyan-300 text-xs font-sans font-bold border border-[#333338] transition-colors"
+              className="px-3 py-1 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] text-white/80 hover:text-white text-xs font-sans font-bold border border-white/10 transition-colors"
             >
               {p.label}
             </button>
@@ -925,14 +925,14 @@ export const ThemeStudioSection: React.FC = () => {
 
         {/* Shader Parameters Grid */}
         {retroShader.enabled && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-xl bg-[#232327] border border-[#333338]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md">
             {/* Curvature */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[11px] font-sans font-bold text-[#a3a3ab]">
+                <label className="text-[11px] font-sans font-bold text-white/40">
                   Barrel Curvature
                 </label>
-                <span className="text-xs font-mono text-cyan-400">
+                <span className="text-xs font-mono text-white/80">
                   {retroShader.curvature.toFixed(2)}
                 </span>
               </div>
@@ -943,17 +943,17 @@ export const ThemeStudioSection: React.FC = () => {
                 step="0.01"
                 value={retroShader.curvature}
                 onChange={(e) => setRetroShader({ curvature: parseFloat(e.target.value) })}
-                className="w-full accent-cyan-400 h-1.5 bg-[#1a1a1e] rounded-lg cursor-pointer"
+                className="w-full accent-white h-1.5 bg-black/40 rounded-lg cursor-pointer"
               />
             </div>
 
             {/* Scanline Intensity */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[11px] font-sans font-bold text-[#a3a3ab]">
+                <label className="text-[11px] font-sans font-bold text-white/40">
                   Scanline Intensity
                 </label>
-                <span className="text-xs font-mono text-cyan-400">
+                <span className="text-xs font-mono text-white/80">
                   {Math.round(retroShader.scanlineIntensity * 100)}%
                 </span>
               </div>
@@ -964,17 +964,17 @@ export const ThemeStudioSection: React.FC = () => {
                 step="0.05"
                 value={retroShader.scanlineIntensity}
                 onChange={(e) => setRetroShader({ scanlineIntensity: parseFloat(e.target.value) })}
-                className="w-full accent-cyan-400 h-1.5 bg-[#1a1a1e] rounded-lg cursor-pointer"
+                className="w-full accent-white h-1.5 bg-black/40 rounded-lg cursor-pointer"
               />
             </div>
 
             {/* Scanline Count */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[11px] font-sans font-bold text-[#a3a3ab]">
+                <label className="text-[11px] font-sans font-bold text-white/40">
                   Scanline Count
                 </label>
-                <span className="text-xs font-mono text-cyan-400">{retroShader.scanlineCount}</span>
+                <span className="text-xs font-mono text-white/80">{retroShader.scanlineCount}</span>
               </div>
               <input
                 type="range"
@@ -983,7 +983,7 @@ export const ThemeStudioSection: React.FC = () => {
                 step="20"
                 value={retroShader.scanlineCount}
                 onChange={(e) => setRetroShader({ scanlineCount: parseInt(e.target.value, 10) })}
-                className="w-full accent-cyan-400 h-1.5 bg-[#1a1a1e] rounded-lg cursor-pointer"
+                className="w-full accent-white h-1.5 bg-black/40 rounded-lg cursor-pointer"
               />
             </div>
           </div>

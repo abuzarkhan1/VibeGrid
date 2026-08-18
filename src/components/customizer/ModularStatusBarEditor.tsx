@@ -80,13 +80,13 @@ export const ModularStatusBarEditor: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-[#e8e8ea]">
+    <div className="space-y-6 text-white/90">
       <div className="flex items-center justify-between">
         <div>
-          <label className="text-xs font-sans font-bold text-[#e8e8ea] uppercase tracking-wider block">
+          <label className="text-xs font-sans font-bold text-white/90 uppercase tracking-wider block">
             Modular Status Bar Telemetry
           </label>
-          <span className="text-[10px] font-sans text-[#a3a3ab]">
+          <span className="text-[10px] font-sans text-white/40">
             Configure, reorder, and position telemetry widgets across Left, Center, and Right zones
           </span>
         </div>
@@ -98,7 +98,7 @@ export const ModularStatusBarEditor: React.FC = () => {
               statusBarWidgets.map((w) => ({ ...w, enabled: true }))
             );
           }}
-          className="text-xs font-mono text-[#818cf8] hover:underline"
+          className="text-xs font-mono text-white/80 hover:underline"
         >
           Enable All
         </button>
@@ -117,10 +117,10 @@ export const ModularStatusBarEditor: React.FC = () => {
           return (
             <div
               key={widget.id}
-              className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between space-y-3 ${
+              className={`p-3.5 rounded-xl border transition-all flex flex-col justify-between space-y-3 backdrop-blur-md ${
                 widget.enabled
-                  ? 'bg-[#232327] border-[#333338] shadow-sm'
-                  : 'bg-[#1a1a1e] border-[#2a2a2e] opacity-60'
+                  ? 'bg-white/[0.02] border-white/10'
+                  : 'bg-black/40 border-white/5 opacity-50'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -128,8 +128,8 @@ export const ModularStatusBarEditor: React.FC = () => {
                   <div
                     className={`p-2 rounded-lg border shrink-0 ${
                       widget.enabled
-                        ? 'bg-[#6366f1]/15 border-[#6366f1]/30 text-[#818cf8]'
-                        : 'bg-[#1a1a1e] border-[#333338] text-[#6f6f78]'
+                        ? 'bg-white/5 border-white/10 text-white/80'
+                        : 'bg-black/40 border-white/5 text-white/40'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -139,7 +139,7 @@ export const ModularStatusBarEditor: React.FC = () => {
                     <h4 className="text-xs font-sans font-bold text-white mb-0.5">
                       {meta.label}
                     </h4>
-                    <p className="text-[11px] font-sans text-[#a3a3ab] leading-snug">
+                    <p className="text-[11px] font-sans text-white/40 leading-snug">
                       {meta.desc}
                     </p>
                   </div>
@@ -148,21 +148,21 @@ export const ModularStatusBarEditor: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => toggleWidget(widget.id)}
-                  className="p-1 text-[#818cf8] hover:text-white transition-colors shrink-0"
+                  className="p-1 text-white/80 hover:text-white transition-colors shrink-0"
                   title={widget.enabled ? 'Disable widget' : 'Enable widget'}
                 >
                   {widget.enabled ? (
-                    <CheckSquare className="w-5 h-5 text-[#6366f1]" />
+                    <CheckSquare className="w-5 h-5 text-white" />
                   ) : (
-                    <Square className="w-5 h-5 text-[#6f6f78]" />
+                    <Square className="w-5 h-5 text-white/40" />
                   )}
                 </button>
               </div>
 
               {/* Zone Selector & Reorder Controls */}
-              <div className="flex items-center justify-between pt-2 border-t border-[#333338] text-xs">
+              <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs">
                 <div className="flex items-center gap-1">
-                  <span className="text-[10px] font-mono text-[#a3a3ab] mr-1">Zone:</span>
+                  <span className="text-[10px] font-mono text-white/40 mr-1">Zone:</span>
                   {(['left', 'center', 'right'] as const).map((z) => (
                     <button
                       key={z}
@@ -170,8 +170,8 @@ export const ModularStatusBarEditor: React.FC = () => {
                       onClick={() => setWidgetZone(widget.id, z)}
                       className={`px-2 py-0.5 rounded-md text-[10px] font-mono capitalize transition-all ${
                         widget.zone === z
-                          ? 'bg-[#6366f1] text-white font-bold'
-                          : 'bg-[#1a1a1e] text-[#a3a3ab] hover:text-white border border-[#333338]'
+                          ? 'bg-white/15 text-white font-bold'
+                          : 'bg-black/40 text-white/40 hover:text-white border border-white/10'
                       }`}
                     >
                       {z}
@@ -185,7 +185,7 @@ export const ModularStatusBarEditor: React.FC = () => {
                     onClick={() => handleMove(index, -1)}
                     disabled={index === 0}
                     title="Move earlier"
-                    className="p-1 rounded bg-[#1a1a1e] hover:bg-[#2a2a2f] text-[#a3a3ab] hover:text-white border border-[#333338] disabled:opacity-30"
+                    className="p-1 rounded bg-black/40 hover:bg-white/10 text-white/40 hover:text-white border border-white/10 disabled:opacity-30"
                   >
                     <ArrowUp className="w-3 h-3" />
                   </button>
@@ -194,7 +194,7 @@ export const ModularStatusBarEditor: React.FC = () => {
                     onClick={() => handleMove(index, 1)}
                     disabled={index === statusBarWidgets.length - 1}
                     title="Move later"
-                    className="p-1 rounded bg-[#1a1a1e] hover:bg-[#2a2a2f] text-[#a3a3ab] hover:text-white border border-[#333338] disabled:opacity-30"
+                    className="p-1 rounded bg-black/40 hover:bg-white/10 text-white/40 hover:text-white border border-white/10 disabled:opacity-30"
                   >
                     <ArrowDown className="w-3 h-3" />
                   </button>
@@ -206,19 +206,19 @@ export const ModularStatusBarEditor: React.FC = () => {
       </div>
 
       {/* Live Status Bar Preview */}
-      <div className="p-3.5 rounded-xl bg-[#232327] border border-[#333338] space-y-2">
-        <span className="text-[10px] font-mono font-bold text-[#a3a3ab] uppercase tracking-wider block">
+      <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2 backdrop-blur-md">
+        <span className="text-[10px] font-mono font-bold text-white/40 uppercase tracking-wider block">
           Live Status Bar Preview (40px Shell Chrome)
         </span>
 
-        <div className="h-10 w-full bg-[#1a1a1e] border border-[#333338] rounded-xl px-3 flex items-center justify-between font-mono text-[11px] text-[#e8e8ea] select-none shadow-inner">
+        <div className="h-10 w-full bg-black/40 border border-white/10 rounded-xl px-3 flex items-center justify-between font-mono text-[11px] text-white/90 select-none shadow-inner">
           {/* Left zone */}
           <div className="flex items-center gap-3">
             {statusBarWidgets
               .filter((w) => w.enabled && w.zone === 'left')
               .map((w) => (
-                <span key={w.id} className="flex items-center gap-1.5 text-[#e8e8ea]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#6366f1]" />
+                <span key={w.id} className="flex items-center gap-1.5 text-white/90">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/80" />
                   <span>{WIDGET_METADATA[w.id]?.label || w.id}</span>
                 </span>
               ))}
@@ -229,7 +229,7 @@ export const ModularStatusBarEditor: React.FC = () => {
             {statusBarWidgets
               .filter((w) => w.enabled && w.zone === 'center')
               .map((w) => (
-                <span key={w.id} className="flex items-center gap-1 text-[#a3a3ab]">
+                <span key={w.id} className="flex items-center gap-1 text-white/40">
                   <span>{WIDGET_METADATA[w.id]?.label || w.id}</span>
                 </span>
               ))}
@@ -240,7 +240,7 @@ export const ModularStatusBarEditor: React.FC = () => {
             {statusBarWidgets
               .filter((w) => w.enabled && w.zone === 'right')
               .map((w) => (
-                <span key={w.id} className="flex items-center gap-1 text-[#a3a3ab]">
+                <span key={w.id} className="flex items-center gap-1 text-white/40">
                   <span>{WIDGET_METADATA[w.id]?.label || w.id}</span>
                 </span>
               ))}

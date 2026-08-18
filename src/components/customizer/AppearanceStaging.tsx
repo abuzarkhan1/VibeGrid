@@ -22,9 +22,9 @@ export const AppearanceStaging: React.FC = () => {
   const setDraftOpacity = useCustomizationStore((s) => s.setDraftOpacity);
 
   return (
-    <div className="flex flex-col gap-4 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06] font-sans select-none">
-      <div className="flex items-center gap-2 text-xs font-semibold text-white/90 uppercase tracking-wider font-mono">
-        <Palette className="w-4 h-4 text-violet-400" />
+    <div className="flex flex-col gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md font-sans select-none">
+      <div className="flex items-center gap-2 text-xs font-semibold text-white/80 uppercase tracking-wider font-mono">
+        <Palette className="w-4 h-4 text-white/60" />
         <span>Theme & Terminal Styling</span>
       </div>
 
@@ -39,13 +39,13 @@ export const AppearanceStaging: React.FC = () => {
               onClick={() => setDraftTheme(key)}
               className={`flex flex-col p-2.5 rounded-xl text-left border transition-all ${
                 isSelected
-                  ? 'bg-[#1A1B26] border-violet-400 ring-1 ring-accent-primary/40 shadow-none'
-                  : 'bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.14] hover:bg-white/[0.08]'
+                  ? 'bg-white/[0.06] border-white/80 ring-1 ring-white/10'
+                  : 'bg-white/[0.02] border-white/10 hover:border-white/30 hover:bg-white/[0.04]'
               }`}
             >
               <div className="flex items-center justify-between w-full mb-1.5">
                 <span className="text-xs font-medium text-white/90 truncate">{theme.name}</span>
-                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />}
+                {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
               </div>
               {/* Color Swatch Dots */}
               <div className="flex items-center gap-1">
@@ -64,17 +64,17 @@ export const AppearanceStaging: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-white/10">
         {/* Font Family */}
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-white/70 flex items-center gap-1">
+          <label className="text-xs text-white/60 flex items-center gap-1">
             <Type className="w-3.5 h-3.5 text-white/40" />
             <span>Font Family</span>
           </label>
           <select
             value={fontFamily}
             onChange={(e) => setDraftFontFamily(e.target.value)}
-            className="w-full px-2.5 py-1.5 rounded-xl bg-[#1A1B26] border border-white/10 text-white/90 text-xs focus:outline-none focus:border-violet-400"
+            className="w-full px-2.5 py-1.5 rounded-xl bg-black/40 border border-white/10 text-white/80 text-xs focus:outline-none focus:border-white/40"
           >
             {FONT_OPTIONS.map((f) => (
-              <option key={f} value={f} className="bg-slate-900 text-white">
+              <option key={f} value={f} className="bg-black text-white">
                 {f}
               </option>
             ))}
@@ -84,8 +84,8 @@ export const AppearanceStaging: React.FC = () => {
         {/* Font Size */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-white/70">Font Size</label>
-            <span className="text-xs font-mono text-violet-400">{fontSize}px</span>
+            <label className="text-xs text-white/60">Font Size</label>
+            <span className="text-xs font-mono text-white/80">{fontSize}px</span>
           </div>
           <input
             type="range"
@@ -94,15 +94,15 @@ export const AppearanceStaging: React.FC = () => {
             step="1"
             value={fontSize}
             onChange={(e) => setDraftFontSize(Number(e.target.value))}
-            className="w-full accent-accent-primary cursor-pointer"
+            className="w-full accent-white cursor-pointer"
           />
         </div>
 
         {/* Terminal Opacity */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-white/70">Opacity</label>
-            <span className="text-xs font-mono text-violet-400">
+            <label className="text-xs text-white/60">Opacity</label>
+            <span className="text-xs font-mono text-white/80">
               {Math.round(terminalOpacity * 100)}%
             </span>
           </div>
@@ -113,7 +113,7 @@ export const AppearanceStaging: React.FC = () => {
             step="0.05"
             value={terminalOpacity}
             onChange={(e) => setDraftOpacity(Number(e.target.value))}
-            className="w-full accent-accent-primary cursor-pointer"
+            className="w-full accent-white cursor-pointer"
           />
         </div>
       </div>

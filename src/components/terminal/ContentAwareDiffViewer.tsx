@@ -61,29 +61,29 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-[#131420] select-none font-sans overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-black select-none font-sans overflow-hidden">
       {/* Diff Header Bar */}
-      <div className="h-10 px-3.5 bg-[#1A1B26] border-b border-white/[0.06] flex items-center justify-between shrink-0 border-b border-white/10 z-10">
+      <div className="h-10 px-3.5 bg-black/40 backdrop-blur-xl border-b border-white/10 flex items-center justify-between shrink-0 z-10">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-violet-500/15 border border-violet-400/30 text-violet-400">
+          <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/10 border border-white/20 text-white/80">
             <GitCommit className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs font-mono font-medium truncate text-white/90 tracking-tight">
             {filePath}
           </span>
           <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-mono font-semibold bg-white/5 border border-white/10">
-            <span style={{ color: 'var(--diff-add-text, #4ADE80)' }}>+{stats.additions}</span>
+            <span className="text-white">+{stats.additions}</span>
             <span className="text-white/40">/</span>
-            <span style={{ color: 'var(--diff-remove-text, #F87171)' }}>-{stats.deletions}</span>
+            <span className="text-white/50">-{stats.deletions}</span>
           </span>
         </div>
 
         {/* Content-Aware Mode Switcher */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-black/40 border border-white/10">
           <button
             onClick={() => setMode('code')}
             title="Monospace High-Contrast Code Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'code' ? 'bg-white/[0.10] text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'code' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
           >
             <FileCode className="w-3 h-3" />
             <span className="hidden sm:inline">Code</span>
@@ -91,7 +91,7 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
           <button
             onClick={() => setMode('markdown')}
             title="Rendered Markdown Document Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'markdown' ? 'bg-white/[0.10] text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'markdown' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
           >
             <FileText className="w-3 h-3" />
             <span className="hidden sm:inline">Markdown</span>
@@ -99,7 +99,7 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
           <button
             onClick={() => setMode('ui')}
             title="Visual UI Mockup Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'ui' ? 'bg-white/[0.10] text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'ui' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
           >
             <Layout className="w-3 h-3" />
             <span className="hidden sm:inline">UI Diff</span>
@@ -107,7 +107,7 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
           <button
             onClick={() => setMode('schema')}
             title="Structured Schema & Data Model Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'schema' ? 'bg-white/[0.10] text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'schema' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
           >
             <Database className="w-3 h-3" />
             <span className="hidden sm:inline">Schema</span>
@@ -119,19 +119,15 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
           <button
             onClick={handleCopyDiff}
             title="Copy Raw Diff (Cmd/Ctrl+C)"
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/[0.08] text-white/70 hover:text-white transition-all"
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-all"
           >
-            {copied ? (
-              <Check className="w-3.5 h-3.5" style={{ color: 'var(--diff-add-text, #4ADE80)' }} />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
+            {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
           {onClose && (
             <button
               onClick={onClose}
               title="Close Diff Panel"
-              className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 border border-white/[0.08] hover:border-rose-500/40 text-white/70 hover:text-rose-300 transition-all"
+              className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white/70 hover:text-white transition-all"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -142,10 +138,10 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
       {/* Main Diff Content */}
       <div className="flex-1 overflow-auto p-3 font-mono text-[12px] leading-relaxed">
         {mode === 'code' && (
-          <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl bg-black/40 ">
+          <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl bg-black/40 backdrop-blur-md">
             <table className="w-full border-collapse text-left font-mono">
               <thead>
-                <tr className="border-b border-white/10 glass-d3 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+                <tr className="border-b border-white/10 bg-black/60 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
                   <th className="w-10 py-1.5 px-2 text-right select-none border-r border-white/5">Old</th>
                   <th className="w-10 py-1.5 px-2 text-right select-none border-r border-white/5">New</th>
                   <th className="w-6 py-1.5 text-center select-none">+/-</th>
@@ -158,22 +154,22 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
                   const isRemove = line.type === 'remove';
 
                   let rowStyle: React.CSSProperties = {};
-                  let textStyle: React.CSSProperties = { color: 'var(--ink-primary, #F3F4F6)' };
+                  let textStyle: React.CSSProperties = { color: 'rgba(255,255,255,0.8)' };
                   let marker = ' ';
 
                   if (isAdd) {
                     rowStyle = {
-                      backgroundColor: 'var(--diff-add-bg, rgba(34, 197, 94, 0.15))',
-                      boxShadow: 'inset 3px 0 0 var(--diff-add-text, #4ADE80)',
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.8)',
                     };
-                    textStyle = { color: 'var(--diff-add-text, #4ADE80)', fontWeight: 500 };
+                    textStyle = { color: '#ffffff', fontWeight: 500 };
                     marker = '+';
                   } else if (isRemove) {
                     rowStyle = {
-                      backgroundColor: 'var(--diff-remove-bg, rgba(239, 68, 68, 0.15))',
-                      boxShadow: 'inset 3px 0 0 var(--diff-remove-text, #F87171)',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.3)',
                     };
-                    textStyle = { color: 'var(--diff-remove-text, #F87171)', fontWeight: 500 };
+                    textStyle = { color: 'rgba(255,255,255,0.4)', fontWeight: 500 };
                     marker = '-';
                   }
 
@@ -183,22 +179,18 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
                       style={rowStyle}
                       className="hover:bg-white/[0.04] transition-colors group"
                     >
-                      {/* Old Line Gutter */}
-                      <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/40 glass-d3 border-r border-white/5">
+                      <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
                         {line.lineOld ?? ''}
                       </td>
-                      {/* New Line Gutter */}
-                      <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/40 glass-d3 border-r border-white/5">
+                      <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
                         {line.lineNew ?? ''}
                       </td>
-                      {/* Sign Marker */}
                       <td
                         className="w-6 py-0.5 text-center select-none text-[12px] font-bold"
                         style={textStyle}
                       >
                         {marker}
                       </td>
-                      {/* Monospace Code Line */}
                       <td className="py-0.5 px-3 whitespace-pre font-mono text-[12px]" style={textStyle}>
                         {line.text.replace(/^[+-]\s*/, '')}
                       </td>
@@ -211,23 +203,23 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
         )}
 
         {mode === 'markdown' && (
-          <div className="p-5 rounded-xl border border-white/[0.08] bg-[#1A1B26] space-y-4 font-sans">
-            <div className="flex items-center gap-2 text-xs font-semibold text-violet-400">
+          <div className="p-5 rounded-xl border border-white/10 bg-black/40 backdrop-blur-md space-y-4 font-sans">
+            <div className="flex items-center gap-2 text-xs font-semibold text-white/80">
               <Sparkles className="w-4 h-4" />
               <span>Rendered Document Diff (Markdown Mode)</span>
             </div>
             <h2 className="text-base font-bold text-white/90 border-b border-white/10 pb-2">
               Autonomous Agent Supervisor Architecture
             </h2>
-            <p className="text-xs text-white/70 leading-relaxed">
+            <p className="text-xs text-white/40 leading-relaxed">
               Codex agents coordinate parallel execution threads across git worktrees and unified PTY runners.
             </p>
             <div
               className="p-3 rounded-lg border text-xs"
               style={{
-                backgroundColor: 'var(--diff-add-bg, rgba(34, 197, 94, 0.15))',
-                borderColor: 'var(--diff-add-text, #4ADE80)',
-                color: 'var(--diff-add-text, #4ADE80)',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                borderColor: 'rgba(255,255,255,0.2)',
+                color: '#ffffff',
               }}
             >
               <strong>+ Added:</strong> Full support for 16-worker heterogeneous agent pods with autonomous PATH resolution and atomic worktree isolation.
@@ -236,44 +228,44 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
         )}
 
         {mode === 'ui' && (
-          <div className="p-5 rounded-xl border border-white/[0.08] bg-[#1A1B26] font-sans space-y-4">
+          <div className="p-5 rounded-xl border border-white/10 bg-black/40 backdrop-blur-md font-sans space-y-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-violet-400">
+              <div className="flex items-center gap-2 text-xs font-semibold text-white/80">
                 <Layout className="w-4 h-4" />
                 <span>Visual UI Mockup Diff</span>
               </div>
-              <span className="text-[11px] font-mono text-white/70">Side-by-Side Surface Render</span>
+              <span className="text-[11px] font-mono text-white/40">Side-by-Side Surface Render</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div
-                className="p-4 rounded-xl border space-y-2 bg-black/40"
-                style={{ borderColor: 'var(--diff-remove-text, #F87171)' }}
+                className="p-4 rounded-xl border space-y-2 bg-black/60"
+                style={{ borderColor: 'rgba(255,255,255,0.3)' }}
               >
                 <span
                   className="text-[10px] font-mono font-bold tracking-wider uppercase"
-                  style={{ color: 'var(--diff-remove-text, #F87171)' }}
+                  style={{ color: 'rgba(255,255,255,0.5)' }}
                 >
                   Previous Surface Mockup
                 </span>
-                <div className="h-24 rounded-lg bg-black/50 border border-white/5 flex items-center justify-center text-xs text-white/40">
+                <div className="h-24 rounded-lg bg-black/80 border border-white/5 flex items-center justify-center text-xs text-white/40">
                   Single Terminal
                 </div>
               </div>
               <div
-                className="p-4 rounded-xl border space-y-2 bg-black/40"
-                style={{ borderColor: 'var(--diff-add-text, #4ADE80)' }}
+                className="p-4 rounded-xl border space-y-2 bg-black/60"
+                style={{ borderColor: 'rgba(255,255,255,0.8)' }}
               >
                 <span
                   className="text-[10px] font-mono font-bold tracking-wider uppercase"
-                  style={{ color: 'var(--diff-add-text, #4ADE80)' }}
+                  style={{ color: '#ffffff' }}
                 >
                   Updated Glassmorphic Grid
                 </span>
                 <div
                   className="h-24 rounded-lg flex items-center justify-center text-xs font-semibold"
                   style={{
-                    backgroundColor: 'var(--diff-add-bg, rgba(34, 197, 94, 0.15))',
-                    color: 'var(--diff-add-text, #4ADE80)',
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    color: '#ffffff',
                   }}
                 >
                   Multi-Pane Agent Matrix
@@ -284,17 +276,17 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
         )}
 
         {mode === 'schema' && (
-          <div className="p-5 rounded-xl border border-white/[0.08] bg-[#1A1B26] font-mono text-xs space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-violet-400 font-sans">
+          <div className="p-5 rounded-xl border border-white/10 bg-black/40 backdrop-blur-md font-mono text-xs space-y-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-white/80 font-sans">
               <Database className="w-4 h-4" />
               <span>Structured Schema & Data Model Changes</span>
             </div>
-            <div className="p-3 rounded-lg bg-black/50 border border-white/10 space-y-1.5">
+            <div className="p-3 rounded-lg bg-black/60 border border-white/10 space-y-1.5">
               <div
                 className="p-1.5 rounded"
                 style={{
-                  backgroundColor: 'var(--diff-remove-bg, rgba(239, 68, 68, 0.15))',
-                  color: 'var(--diff-remove-text, #F87171)',
+                  backgroundColor: 'rgba(255,255,255,0.02)',
+                  color: 'rgba(255,255,255,0.4)',
                 }}
               >
                 - type: SessionConfig &#123; maxThreads: 1 &#125;
@@ -302,8 +294,8 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
               <div
                 className="p-1.5 rounded"
                 style={{
-                  backgroundColor: 'var(--diff-add-bg, rgba(34, 197, 94, 0.15))',
-                  color: 'var(--diff-add-text, #4ADE80)',
+                  backgroundColor: 'rgba(255,255,255,0.05)',
+                  color: '#ffffff',
                 }}
               >
                 + type: SessionConfig &#123; maxThreads: 16, worktreeIsolation: true, ptyMultiplexing: true &#125;
@@ -314,20 +306,17 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
       </div>
 
       {/* Diff Footer Status */}
-      <div className="h-7 px-3.5 bg-[#1A1B26] border-t border-white/[0.06] flex items-center justify-between text-[11px] text-white/70 font-mono shrink-0">
+      <div className="h-7 px-3.5 bg-black/40 backdrop-blur-xl border-t border-white/10 flex items-center justify-between text-[11px] text-white/40 font-mono shrink-0">
         <div className="flex items-center gap-2">
-          <span
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: 'var(--diff-add-text, #4ADE80)' }}
-          />
-          <span className="text-white/90 font-medium">Stage Ready</span>
+          <span className="w-2 h-2 rounded-full bg-white/80" />
+          <span className="text-white/80 font-medium">Stage Ready</span>
         </div>
         <div className="flex items-center gap-2 text-[10px]">
           <span>Encoding: UTF-8</span>
           <span>•</span>
           <span>LF</span>
           <span>•</span>
-          <span className="text-violet-400">Functional Glassmorphic Diff</span>
+          <span className="text-white/60">Functional Glassmorphic Diff</span>
         </div>
       </div>
     </div>

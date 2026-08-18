@@ -8,7 +8,7 @@ import { ShortcutsModal } from '@/components/ui/ShortcutsModal';
 import { NotificationToastContainer } from '@/components/ui/NotificationToast';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { InputModal } from '@/components/ui/InputModal';
-import { SplashScreen } from '@/components/common/SplashScreen';
+import { CinematicSplashScreen } from '@/components/splash/CinematicSplashScreen';
 import { FirstRunHint } from '@/components/common/FirstRunHint';
 import { VoiceIndicator } from '@/components/ui/VoiceIndicator';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
@@ -116,11 +116,10 @@ export const App: React.FC = () => {
       resetFontSize: s.resetFontSize,
     }))
   );
-  const { workspaces, activeWorkspaceId, isLoading, loadWorkspaces, saveCurrentWorkspace } = useWorkspaceStore(
+  const { workspaces, activeWorkspaceId, loadWorkspaces, saveCurrentWorkspace } = useWorkspaceStore(
     useShallow((s) => ({
       workspaces: s.workspaces,
       activeWorkspaceId: s.activeWorkspaceId,
-      isLoading: s.isLoading,
       loadWorkspaces: s.loadWorkspaces,
       saveCurrentWorkspace: s.saveCurrentWorkspace,
     }))
@@ -129,6 +128,7 @@ export const App: React.FC = () => {
 
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [splashDismissed, setSplashDismissed] = useState(false);
   // Customization audit: show/hide the splash screen at startup.
   const showSplash = useSettingsStore((s) => s.showSplash);
   // Customization audit: UI zoom, animation master switch, compact chrome.
@@ -640,10 +640,10 @@ export const App: React.FC = () => {
       <ShortcutsModal />
       {isAboutOpen && <AboutModal onClose={() => setIsAboutOpen(false)} />}
       <NotificationToastContainer />
-      {/* Audit: the splash is tied to the real workspace-restore load, not a
-          fixed timer — on a slow disk it stays until loadWorkspaces resolves.
-          Customization audit: users can disable the splash entirely. */}
-      {showSplash && !useOnboardingStore.getState().isOpen && <SplashScreen ready={!isLoading} />}
+      {/* Cinematic Splash Screen matching splash.html */}
+      {showSplash && !splashDismissed && !useOnboardingStore.getState().isOpen && (
+        <CinematicSplashScreen onComplete={() => setSplashDismissed(true)} />
+      )}
       <FirstRunHint />
       <OnboardingWizard />
       <LayoutStudioModal onProceedToAgents={() => useAgentStore.getState().openLauncher()} />

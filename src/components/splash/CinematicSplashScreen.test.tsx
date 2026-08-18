@@ -73,8 +73,7 @@ describe('CinematicSplashScreen', () => {
     render(<CinematicSplashScreen onComplete={vi.fn()} />);
 
     expect(screen.getByRole('status')).toHaveAttribute('aria-label', 'VibeGrid Launch Screen');
-    expect(screen.getByText('Vibe')).toBeInTheDocument();
-    expect(screen.getByText('Grid')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('VibeGrid');
   });
 
   it('triggers onComplete upon keyboard skip (Space, Escape, Enter)', () => {
@@ -82,6 +81,9 @@ describe('CinematicSplashScreen', () => {
     render(<CinematicSplashScreen onComplete={onComplete} />);
 
     fireEvent.keyDown(window, { key: 'Escape' });
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
@@ -91,6 +93,9 @@ describe('CinematicSplashScreen', () => {
 
     const screenElement = screen.getByRole('status');
     fireEvent.click(screenElement);
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
@@ -101,9 +106,9 @@ describe('CinematicSplashScreen', () => {
 
     expect(onComplete).not.toHaveBeenCalled();
 
-    // Advance past full timeline (7000ms)
+    // Advance past full timeline (7000ms + 500ms fade)
     act(() => {
-      vi.advanceTimersByTime(7100);
+      vi.advanceTimersByTime(7600);
     });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
@@ -125,7 +130,7 @@ describe('CinematicSplashScreen', () => {
     render(<CinematicSplashScreen onComplete={onComplete} />);
 
     act(() => {
-      vi.advanceTimersByTime(3100);
+      vi.advanceTimersByTime(3600);
     });
 
     expect(onComplete).toHaveBeenCalledTimes(1);

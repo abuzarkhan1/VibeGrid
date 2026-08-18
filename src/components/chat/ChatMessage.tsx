@@ -20,7 +20,7 @@ export const ChatMessage: React.FC<{ message: MessageItem }> = ({ message }) => 
     <div className={`flex w-full gap-3 ${isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}>
       {/* Agent Avatar */}
       {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-violet-500/20 border border-violet-400/30 text-violet-400 shadow-sm mt-0.5">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white/80 shadow-sm mt-0.5">
           <Bot className="w-4 h-4" />
         </div>
       )}
@@ -34,24 +34,13 @@ export const ChatMessage: React.FC<{ message: MessageItem }> = ({ message }) => 
           <span>{message.timestamp}</span>
         </div>
 
-        {/* Bubble Surface: User message with accent gradient, Agent with Density 2 */}
+        {/* Bubble Surface: User message with solid white glass, Agent with stealth black glass */}
         <div
-          className={`px-4 py-3 rounded-xl text-xs sm:text-[13px] leading-relaxed select-text font-sans ${
+          className={`px-4 py-3 rounded-xl text-xs sm:text-[13px] leading-relaxed select-text font-sans backdrop-blur-md ${
             isUser
-              ? 'rounded-tr-sm text-white/90 border border-violet-400/30'
-              : 'bg-white/[0.05] border border-white/[0.08] rounded-xl rounded-tl-sm text-white/90'
+              ? 'rounded-tr-sm text-white bg-white/10 border border-white/20'
+              : 'bg-black/40 border border-white/10 rounded-xl rounded-tl-sm text-white/90'
           }`}
-          style={
-            isUser
-              ? {
-                  background:
-                    'linear-gradient(135deg, var(--glass-density-3, rgba(255,255,255,0.10)), rgba(139, 92, 246, 0.15))',
-                  backdropFilter: 'blur(20px) saturate(180%)',
-                  WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                  boxShadow: 'var(--glass-edge-effect), 0 4px 16px rgba(139, 92, 246, 0.12)',
-                }
-              : undefined
-          }
         >
           <div className="whitespace-pre-wrap">{message.content}</div>
 
@@ -67,14 +56,14 @@ export const ChatMessage: React.FC<{ message: MessageItem }> = ({ message }) => 
 
           {/* Streaming Cursor */}
           {message.isStreaming && (
-            <span className="inline-block w-1.5 h-3.5 bg-violet-500 ml-1 translate-y-0.5 animate-pulse" />
+            <span className="inline-block w-1.5 h-3.5 bg-white ml-1 translate-y-0.5 animate-pulse" />
           )}
         </div>
       </div>
 
       {/* User Avatar */}
       {isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white shadow-sm mt-0.5">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/20 text-white/80 shadow-sm mt-0.5">
           <User className="w-4 h-4" />
         </div>
       )}

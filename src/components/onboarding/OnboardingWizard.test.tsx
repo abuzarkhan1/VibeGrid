@@ -30,8 +30,7 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     render(<OnboardingWizard />);
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByLabelText(/Launch Screen/i)).toBeTruthy();
-    expect(screen.getByText('Vibe')).toBeTruthy();
-    expect(screen.getByText('Grid')).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('VibeGrid');
 
     // Skip splash using keyboard Space
     fireEvent.keyDown(window, { key: 'Space' });

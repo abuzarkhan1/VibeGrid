@@ -40,9 +40,9 @@ export const DirectorySelector: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
-      <div className="flex items-center gap-2 text-xs font-semibold text-white/90 uppercase tracking-wider font-mono">
-        <Folder className="w-4 h-4 text-violet-400" />
+    <div className="flex flex-col gap-3 p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md">
+      <div className="flex items-center gap-2 text-xs font-semibold text-white/80 uppercase tracking-wider font-mono">
+        <Folder className="w-4 h-4 text-white/60" />
         <span>Working Directory (CWD)</span>
       </div>
 
@@ -53,16 +53,16 @@ export const DirectorySelector: React.FC = () => {
             value={workspaceCwd}
             onChange={(e) => handleCwdChange(e.target.value)}
             placeholder="Default to session directory (or browse project root)"
-            className="w-full px-3.5 py-2.5 rounded-xl bg-[#1A1B26] border border-white/10 text-white/90 text-xs font-mono placeholder:text-white/40 focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-accent-primary/40 transition-colors"
+            className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-white/80 text-xs font-mono placeholder:text-white/30 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20 transition-colors"
           />
         </div>
 
         <button
           type="button"
           onClick={handlePickFolder}
-          className="px-3 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center gap-1.5 text-white/70 hover:text-white/90 text-xs cursor-pointer"
+          className="px-3 py-2 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 flex items-center gap-1.5 text-white/60 hover:text-white text-xs cursor-pointer transition-colors"
         >
-          <FolderOpen className="w-4 h-4 text-violet-400" />
+          <FolderOpen className="w-4 h-4 text-white/60" />
           <span>Browse</span>
         </button>
       </div>

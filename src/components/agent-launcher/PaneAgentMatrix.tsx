@@ -19,28 +19,29 @@ export const PaneAgentMatrix: React.FC = () => {
   const terminalNodes: TerminalNode[] = getTerminalNodesFromTree(draftLayout);
 
   const getAgentIcon = (agentId?: string) => {
+    // All icons now strictly use white with varying opacities for the B&W stealth theme
     switch (agentId) {
       case 'claude-code':
       case 'antigravity':
-        return <Sparkles className="w-4 h-4 text-violet-400" />;
+        return <Sparkles className="w-4 h-4 text-white/80" />;
       case 'codex':
-        return <Terminal className="w-4 h-4 text-emerald-400" />;
+        return <Terminal className="w-4 h-4 text-white/80" />;
       case 'gemini':
       case 'goose':
-        return <Zap className="w-4 h-4 text-amber-400" />;
+        return <Zap className="w-4 h-4 text-white/80" />;
       case 'aider':
       case 'grok':
       case 'kimi':
       case 'qwen':
       case 'cline':
-        return <Bot className="w-4 h-4 text-violet-400" />;
+        return <Bot className="w-4 h-4 text-white/80" />;
       case 'openhands':
-        return <Layers className="w-4 h-4 text-pink-400" />;
+        return <Layers className="w-4 h-4 text-white/80" />;
       case 'ollama':
       case 'deepseek':
-        return <Cpu className="w-4 h-4 text-sky-400" />;
+        return <Cpu className="w-4 h-4 text-white/80" />;
       default:
-        return <TerminalSquare className="w-4 h-4 text-white/70" />;
+        return <TerminalSquare className="w-4 h-4 text-white/80" />;
     }
   };
 
@@ -54,10 +55,11 @@ export const PaneAgentMatrix: React.FC = () => {
           return (
             <div
               key={term.id}
-              className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:border-violet-400/40 hover:bg-white/[0.06] transition-all"
+              className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:border-white/30 hover:bg-white/[0.06] transition-all backdrop-blur-md"
             >
               <div className="flex items-center gap-3 min-w-0 mr-2">
-                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#1A1B26] border border-violet-400/30 font-mono text-xs font-bold text-violet-400 shrink-0">
+                {/* Pure Black Glass for Number Indicator */}
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-black/40 border border-white/10 font-mono text-xs font-bold text-white/80 shrink-0">
                   {idx + 1}
                 </div>
                 <div className="truncate">
@@ -67,9 +69,9 @@ export const PaneAgentMatrix: React.FC = () => {
                       {config?.name || term.title || `Terminal ${idx + 1}`}
                     </h4>
                   </div>
-                  <div className="flex items-center gap-2 mt-1 text-xs text-white/70 font-mono">
+                  <div className="flex items-center gap-2 mt-1 text-xs text-white/40 font-mono">
                     {isAgent && config?.model && (
-                      <span className="text-violet-400 font-mono font-medium">[{config.model}]</span>
+                      <span className="text-white/80 font-mono font-medium">[{config.model}]</span>
                     )}
                     <span className="truncate max-w-[180px] text-white/40">
                       {isAgent
@@ -82,7 +84,7 @@ export const PaneAgentMatrix: React.FC = () => {
 
               <button
                 onClick={() => setConfiguringPane({ paneId: term.id, index: idx })}
-                className="px-3 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] flex items-center gap-1.5 text-xs text-white/70 hover:text-white/90 shrink-0 cursor-pointer"
+                className="px-3 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 flex items-center gap-1.5 text-xs text-white/60 hover:text-white shrink-0 cursor-pointer transition-colors"
               >
                 <Settings className="w-3.5 h-3.5" />
                 <span>Configure</span>
