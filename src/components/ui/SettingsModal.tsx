@@ -22,8 +22,8 @@ const ToggleSwitch: React.FC<{ checked: boolean; onChange: (v: boolean) => void 
     role="switch"
     aria-checked={checked}
     onClick={() => onChange(!checked)}
-    className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-forest-bright/60 ${
-      checked ? 'bg-forest' : 'bg-white/15 hover:bg-white/20'
+    className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1]/60 ${
+      checked ? 'bg-[#6366f1]' : 'bg-[#333338] hover:bg-[#3e3e46]'
     }`}
   >
     <span
@@ -476,49 +476,49 @@ export const SettingsModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-label="VibeGrid settings"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-4 animate-fade-in font-sans"
     >
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[85vh] backdrop-blur-xl"
+        className="w-full max-w-2xl bg-[#1A1B26] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-white/[0.02]">
-          <h2 className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">VibeGrid Settings</h2>
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-white/[0.03]">
+          <h2 className="text-xs font-bold text-white/90 uppercase tracking-wider">Codex Grid Settings</h2>
           <button
             onClick={toggleSettings}
             aria-label="Close settings"
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-border/[0.08] bg-background/40 px-4 overflow-x-auto">
+        <div className="flex border-b border-white/10 bg-white/[0.02] px-4 overflow-x-auto">
           <button
             onClick={() => setActiveTab('font')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-3 text-xs flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'font'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
+                ? 'border-[#6366f1] text-white bg-[#232327]'
+                : 'border-transparent text-[#a3a3ab] hover:text-white'
             }`}
           >
-            <Type className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Font &amp; Appearance</span>
+            <Type className="w-3.5 h-3.5 text-[#818cf8]" />
+            <span className="font-sans font-semibold normal-case tracking-tight">Font &amp; Appearance</span>
           </button>
 
           <button
             onClick={() => setActiveTab('theme')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
+            className={`px-4 py-3 text-xs flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
               activeTab === 'theme'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
+                ? 'border-[#6366f1] text-white bg-[#232327]'
+                : 'border-transparent text-[#a3a3ab] hover:text-white'
             }`}
           >
-            <Palette className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Themes</span>
+            <Palette className="w-3.5 h-3.5 text-[#818cf8]" />
+            <span className="font-sans font-bold normal-case tracking-tight">Themes</span>
           </button>
 
           <button
@@ -530,7 +530,7 @@ export const SettingsModal: React.FC = () => {
             }`}
           >
             <TerminalIcon className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Terminal</span>
+            <span className="font-sans font-bold normal-case tracking-tight">Terminal</span>
           </button>
 
           <button
@@ -542,7 +542,7 @@ export const SettingsModal: React.FC = () => {
             }`}
           >
             <Layout className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Workspaces</span>
+            <span className="font-sans font-bold normal-case tracking-tight">Workspaces</span>
           </button>
 
           <button
@@ -554,7 +554,7 @@ export const SettingsModal: React.FC = () => {
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Limits</span>
+            <span className="font-sans font-bold normal-case tracking-tight">Limits</span>
           </button>
 
           <button
@@ -566,7 +566,7 @@ export const SettingsModal: React.FC = () => {
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Appearance</span>
+            <span className="font-sans font-bold normal-case tracking-tight">Appearance</span>
           </button>
 
           <button
@@ -578,7 +578,7 @@ export const SettingsModal: React.FC = () => {
             }`}
           >
             <KeyboardIcon className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Keybindings</span>
+            <span className="font-sans font-bold normal-case tracking-tight">Keybindings</span>
           </button>
 
           <button
@@ -590,7 +590,7 @@ export const SettingsModal: React.FC = () => {
             }`}
           >
             <UserRound className="w-3.5 h-3.5" />
-            <span className="font-space font-bold normal-case tracking-tight">Profiles</span>
+            <span className="font-sans font-bold normal-case tracking-tight">Profiles</span>
           </button>
         </div>
 
@@ -684,11 +684,11 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'theme' && (
             <div className="space-y-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Themes ({Object.keys(allThemes).length})</span>
+                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Themes ({Object.keys(allThemes).length})</span>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowCreateThemeModal(true)}
-                    className="px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
+                    className="px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
                     title="Create a new theme based on the current one"
                   >
                     <Plus className="w-3.5 h-3.5" />
@@ -719,7 +719,7 @@ export const SettingsModal: React.FC = () => {
                     <button
                       onClick={handleImportTheme}
                       disabled={!themeImportText.trim()}
-                      className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 text-xs font-extrabold font-space transition-colors"
+                      className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 text-xs font-extrabold font-sans transition-colors"
                     >
                       Import Theme
                     </button>
@@ -1071,7 +1071,7 @@ export const SettingsModal: React.FC = () => {
                       onClick={handleMicTest}
                       disabled={micTesting}
                       title="Record for 1.6s and check the input level"
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-space disabled:opacity-50 transition-colors"
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-sans disabled:opacity-50 transition-colors"
                     >
                       <Mic className="w-3 h-3 text-black" />
                       {micTesting ? 'Listening…' : 'Test Microphone'}
@@ -1221,10 +1221,10 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'workspaces' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Active Workspaces ({workspaces.length})</span>
+                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Active Workspaces ({workspaces.length})</span>
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Create Workspace</span>
@@ -1814,7 +1814,7 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'keyboard' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Custom Keybindings</span>
+                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Custom Keybindings</span>
                 <button
                   // UX audit P0 #2: resetting keybindings is destructive — confirm.
                   onClick={() => setConfirmResetKeybindings(true)}
@@ -1838,7 +1838,7 @@ export const SettingsModal: React.FC = () => {
                     }`}
                   >
                     <div>
-                      <div className="font-space font-bold text-white/90">{kb.label}</div>
+                      <div className="font-sans font-bold text-white/90">{kb.label}</div>
                       <div className="text-[10px] text-zinc-400 font-mono">{kb.id}</div>
                     </div>
 
@@ -1860,10 +1860,10 @@ export const SettingsModal: React.FC = () => {
               {/* Customization audit C22: macros (action sequences + pauses). */}
               <div className="mt-6 border-t border-white/[0.08] pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Macros ({macros.length})</span>
+                  <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Macros ({macros.length})</span>
                   <button
                     onClick={addMacro}
-                    className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
+                    className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5" /> New Macro
                   </button>
@@ -1971,7 +1971,7 @@ export const SettingsModal: React.FC = () => {
           {activeTab === 'profiles' && (
             <div className="space-y-5">
               <div>
-                <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">Settings Profiles</span>
+                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Settings Profiles</span>
                 <p className="text-[11px] text-zinc-400 font-sans mt-1">Save your current settings (fonts, themes, terminal options, voice, startup behavior…) as a named profile and switch between them. Profiles are stored locally.</p>
               </div>
 
@@ -1984,11 +1984,11 @@ export const SettingsModal: React.FC = () => {
                     if (e.key === 'Enter') saveProfile();
                   }}
                   placeholder="Profile name (e.g. Work / Home)"
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] text-xs font-space text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30"
+                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] text-xs font-sans text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30"
                 />
                 <button
                   onClick={saveProfile}
-                  className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space flex items-center gap-1.5 transition-colors"
+                  className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" /> Save Current
                 </button>
@@ -2000,7 +2000,7 @@ export const SettingsModal: React.FC = () => {
                 )}
                 {listSettingsProfiles().map((name) => (
                   <div key={name} className="p-3.5 rounded-xl border border-white/[0.08] bg-black/40 flex items-center justify-between">
-                    <span className="text-xs font-bold font-space text-white/90 truncate">{name}</span>
+                    <span className="text-xs font-bold font-sans text-white/90 truncate">{name}</span>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => {
@@ -2010,7 +2010,7 @@ export const SettingsModal: React.FC = () => {
                             addToast({ type: 'error', title: 'Could not apply profile', description: `"${name}" appears to be corrupt.` });
                           }
                         }}
-                        className="px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-space transition-colors"
+                        className="px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-sans transition-colors"
                       >
                         Apply
                       </button>
@@ -2031,7 +2031,7 @@ export const SettingsModal: React.FC = () => {
               <div className="border-t border-white/[0.08] pt-4">
                 <div className="flex items-center gap-2">
                   <Globe className="w-3.5 h-3.5 text-white/80" />
-                  <span className="text-xs font-bold font-space text-white/90 uppercase tracking-wider">MCP / HTTP Endpoint</span>
+                  <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">MCP / HTTP Endpoint</span>
                 </div>
                 <p className="text-[11px] text-zinc-400 font-sans mt-1 leading-relaxed">
                   VibeGrid exposes a read-only state API that MCP clients and scripts can query (pane list, output history). The server listens on localhost only.

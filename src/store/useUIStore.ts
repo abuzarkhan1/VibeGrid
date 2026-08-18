@@ -17,6 +17,8 @@ interface UIState {
   isCommandPaletteOpen: boolean;
   isSettingsOpen: boolean;
   isCheatsheetOpen: boolean;
+  isDiffViewerOpen: boolean;
+  isChatOpen: boolean;
   toasts: ToastMessage[];
   activeWebglPanes: string[];
   maxWebglSlots: number;
@@ -53,6 +55,10 @@ interface UIState {
   setCommandPaletteOpen: (open: boolean) => void;
   toggleSettings: () => void;
   setCheatsheetOpen: (open: boolean) => void;
+  toggleDiffViewer: () => void;
+  setDiffViewerOpen: (open: boolean) => void;
+  toggleChat: () => void;
+  setChatOpen: (open: boolean) => void;
   addToast: (toast: Omit<ToastMessage, 'id'>) => string;
   updateToast: (id: string, patch: Partial<Omit<ToastMessage, 'id'>>) => void;
   removeToast: (id: string) => void;
@@ -80,12 +86,28 @@ interface UIState {
   closeCreateWsModal: () => void;
   /** Unified "max panes reached" toast (audit: 3 hand-rolled copies drifted). */
   notifyMaxPanes: () => void;
+
+  // View state & navigation matching desktop design layout
+  activeViewMode: 'hub' | 'grid';
+  selectedModel: string;
+  selectedRunner: string;
+  activeThreadTitle: string;
+  historyStack: ('hub' | 'grid')[];
+  historyPointer: number;
+  setActiveViewMode: (mode: 'hub' | 'grid') => void;
+  setSelectedModel: (model: string) => void;
+  setSelectedRunner: (runner: string) => void;
+  setActiveThreadTitle: (title: string) => void;
+  navigateBack: () => void;
+  navigateForward: () => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
   isCommandPaletteOpen: false,
   isSettingsOpen: false,
   isCheatsheetOpen: false,
+  isDiffViewerOpen: false,
+  isChatOpen: false,
   toasts: [],
   activeWebglPanes: [],
   maxWebglSlots: 12, // Max active WebGL GPU contexts allowed before canvas fallback
@@ -94,10 +116,63 @@ export const useUIStore = create<UIState>((set, get) => ({
   pendingLayoutAction: null,
   isCreateWsModalOpen: false,
 
+  activeViewMode: 'hub',
+  selectedModel: 'Gemini 3.7 Flash High',
+  selectedRunner: 'Local',
+  activeThreadTitle: 'Codex UI Design Alignment',
+  historyStack: ['hub'],
+  historyPointer: 0,
+
+  setActiveViewMode: (mode: 'hub' | 'grid') => {
+    set((state) => {
+      const nextStack = state.historyStack.slice(0, state.historyPointer + 1);
+      nextStack.push(mode);
+      return {
+        activeViewMode: mode,
+        historyStack: nextStack,
+        historyPointer: nextStack.length - 1,
+      };
+    });
+  },
+
+  setSelectedModel: (model: string) => set({ selectedModel: model }),
+  setSelectedRunner: (runner: string) => set({ selectedRunner: runner }),
+  setActiveThreadTitle: (title: string) => set({ activeThreadTitle: title }),
+
+  navigateBack: () => {
+    set((state) => {
+      if (state.historyPointer > 0) {
+        const nextPointer = state.historyPointer - 1;
+        return {
+          historyPointer: nextPointer,
+          activeViewMode: state.historyStack[nextPointer],
+        };
+      }
+      return state;
+    });
+  },
+
+  navigateForward: () => {
+    set((state) => {
+      if (state.historyPointer < state.historyStack.length - 1) {
+        const nextPointer = state.historyPointer + 1;
+        return {
+          historyPointer: nextPointer,
+          activeViewMode: state.historyStack[nextPointer],
+        };
+      }
+      return state;
+    });
+  },
+
   toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
   toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
   setCheatsheetOpen: (open: boolean) => set({ isCheatsheetOpen: open }),
+  toggleDiffViewer: () => set((state) => ({ isDiffViewerOpen: !state.isDiffViewerOpen })),
+  setDiffViewerOpen: (open: boolean) => set({ isDiffViewerOpen: open }),
+  toggleChat: () => set((state) => ({ isChatOpen: !state.isChatOpen })),
+  setChatOpen: (open: boolean) => set({ isChatOpen: open }),
 
   requestClosePane: (paneId: string) => {
     // Customization audit L19: with confirmation off, close (and kill) now.

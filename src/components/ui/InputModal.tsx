@@ -8,7 +8,6 @@ interface InputModalProps {
   placeholder?: string;
   initialValue?: string;
   maxLength?: number;
-  /** Optional native folder-picker button (audit: folder picker was a text field only). */
   onBrowse?: (path: string) => void;
   onSave: (value: string) => void;
   onClose: () => void;
@@ -27,8 +26,6 @@ export const InputModal: React.FC<InputModalProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useFocusTrap<HTMLFormElement>(true);
 
-  // Native folder picker (Tauri dialog plugin). Falls back to the text field in
-  // web preview mode.
   const handleBrowse = async () => {
     if (!onBrowse || !isTauri()) return;
     try {
@@ -69,21 +66,21 @@ export const InputModal: React.FC<InputModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-4 animate-fade-in font-sans"
     >
       <form
         ref={panelRef}
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
+        className="w-full max-w-md bg-[#1A1B26] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
-          <h3 className="text-xs font-bold font-space text-foreground/90 uppercase tracking-wider">{title}</h3>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.03]">
+          <h3 className="text-xs font-bold text-white/90 uppercase tracking-wider">{title}</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1 rounded-lg hover:bg-border/10 text-foreground/50 hover:text-foreground/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -98,37 +95,43 @@ export const InputModal: React.FC<InputModalProps> = ({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={placeholder}
-              className="w-full px-3.5 py-2.5 rounded-xl bg-background/40 border border-border/[0.08] text-xs font-space font-medium text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-border/30"
+              className="w-full px-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white/90 placeholder:text-white/30 focus:outline-none focus:border-violet-400/60 focus:ring-1 focus:ring-accent-primary/30 transition-all font-sans"
             />
             {onBrowse && (
               <button
                 type="button"
                 onClick={handleBrowse}
-                title="Browse folders…"
-                aria-label="Browse folders"
-                className="shrink-0 px-3.5 py-2.5 rounded-xl bg-border/[0.04] border border-border/10 text-foreground/60 hover:text-foreground hover:border-border/30 transition-colors"
+                title="Browse folder"
+                aria-label="Browse folder"
+                className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs px-3 py-2 text-white/70 hover:text-white transition-colors shrink-0"
               >
-                <FolderOpen className="w-3.5 h-3.5" />
+                <FolderOpen className="w-4 h-4" />
               </button>
             )}
           </div>
-
-          <div className="flex justify-end gap-2.5 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-2xl border border-border/10 text-xs font-mono uppercase tracking-wider text-muted hover:text-foreground hover:bg-border/5 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!value.trim()}
-              className="px-5 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 text-xs font-extrabold font-space transition-colors"
-            >
-              Save
-            </button>
+          <div className="flex justify-between items-center text-[10px] text-white/40 font-mono">
+            <span>Press Enter to save</span>
+            <span>
+              {value.length}/{maxLength}
+            </span>
           </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-white/10 bg-white/[0.02]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs px-3.5 py-1.5 text-xs font-medium text-white/70 hover:text-white"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!value.trim()}
+            className="px-4 py-1.5 rounded-full bg-violet-500 hover:bg-violet-500/90 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-40"
+          >
+            Save
+          </button>
         </div>
       </form>
     </div>

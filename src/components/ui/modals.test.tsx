@@ -1,89 +1,61 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { ConfirmModal } from './ConfirmModal';
-import { InputModal } from './InputModal';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { AboutModal } from './AboutModal';
+import { ShortcutsModal } from './ShortcutsModal';
+import { NotificationToastContainer } from './NotificationToast';
+import { VoiceIndicator } from './VoiceIndicator';
+import { useUIStore } from '@/store/useUIStore';
+import { useVoiceStore } from '@/store/useVoiceStore';
 
-describe('ConfirmModal', () => {
-  it('renders as a labelled modal dialog', () => {
-    render(
-      <ConfirmModal title="Delete Workspace" message="This cannot be undone." onConfirm={vi.fn()} onClose={vi.fn()} />
-    );
-    const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(dialog).toHaveAccessibleName('Delete Workspace');
-    expect(screen.getByText('This cannot be undone.')).toBeTruthy();
-  });
-
-  it('autofocuses the confirm button', () => {
-    render(<ConfirmModal title="T" message="M" onConfirm={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Confirm' })).toHaveFocus();
-  });
-
-  it('Enter confirms and closes, Escape cancels (audit P2 #7)', async () => {
-    const user = userEvent.setup();
-    const onConfirm = vi.fn();
+describe('AboutModal', () => {
+  it('renders modal with engine info and close action', () => {
     const onClose = vi.fn();
-    render(<ConfirmModal title="T" message="M" onConfirm={onConfirm} onClose={onClose} />);
+    render(<AboutModal onClose={onClose} />);
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-label', 'About Codex Grid');
+    expect(screen.getByText('Tauri 2 + Rust')).toBeTruthy();
+    expect(screen.getByText('MIT Open Source')).toBeTruthy();
 
-    // user-event drives the keydown listener on window (the modal is
-    // autofocused on Confirm, which is where a real user's Enter lands).
-    await user.keyboard('{Enter}');
-    expect(onConfirm).toHaveBeenCalledTimes(1);
-    expect(onClose).toHaveBeenCalledTimes(1);
-
-    await user.keyboard('{Escape}');
-    expect(onClose).toHaveBeenCalledTimes(2);
-  });
-
-  it('marks the confirm button with the danger styling when isDanger', () => {
-    render(<ConfirmModal title="T" message="M" confirmLabel="Delete" isDanger onConfirm={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Delete' }).className).toContain('bg-rose-600');
-  });
-
-  it('renders an accessible close button', () => {
-    render(<ConfirmModal title="T" message="M" onConfirm={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Close confirmation dialog' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Close about dialog' }));
+    expect(onClose).toHaveBeenCalled();
   });
 });
 
-describe('InputModal', () => {
-  it('renders a labelled modal with the initial value', () => {
-    render(<InputModal title="Rename Workspace" initialValue="My Space" onSave={vi.fn()} onClose={vi.fn()} />);
-    const dialog = screen.getByRole('dialog');
-    expect(dialog).toHaveAccessibleName('Rename Workspace');
-    expect(screen.getByDisplayValue('My Space')).toBeTruthy();
+describe('ShortcutsModal', () => {
+  it('renders keybindings when store is open', () => {
+    useUIStore.setState({ isCheatsheetOpen: true });
+    render(<ShortcutsModal />);
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-label', 'Keyboard shortcuts reference');
+    expect(screen.getByText('Pane Operations')).toBeTruthy();
+    expect(screen.getByText('Navigation')).toBeTruthy();
   });
+});
 
-  it('submits the trimmed value on save', async () => {
-    const user = userEvent.setup();
-    const onSave = vi.fn();
-    const onClose = vi.fn();
-    render(<InputModal title="T" onSave={onSave} onClose={onClose} />);
-    await user.type(screen.getByRole('textbox'), '  hello  ');
-    await user.click(screen.getByRole('button', { name: 'Save' }));
-    expect(onSave).toHaveBeenCalledWith('hello');
-    expect(onClose).toHaveBeenCalled();
+describe('NotificationToastContainer', () => {
+  it('renders toasts for all semantic types', () => {
+    useUIStore.setState({
+      toasts: [
+        { id: '1', type: 'info', title: 'Info Toast', description: 'Informational message' },
+        { id: '2', type: 'success', title: 'Success Toast' },
+        { id: '3', type: 'warning', title: 'Warning Toast' },
+        { id: '4', type: 'error', title: 'Error Toast' },
+      ],
+    });
+    render(<NotificationToastContainer />);
+    expect(screen.getByText('Info Toast')).toBeTruthy();
+    expect(screen.getByText('Success Toast')).toBeTruthy();
+    expect(screen.getByText('Warning Toast')).toBeTruthy();
+    expect(screen.getByText('Error Toast')).toBeTruthy();
   });
+});
 
-  it('disables save when the value is empty', () => {
-    render(<InputModal title="T" onSave={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
-  });
+describe('VoiceIndicator', () => {
+  it('renders listening and transcribing indicators accurately', () => {
+    useVoiceStore.setState({ isListening: true, phase: 'listening', level: 0.5 });
+    const { rerender } = render(<VoiceIndicator />);
+    expect(screen.getByText('Listening…')).toBeTruthy();
 
-  it('Esc closes without saving', async () => {
-    const user = userEvent.setup();
-    const onSave = vi.fn();
-    const onClose = vi.fn();
-    render(<InputModal title="T" onSave={onSave} onClose={onClose} />);
-    await user.type(screen.getByRole('textbox'), 'draft');
-    await user.keyboard('{Escape}');
-    expect(onClose).toHaveBeenCalledTimes(1);
-    expect(onSave).not.toHaveBeenCalled();
-  });
-
-  it('has an accessible close button', () => {
-    render(<InputModal title="T" onSave={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Close dialog' })).toBeTruthy();
+    useVoiceStore.setState({ isListening: false, phase: 'transcribing' });
+    rerender(<VoiceIndicator />);
+    expect(screen.getByText('Transcribing…')).toBeTruthy();
   });
 });

@@ -46,3 +46,14 @@ if (!window.ResizeObserver) {
     disconnect() {}
   } as unknown as typeof ResizeObserver;
 }
+
+if (!HTMLCanvasElement.prototype.getContext) {
+  HTMLCanvasElement.prototype.getContext = vi.fn().mockReturnValue({
+    clearRect: vi.fn(),
+    beginPath: vi.fn(),
+    arc: vi.fn(),
+    fill: vi.fn(),
+    scale: vi.fn(),
+    resetTransform: vi.fn(),
+  }) as unknown as typeof HTMLCanvasElement.prototype.getContext;
+}

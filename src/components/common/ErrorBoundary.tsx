@@ -31,22 +31,22 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render() {
     if (this.state.hasError) {
       return (
-        <div className="h-screen w-screen flex flex-col items-center justify-center bg-bgDark text-white select-none p-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-forest/20 border border-forest/40 mb-6">
-            <Bug className="w-7 h-7 text-forest-bright" />
+        <div className="h-screen w-screen flex flex-col items-center justify-center bg-[#1a1a1e] text-[#e8e8ea] select-none p-8 font-sans">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#6366f1]/15 border border-[#6366f1]/30 mb-6">
+            <Bug className="w-7 h-7 text-[#818cf8]" />
           </div>
-          <h1 className="vg-serif text-3xl text-white mb-2">Something went wrong</h1>
-          <p className="text-sm text-white/50 max-w-md text-center leading-relaxed mb-6">
-            VibeGrid hit an unexpected error. Your workspaces are saved on disk — nothing is lost. Reload the app to continue.
+          <h1 className="text-2xl font-bold text-[#e8e8ea] mb-2 tracking-tight">Something went wrong</h1>
+          <p className="text-xs text-[#a3a3ab] max-w-md text-center leading-relaxed mb-6 font-sans">
+            VibeGrid hit an unexpected error. Your workspaces are safely saved on disk. Reload the application to continue.
           </p>
           {this.state.message && (
-            <pre className="text-[11px] font-mono text-white/40 bg-black/40 border border-white/10 rounded-lg px-4 py-3 max-w-lg overflow-auto mb-6 whitespace-pre-wrap">
+            <pre className="text-[11px] font-mono text-[#a3a3ab] bg-[#232327] border border-[#333338] rounded-xl px-4 py-3 max-w-lg overflow-auto mb-6 whitespace-pre-wrap">
               {this.state.message}
             </pre>
           )}
           <button
             onClick={this.reload}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-forest hover:bg-forest-bright text-sm font-medium text-white transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#6366f1] hover:bg-[#5558e6] text-xs font-semibold text-white transition-colors shadow-sm"
           >
             <RotateCcw className="w-4 h-4" />
             Reload VibeGrid

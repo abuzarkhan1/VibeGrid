@@ -5,17 +5,6 @@ import { barHeights } from '@/lib/voice';
 
 const BAR_COUNT = 24;
 
-/**
- * Real-time voice waveform shown while dictating. Subscribes to the live mic
- * level (from useVoiceStore) directly, so the level updates only re-render this
- * component — never the pane grid. The wave is animated with a
- * requestAnimationFrame clock (time-based traveling wave), so it flows
- * continuously even when the mic level itself is steady.
- *
- * The indicator also renders transient commit states:
- * - 'transcribing' → spinner while Rust runs Whisper
- * - 'inserted'     → accent check + the transcript (brief flash)
- */
 export const VoiceIndicator: React.FC = () => {
   const isListening = useVoiceStore((s) => s.isListening);
   const level = useVoiceStore((s) => s.level);
@@ -23,13 +12,8 @@ export const VoiceIndicator: React.FC = () => {
   const lastTranscript = useVoiceStore((s) => s.lastTranscript);
   const [time, setTime] = useState(0);
   const rafRef = useRef<number>(0);
-  // Once the user actually speaks, never fall back to the "speak when ready"
-  // label — the mic noise floor varies per device, so a fixed RMS threshold
-  // (audit gap 2) makes the label flap between idle/active on quiet input.
   const heardVoiceRef = useRef(false);
 
-  // Advance the wave clock while listening. rAF re-renders only this tiny
-  // indicator (24 bars), so the 60fps clock costs nothing elsewhere.
   useEffect(() => {
     if (!isListening) return;
     const start = performance.now();
@@ -41,10 +25,6 @@ export const VoiceIndicator: React.FC = () => {
     return () => cancelAnimationFrame(rafRef.current);
   }, [isListening]);
 
-  // Track "has the user actually spoken" (not during render). A single effect
-  // on [isListening, level]: each new recording resets the ref, and once real
-  // speech is heard (level >= SPEECH_FLOOR) it stays true until the recording
-  // ends — so the "speak when ready" prompt never flaps on a noisy mic (gap 2).
   const SPEECH_FLOOR = 0.12;
   useEffect(() => {
     if (isListening) {
@@ -56,32 +36,27 @@ export const VoiceIndicator: React.FC = () => {
   if (!visible) return null;
 
   const heights = barHeights(level, BAR_COUNT, time);
-  // "Idle / speak when ready" only applies before any speech was heard and the
-  // live level is at/below the same speech floor the ref uses — the label can
-  // never disagree with the heard-voice state.
   const idle = !heardVoiceRef.current && level < SPEECH_FLOOR;
 
   return (
     <div
       data-voice-indicator
-      className="fixed bottom-9 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2.5 rounded-full bg-surfaceCard/95 border border-forest/40 shadow-2xl shadow-black/60 backdrop-blur-md animate-fade-in-up select-none"
+      className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2.5 rounded-full bg-[#1A1B26] border border-white/20 shadow-2xl animate-fade-in-up select-none font-sans "
     >
       {phase === 'transcribing' && (
         <>
-          {/* Spinner while the transcript is being computed */}
-          <Loader2 className="w-4 h-4 text-forest-bright animate-spin" />
-          <span className="text-[11px] text-white/70 whitespace-nowrap">Transcribing…</span>
+          <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+          <span className="text-[11px] text-white/90 whitespace-nowrap">Transcribing…</span>
         </>
       )}
 
       {phase === 'inserted' && (
         <>
-          {/* Success flash — accent check + the inserted text */}
           <div className="relative flex items-center justify-center">
-            <span className="absolute inline-flex h-6 w-6 rounded-full bg-forest/30 animate-ping" />
-            <Check className="w-4 h-4 text-forest-bright relative" />
+            <span className="absolute inline-flex h-6 w-6 rounded-full bg-emerald-400/30 animate-ping" />
+            <Check className="w-4 h-4 text-emerald-400 relative" />
           </div>
-          <span className="text-[11px] text-forest-light whitespace-nowrap max-w-[280px] truncate">
+          <span className="text-[11px] text-emerald-400 whitespace-nowrap max-w-[280px] truncate font-medium">
             {lastTranscript ? `Inserted: "${lastTranscript}"` : 'Inserted'}
           </span>
         </>
@@ -89,18 +64,16 @@ export const VoiceIndicator: React.FC = () => {
 
       {phase === 'listening' && (
         <>
-          {/* Mic + pulsing ring */}
           <div className="relative flex items-center justify-center">
-            <span className="absolute inline-flex h-6 w-6 rounded-full bg-forest/30 animate-ping" />
-            <Mic className={`w-4 h-4 text-forest-bright relative ${idle ? 'animate-pulse' : ''}`} />
+            <span className="absolute inline-flex h-6 w-6 rounded-full bg-violet-500/30 animate-ping" />
+            <Mic className={`w-4 h-4 text-violet-400 relative ${idle ? 'animate-pulse' : ''}`} />
           </div>
 
-          {/* Live waveform bars — traveling wave */}
           <div className={`flex items-end gap-[3px] h-6 ${idle ? 'opacity-70' : ''}`} aria-hidden>
             {heights.map((h, i) => (
               <div
                 key={i}
-                className="w-[3px] rounded-full bg-forest-bright transition-none"
+                className="w-[3px] rounded-full bg-violet-500 transition-none"
                 style={{
                   height: `${h.toFixed(1)}px`,
                   opacity: 0.4 + 0.6 * Math.min(1, h / 26),
@@ -109,15 +82,15 @@ export const VoiceIndicator: React.FC = () => {
             ))}
           </div>
 
-          <span className={`text-[11px] whitespace-nowrap ${idle ? 'text-white/45 animate-pulse' : 'text-white/70'}`}>
+          <span className={`text-[11px] whitespace-nowrap ${idle ? 'text-white/70 animate-pulse' : 'text-white/90 font-medium'}`}>
             {idle ? 'Listening… speak when ready' : 'Listening…'}
           </span>
 
-          <span className="flex items-center gap-1 text-[10px] text-white/40 whitespace-nowrap">
-            <CornerDownLeft className="w-3 h-3 text-forest-light" />
+          <span className="flex items-center gap-1 text-[10px] text-white/40 whitespace-nowrap font-mono">
+            <CornerDownLeft className="w-3 h-3 text-violet-400" />
             <span>Insert</span>
-            <span className="mx-1 text-white/20">·</span>
-            <X className="w-3 h-3 text-white/40" />
+            <span className="mx-1 text-white/10">·</span>
+            <X className="w-3 h-3 text-white/70" />
             <span>Cancel</span>
           </span>
         </>

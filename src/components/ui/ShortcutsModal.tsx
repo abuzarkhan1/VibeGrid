@@ -39,22 +39,22 @@ export const ShortcutsModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts reference"
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-4 animate-fade-in"
     >
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[80vh] backdrop-blur-xl"
+        className="w-full max-w-lg bg-[#1A1B26] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] font-sans"
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.03]">
           <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-white/80" />
-            <h2 className="text-xs font-bold font-space text-foreground/90 uppercase tracking-wider">Keyboard Shortcuts</h2>
+            <BookOpen className="w-4 h-4 text-violet-400" />
+            <h2 className="text-xs font-bold text-white/90 uppercase tracking-wider">Keyboard Shortcuts</h2>
           </div>
           <button
             onClick={() => setCheatsheetOpen(false)}
             aria-label="Close shortcuts"
-            className="p-1 rounded-lg hover:bg-border/10 text-foreground/50 hover:text-foreground/80 transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -63,15 +63,15 @@ export const ShortcutsModal: React.FC = () => {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {groups.map((group) => (
             <div key={group.title}>
-              <h3 className="text-[10px] font-mono font-semibold text-muted uppercase tracking-widest mb-2.5">{group.title}</h3>
+              <h3 className="text-[10px] font-mono font-semibold text-white/40 uppercase tracking-widest mb-2.5">{group.title}</h3>
               <div className="space-y-1.5">
                 {group.ids.map((id) => {
                   const kb = keybindings[id];
                   if (!kb) return null;
                   return (
-                    <div key={id} className="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors">
-                      <span className="font-space font-bold text-foreground/90">{kb.label}</span>
-                      <kbd className="px-2 py-0.5 font-mono bg-border/5 border border-border/10 rounded-md text-foreground/80 text-[11px]">{kb.currentKey}</kbd>
+                    <div key={id} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-xl hover:bg-white/[0.06] transition-colors">
+                      <span className="font-medium text-white/90">{kb.label}</span>
+                      <kbd className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs !px-2.5 !py-0.5 font-mono text-white/70 text-[11px]">{kb.currentKey}</kbd>
                     </div>
                   );
                 })}
@@ -79,8 +79,8 @@ export const ShortcutsModal: React.FC = () => {
             </div>
           ))}
 
-          <p className="text-[11px] text-muted font-sans leading-relaxed pt-2 border-t border-border/[0.08]">
-            Reassign any shortcut in <span className="text-foreground font-space font-bold">Settings → Keybindings</span>. Press <kbd className="px-1.5 py-0.5 font-mono bg-border/5 border border-border/10 rounded text-[10px] text-foreground/80">Esc</kbd> to close this panel.
+          <p className="text-[11px] text-white/70 font-sans leading-relaxed pt-2 border-t border-white/10">
+            Reassign any shortcut in <span className="text-white/90 font-medium">Settings → Keybindings</span>. Press <kbd className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs !px-1.5 !py-0.5 text-[10px] font-mono text-white/90">Esc</kbd> to close this panel.
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid, FolderOpen, BookOpen, Mic, Download, Upload, Save, Terminal as TerminalIcon, Trash2, Play, Zap } from 'lucide-react';
+import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid, FolderOpen, BookOpen, Mic, Download, Upload, Save, Terminal as TerminalIcon, Trash2, Play, Zap, Bot, Layers, GitCommit } from 'lucide-react';
 import { runMacro } from '@/lib/macros';
 import { useUIStore } from '@/store/useUIStore';
 import { usePaneStore, getTerminalNodes, PresetCount } from '@/store/usePaneStore';
@@ -7,6 +7,10 @@ import { useSettingsStore, THEMES, UserCommand } from '@/store/useSettingsStore'
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { useVoiceStore } from '@/store/useVoiceStore';
+import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useLayoutStudioStore } from '@/store/useLayoutStudioStore';
+import { useAgentStore } from '@/store/useAgentStore';
+import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { fuzzyScore } from '@/lib/commandUtils';
 import { writeToPty } from '@/lib/tauri';
 import { InputModal } from './InputModal';
@@ -155,17 +159,52 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
 
   const commands: CommandItem[] = [
     {
+      id: 'open-layout-studio',
+      label: 'Open Layout Selection Studio…',
+      category: 'Layout',
+      icon: <Layers className="w-4 h-4 text-violet-400" />,
+      action: () => useLayoutStudioStore.getState().openStudio(),
+    },
+    {
+      id: 'open-agent-launcher',
+      label: 'Open AI Agent Fleet Launcher…',
+      category: 'AI Agents',
+      icon: <Bot className="w-4 h-4 text-violet-400" />,
+      action: () => useAgentStore.getState().openLauncher(),
+    },
+    {
+      id: 'open-customizer-studio',
+      label: 'Open Theme & Customization Studio…',
+      category: 'Customization',
+      icon: <Palette className="w-4 h-4 text-violet-400" />,
+      action: () => useCustomizationStore.getState().openCustomizer(),
+    },
+    {
+      id: 'toggle-diff-viewer',
+      label: 'Toggle Content-Aware Diff Viewer',
+      category: 'Workspace',
+      icon: <GitCommit className="w-4 h-4 text-violet-400" />,
+      action: () => useUIStore.getState().toggleDiffViewer(),
+    },
+    {
+      id: 'app-setup-layout-studio',
+      label: 'Open Codex Setup & Onboarding Wizard…',
+      category: 'Workspace',
+      icon: <Zap className="w-4 h-4 text-violet-400" />,
+      action: () => useOnboardingStore.getState().openOnboarding('splash'),
+    },
+    {
       id: 'edit-pane-title',
       label: 'Edit Focused Pane Title',
       category: 'Pane Operations',
-      icon: <Edit3 className="w-4 h-4 text-forest-bright" />,
+      icon: <Edit3 className="w-4 h-4 text-violet-400" />,
       action: () => setShowTitleModal(true),
     },
     ...presets.map((p) => ({
       id: `preset-grid-${p}`,
       label: `Set Equal Grid Layout to ${p} Pane${p > 1 ? 's' : ''}`,
       category: 'Layout Presets',
-      icon: <Grid className="w-4 h-4 text-forest-bright" />,
+      icon: <Grid className="w-4 h-4 text-[#818cf8]" />,
       // Guarded: a grid rebuild kills all running panes — confirm when running.
       action: () => requestSetLayoutPreset(p),
     })),
@@ -173,7 +212,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'split-folder',
       label: 'Split Pane in a New Folder…',
       category: 'Pane Operations',
-      icon: <FolderOpen className="w-4 h-4 text-forest-bright" />,
+      icon: <FolderOpen className="w-4 h-4 text-[#818cf8]" />,
       action: () => setShowFolderModal(true),
     },
     {
@@ -181,7 +220,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Split Pane Horizontally (Side by Side)',
       category: 'Pane Operations',
       shortcut: keybindings['split-horizontal']?.currentKey || 'Mod+D',
-      icon: <Columns className="w-4 h-4 text-forest-bright" />,
+      icon: <Columns className="w-4 h-4 text-[#818cf8]" />,
       action: () => {
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'horizontal');
@@ -196,7 +235,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Split Pane Vertically (Stacked)',
       category: 'Pane Operations',
       shortcut: keybindings['split-vertical']?.currentKey || 'Mod+Shift+D',
-      icon: <Rows className="w-4 h-4 text-forest-bright" />,
+      icon: <Rows className="w-4 h-4 text-[#818cf8]" />,
       action: () => {
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'vertical');
@@ -211,7 +250,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Toggle Maximize / Restore Focused Pane',
       category: 'Pane Operations',
       shortcut: keybindings['toggle-maximize']?.currentKey || 'Mod+Shift+Enter',
-      icon: <Maximize2 className="w-4 h-4 text-forest-bright" />,
+      icon: <Maximize2 className="w-4 h-4 text-[#818cf8]" />,
       action: () => toggleMaximize(),
     },
     {
@@ -229,7 +268,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Create New Workspace',
       category: 'Workspace',
       shortcut: keybindings['new-workspace']?.currentKey || 'Mod+Shift+N',
-      icon: <Plus className="w-4 h-4 text-forest-bright" />,
+      icon: <Plus className="w-4 h-4 text-[#818cf8]" />,
       action: () => setShowWsModal(true),
     },
     ...workspaces.map((ws) => {
@@ -240,7 +279,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
         id: `ws-switch-${ws.id}`,
         label: `Switch to Workspace: ${ws.name}${running > 0 ? `  ●${running} running` : ''}`,
         category: 'Workspace',
-        icon: <Info className="w-4 h-4 text-forest-bright" />,
+        icon: <Info className="w-4 h-4 text-[#818cf8]" />,
         action: () => requestSwitchWorkspace(ws.id),
       };
     }),
@@ -248,7 +287,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: `ws-duplicate-${ws.id}`,
       label: `Duplicate Workspace: ${ws.name}`,
       category: 'Workspace',
-      icon: <Plus className="w-4 h-4 text-forest-light" />,
+      icon: <Plus className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => {
         useWorkspaceStore.getState().duplicateWorkspace(ws.id);
       },
@@ -259,7 +298,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'save-workspace-now',
       label: 'Save Workspace Now',
       category: 'Workspace',
-      icon: <Save className="w-4 h-4 text-forest-light" />,
+      icon: <Save className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => {
         saveCurrentWorkspace();
         addToast({ type: 'success', title: 'Workspace saved', description: 'The current layout and settings were written to disk.' });
@@ -270,7 +309,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: `user-cmd-${uc.id}`,
       label: uc.label,
       category: 'Custom Commands',
-      icon: <TerminalIcon className="w-4 h-4 text-forest-light" />,
+      icon: <TerminalIcon className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => runUserCommand(uc),
     })),
     // Customization audit C22: user-defined macros.
@@ -278,14 +317,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: `macro-run-${m.id}`,
       label: `Run Macro: ${m.name}`,
       category: 'Macros',
-      icon: <Zap className="w-4 h-4 text-forest-light" />,
+      icon: <Zap className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => runMacro(m),
     })),
     {
       id: 'manage-user-commands',
       label: 'Manage Custom Commands…',
       category: 'Custom Commands',
-      icon: <Plus className="w-4 h-4 text-forest-light" />,
+      icon: <Plus className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => setShowCmdModal(true),
     },
     {
@@ -293,21 +332,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Open Settings Panel',
       category: 'Preferences',
       shortcut: keybindings['open-settings']?.currentKey || 'Mod+,',
-      icon: <Settings className="w-4 h-4 text-white/60" />,
+      icon: <Settings className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => toggleSettings(),
     },
     {
       id: 'open-shortcuts',
       label: 'Keyboard Shortcuts Reference',
       category: 'Preferences',
-      icon: <BookOpen className="w-4 h-4 text-forest-light" />,
+      icon: <BookOpen className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => setCheatsheetOpen(true),
     },
     {
       id: 'open-about',
       label: 'About VibeGrid',
       category: 'Application',
-      icon: <Info className="w-4 h-4 text-forest-bright" />,
+      icon: <Info className="w-4 h-4 text-[#818cf8]" />,
       action: () => {
         if (onOpenAbout) onOpenAbout();
       },
@@ -316,7 +355,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'export-settings',
       label: 'Export Settings to JSON File',
       category: 'Preferences',
-      icon: <Download className="w-4 h-4 text-forest-light" />,
+      icon: <Download className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => {
         const blob = new Blob([exportSettings()], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -332,14 +371,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'import-settings',
       label: 'Import Settings from JSON File…',
       category: 'Preferences',
-      icon: <Upload className="w-4 h-4 text-forest-light" />,
+      icon: <Upload className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => importInputRef.current?.click(),
     },
     {
       id: 'toggle-voice',
       label: voiceToTerminal ? 'Disable Voice-to-Terminal' : 'Enable Voice-to-Terminal',
       category: 'Preferences',
-      icon: <Mic className={`w-4 h-4 ${voiceToTerminal ? 'text-forest-bright' : 'text-white/60'}`} />,
+      icon: <Mic className={`w-4 h-4 ${voiceToTerminal ? 'text-[#818cf8]' : 'text-[#a3a3ab]'}`} />,
       action: () => {
         setVoiceToTerminal(!voiceToTerminal);
         addToast({ type: 'success', title: voiceToTerminal ? 'Voice disabled' : 'Voice enabled', description: 'Press Cmd/Ctrl+Shift+V to dictate into the focused pane.' });
@@ -350,7 +389,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Increase Terminal Font Size',
       category: 'View & Font',
       shortcut: 'Mod+Plus',
-      icon: <ZoomIn className="w-4 h-4 text-forest-light" />,
+      icon: <ZoomIn className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => increaseFontSize(),
     },
     {
@@ -358,7 +397,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Decrease Terminal Font Size',
       category: 'View & Font',
       shortcut: 'Mod+Minus',
-      icon: <ZoomOut className="w-4 h-4 text-forest-light" />,
+      icon: <ZoomOut className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => decreaseFontSize(),
     },
     {
@@ -366,7 +405,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Reset Terminal Font Size to Default',
       category: 'View & Font',
       shortcut: 'Mod+0',
-      icon: <RotateCcw className="w-4 h-4 text-forest-light" />,
+      icon: <RotateCcw className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => resetFontSize(),
     },
     // Customization audit C1: the palette offers custom themes too (built-ins
@@ -375,7 +414,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: `theme-${key}`,
       label: `Switch Theme to ${theme.name}`,
       category: 'Themes',
-      icon: <Palette className="w-4 h-4 text-forest-light" />,
+      icon: <Palette className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => setThemeName(key),
     })),
     {
@@ -456,16 +495,16 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           role="dialog"
           aria-modal="true"
           aria-label="Command palette"
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-start justify-center pt-24 animate-fade-in"
+          className="fixed inset-0 z-50 bg-black/70  flex items-start justify-center pt-24 animate-fade-in"
         >
           <div
             ref={panelRef}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col max-h-[70vh] backdrop-blur-xl"
+            className="w-full max-w-xl bg-[#1A1B26] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] font-sans border border-white/15"
           >
             {/* Search Header */}
-            <div className="flex items-center px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
-              <Search className="w-4 h-4 text-white/70 mr-3 shrink-0" />
+            <div className="flex items-center px-4 py-3.5 border-b border-white/10 bg-white/[0.03]">
+              <Search className="w-4 h-4 text-violet-400 mr-3 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -477,33 +516,38 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                 onKeyDown={handleKeyDown}
                 placeholder="Type a command or search actions…"
                 aria-label="Search commands"
-                className="w-full bg-transparent text-sm font-space font-bold text-foreground/90 placeholder-muted/35 focus:outline-none"
+                className="w-full bg-transparent text-sm font-sans font-medium text-white/90 placeholder:text-white/30 focus:outline-none"
               />
             </div>
 
             {/* Command List */}
-            <div className="flex-1 overflow-y-auto py-2 px-1">
+            <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
               {filteredCommands.length === 0 ? (
-                <div className="py-8 text-center text-xs font-mono text-muted">No matching commands found</div>
+                <div className="py-8 text-center text-xs font-mono text-white/40">No matching commands found</div>
               ) : (
                 filteredCommands.map((cmd, idx) => (
                   <div
                     key={cmd.id}
                     onClick={() => runCommand(cmd)}
                     onMouseEnter={() => setSelectedIndex(idx)}
-                    className={`px-4 py-2.5 flex items-center justify-between cursor-pointer text-xs transition-colors rounded-xl mx-1 my-0.5 hover:bg-white/10 ${
-                      idx === selectedIndex ? 'bg-border/10 text-foreground' : 'text-foreground/80'                    }`}
+                    className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer text-xs transition-all rounded-xl ${
+                      idx === selectedIndex
+                        ? 'bg-white/[0.12] text-white border border-white/10 shadow-sm'
+                        : 'text-white/90 hover:bg-white/[0.06] border border-transparent'
+                    }`}
                   >
                     <div className="flex items-center gap-3">
-                      {cmd.icon}
+                      <div className="p-1 rounded-lg bg-white/5 text-violet-400">
+                        {cmd.icon}
+                      </div>
                       <div>
-                        <div className="font-space font-bold text-white/90 tracking-tight">{cmd.label}</div>
-                        <div className="text-[10px] text-muted font-mono uppercase tracking-wider">{cmd.category}</div>
+                        <div className="font-sans font-semibold text-white/90 tracking-tight">{cmd.label}</div>
+                        <div className="text-[10px] text-white/40 font-mono uppercase tracking-wider">{cmd.category}</div>
                       </div>
                     </div>
 
                     {cmd.shortcut && (
-                      <kbd className="px-2 py-0.5 text-[10px] font-mono bg-border/5 border border-border/10 rounded-md text-foreground/80">{cmd.shortcut}</kbd>
+                      <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/70">{cmd.shortcut}</kbd>
                     )}
                   </div>
                 ))
@@ -511,11 +555,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
             </div>
 
             {/* Footer hints */}
-            <div className="flex items-center gap-4 px-5 py-3 border-t border-border/[0.08] bg-border/[0.02] text-[10px] font-mono text-muted">
-              <span><kbd className="px-1.5 py-0.5 font-mono bg-border/5 border border-border/10 rounded text-foreground/80">↑</kbd> <kbd className="px-1.5 py-0.5 font-mono bg-border/5 border border-border/10 rounded text-foreground/80">↓</kbd> navigate</span>
-              <span><kbd className="px-1.5 py-0.5 font-mono bg-border/5 border border-border/10 rounded text-foreground/80">↵</kbd> run</span>
-              <span><kbd className="px-1.5 py-0.5 font-mono bg-border/5 border border-border/10 rounded text-foreground/80">esc</kbd> close</span>
-              {query.trim() === '' && recents.length > 0 && <span className="ml-auto text-muted font-mono text-[10px]">Recently used first</span>}
+            <div className="flex items-center gap-4 px-4 py-2.5 border-t border-white/10 bg-white/[0.02] text-[10px] font-mono text-white/40">
+              <span><kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/90">↑</kbd> <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/90">↓</kbd> navigate</span>
+              <span><kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/90">↵</kbd> run</span>
+              <span><kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[10px] font-mono text-white/90">esc</kbd> close</span>
+              {query.trim() === '' && recents.length > 0 && <span className="ml-auto text-white/40 font-mono text-[10px]">Recently used first</span>}
             </div>
           </div>
         </div>
@@ -561,40 +605,40 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           the palette). Add/run/delete commands that type into the focused pane. */}
       {showCmdModal && (
         <div
-          className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[60] bg-black/75  flex items-center justify-center p-4 animate-fade-in font-sans select-none"
           onClick={() => setShowCmdModal(false)}
         >
           <div
-            className="w-full max-w-md bg-surface/95 border border-border/[0.08] rounded-2xl shadow-2xl shadow-black/80 overflow-hidden flex flex-col backdrop-blur-xl"
+            className="w-full max-w-md bg-[#1A1B26] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Manage custom commands"
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.08] bg-white/[0.02]">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-black/20">
               <div className="flex items-center gap-2">
-                <TerminalIcon className="w-4 h-4 text-white/80" />
-                <span className="text-xs font-bold font-space text-foreground/90">Custom Commands</span>
+                <TerminalIcon className="w-4 h-4 text-violet-400" />
+                <span className="text-xs font-bold text-white/90 font-mono uppercase tracking-wider">Custom Commands</span>
               </div>
               <button
                 onClick={() => setShowCmdModal(false)}
-                className="p-1 rounded-lg hover:bg-border/10 text-foreground/45 hover:text-foreground/80 transition-colors"
+                className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-4 max-h-[50vh] overflow-y-auto">
+            <div className="p-4 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
               {/* Add form */}
-              <div className="space-y-3 rounded-xl border border-border/[0.08] bg-background/30 p-4">
-                <span className="text-[10px] font-mono font-semibold text-muted uppercase tracking-widest">New command</span>
+              <div className="space-y-3 rounded-2xl border border-white/10 bg-[#1A1B26] border border-white/[0.06] p-3.5">
+                <span className="text-[10px] font-mono font-semibold text-white/40 uppercase tracking-widest">New command</span>
                 <input
                   type="text"
                   value={cmdLabel}
                   onChange={(e) => setCmdLabel(e.target.value)}
                   placeholder="Label (e.g. Run tests)"
-                  className="w-full px-3 py-2 rounded-xl bg-background/40 border border-border/[0.08] text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-border/30 font-space font-medium"
+                  className="w-full px-3 py-2 rounded-xl bg-[#1A1B26] border border-white/10 text-xs text-white/90 placeholder:text-white/40 focus:outline-none focus:border-violet-400 font-sans"
                 />
                 <input
                   type="text"
@@ -607,12 +651,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                     }
                   }}
                   placeholder="Shell command (e.g. npm test)"
-                  className="w-full px-3 py-2 rounded-xl bg-background/40 border border-border/[0.08] text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-border/30 font-mono"
+                  className="w-full px-3 py-2 rounded-xl bg-[#1A1B26] border border-white/10 text-xs text-white/90 placeholder:text-white/40 focus:outline-none focus:border-violet-400 font-mono"
                 />
                 <button
                   onClick={addUserCommand}
                   disabled={!cmdLabel.trim() || !cmdCommand.trim()}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-space transition-colors disabled:opacity-40 disabled:hover:bg-foreground"
+                  className="w-full px-4 py-2 rounded-full bg-violet-500 hover:bg-violet-500/90 text-white text-xs font-semibold shadow-none transition-colors disabled:opacity-40 cursor-pointer"
                 >
                   Add Command
                 </button>
@@ -620,25 +664,25 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
 
               {/* Command list */}
               {userCommands.length === 0 ? (
-                <p className="text-[11px] text-muted font-mono text-center py-4">
+                <p className="text-[11px] text-white/40 font-mono text-center py-4">
                   No custom commands yet — add one above. It will appear in the palette under “Custom Commands”.
                 </p>
               ) : (
                 userCommands.map((uc) => (
                   <div
                     key={uc.id}
-                    className="flex items-center justify-between gap-2 rounded-xl border border-border/[0.08] bg-background/30 px-3.5 py-2.5"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#1A1B26] border border-white/[0.06] px-3.5 py-2.5"
                   >
                     <div className="min-w-0">
-                      <div className="text-xs font-bold font-space text-white/90 truncate">{uc.label}</div>
-                      <div className="text-[10px] text-muted font-mono truncate">$ {uc.command}</div>
+                      <div className="text-xs font-semibold text-white/90 truncate">{uc.label}</div>
+                      <div className="text-[10px] text-white/70 font-mono truncate">$ {uc.command}</div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => runUserCommand(uc)}
                         title="Run in focused pane"
                         aria-label={`Run ${uc.label}`}
-                        className="p-1.5 rounded-lg hover:bg-white/10 text-white/80 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-white/10 text-violet-400 transition-colors"
                       >
                         <Play className="w-3.5 h-3.5" />
                       </button>
@@ -646,7 +690,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                         onClick={() => deleteUserCommand(uc.id)}
                         title="Delete command"
                         aria-label={`Delete ${uc.label}`}
-                        className="p-1.5 rounded-lg hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
+                        className="p-1.5 rounded-lg hover:bg-rose-950/60 text-white/40 hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
