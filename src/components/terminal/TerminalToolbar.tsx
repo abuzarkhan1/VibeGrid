@@ -31,10 +31,13 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   isMaximized,
   hasActivity = false,
 }) => {
-  const { splitPane, toggleMaximize, paneCount, maxPanes } = usePaneStore();
-  const { addToast, requestClosePane } = useUIStore();
+  const splitPane = usePaneStore((s) => s.splitPane);
+  const toggleMaximize = usePaneStore((s) => s.toggleMaximize);
+  const paneCount = usePaneStore((s) => s.paneCount);
+  const maxPanes = usePaneStore((s) => s.maxPanes);
+  const addToast = useUIStore((s) => s.addToast);
+  const requestClosePane = useUIStore((s) => s.requestClosePane);
 
-  // Per-pane identity: 0-based tree-order index → colored number badge.
   const paneIndex = usePaneStore((s) => s.getPaneIndex(nodeId));
   const badgeNumber = Math.max(paneIndex + 1, 1);
   const paneColor = paneColorForIndex(paneIndex);
@@ -77,54 +80,51 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
 
   const handleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Guard against killing a running terminal without confirmation (UX audit 7.1)
     requestClosePane(nodeId);
   };
 
   return (
     <div
       onDoubleClick={handleToggleMaximize}
-      className={`h-7 w-full px-2.5 flex items-center justify-between select-none cursor-pointer bg-[#0f1115] border-b border-white/[0.06] ${
-        isFocused ? 'text-white' : 'text-zinc-400'
+      className={`h-8 w-full px-3 flex items-center justify-between select-none cursor-pointer bg-[#1A1B26] border-b border-white/[0.06] font-sans transition-colors ${
+        isFocused ? 'text-white bg-white/[0.08]' : 'text-white/70 bg-white/[0.02] hover:bg-white/[0.04]'
       }`}
     >
       {/* Pane info */}
-      <div className="flex items-center gap-1.5 min-w-0">
-        {/* Pane index badge: a distinct colored number per pane, so a 2/3/4
-            pane grid is identifiable at a glance — even if borders fail. */}
+      <div className="flex items-center gap-2 min-w-0">
         <span
-          className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-[5px] px-1 text-[10px] font-bold text-black/85"
+          className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-[5px] px-1 text-[10px] font-bold text-black/90 shadow-sm"
           style={{ backgroundColor: paneColor }}
           title={`Pane ${badgeNumber}`}
         >
           {badgeNumber}
         </span>
-        {/* macOS traffic lights (site terminal mock) */}
-        <span className="flex items-center gap-1.5 mr-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-500/70" />
-          <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/70" />
-          <span className="h-2.5 w-2.5 rounded-full bg-forest/70" />
+        {/* macOS traffic lights */}
+        <span className="flex items-center gap-1.5 mr-1">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-400 shadow-[0_0_6px_var(--diff-remove)]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-400 shadow-[0_0_6px_#d29922]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_6px_var(--diff-add)]" />
         </span>
         <TerminalIcon
-          className={`w-3.5 h-3.5 ${isFocused ? '' : 'text-white/40'}`}
-          style={{ color: isFocused ? paneColor : undefined }}
+          className="w-3.5 h-3.5"
+          style={{ color: isFocused ? paneColor : 'var(--ink-muted)' }}
         />
-        <span className="font-['Space_Grotesk'] font-bold text-white text-xs truncate tracking-wide">
+        <span className="font-sans font-semibold text-white/90 text-xs truncate tracking-wide">
           {title}
         </span>
         {displayCwd && (
-          <span className="font-mono text-[10px] text-zinc-400 truncate max-w-[140px]" title={displayCwd}>
+          <span className="font-mono text-[10px] text-white/40 px-1.5 py-0.5 rounded bg-white/[0.04] border border-white/[0.06] truncate max-w-[130px]" title={displayCwd}>
             {displayCwd}
           </span>
         )}
         {hasActivity && !isFocused && (
           <span
-            className="relative flex h-2 w-2 shrink-0"
+            className="relative flex h-2 w-2 shrink-0 ml-0.5"
             title="New output in this pane"
             aria-label="New output in this pane"
           >
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-forest-bright opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-forest-bright" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
           </span>
         )}
       </div>
@@ -135,7 +135,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           onClick={handleSplitHorizontal}
           title="Split Right (Cmd/Ctrl+D)"
           aria-label="Split right"
-          className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+          className="px-1.5 py-1 rounded bg-white/[0.06] border border-white/[0.08] hover:!text-white"
         >
           <Columns className="w-3.5 h-3.5" />
         </button>
@@ -144,7 +144,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           onClick={handleSplitVertical}
           title="Split Down (Cmd/Ctrl+Shift+D)"
           aria-label="Split down"
-          className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+          className="px-1.5 py-1 rounded bg-white/[0.06] border border-white/[0.08] hover:!text-white"
         >
           <Rows className="w-3.5 h-3.5" />
         </button>
@@ -153,7 +153,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           onClick={handleToggleMaximize}
           title={isMaximized ? 'Restore Layout (Cmd/Ctrl+Shift+Enter)' : 'Maximize Pane (Cmd/Ctrl+Shift+Enter)'}
           aria-label={isMaximized ? 'Restore layout' : 'Maximize pane'}
-          className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+          className="px-1.5 py-1 rounded bg-white/[0.06] border border-white/[0.08] hover:!text-white"
         >
           {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         </button>
@@ -162,7 +162,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           onClick={handleClose}
           title="Close Pane (Cmd/Ctrl+W)"
           aria-label="Close pane"
-          className="p-1 rounded-lg hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
+          className="px-1.5 py-1 rounded bg-white/[0.06] border border-white/[0.08] hover:bg-red-400/20 hover:border-red-400/40 hover:text-red-400"
         >
           <X className="w-3.5 h-3.5" />
         </button>

@@ -207,8 +207,22 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
   const [hasExited, setHasExited] = useState(false); // PTY process exited (audit fix)
   const [session, setSession] = useState(0); // bumped to relaunch a dead shell (UX audit P2 #9)
   const exitToastShownRef = useRef(false);
-  // Customization audit C20: a multi-line paste awaits explicit confirmation.
   const [pendingPasteText, setPendingPasteText] = useState<string | null>(null);
+
+  const isFocusedRef = useRef(isFocused);
+  useEffect(() => {
+    isFocusedRef.current = isFocused;
+  }, [isFocused]);
+
+  const onActivityRef = useRef(onActivity);
+  useEffect(() => {
+    onActivityRef.current = onActivity;
+  }, [onActivity]);
+
+  const handleCloseSearch = useCallback(() => {
+    setIsSearchOpen(false);
+    terminalRef.current?.focus();
+  }, []);
 
   // ── Perf: fine-grained store selectors ──────────────────────────────────
   // Each pane subscribes ONLY to (a) its own node in the layout tree and (b)
@@ -364,7 +378,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       setIsDragOver(false);
       if (unlisten) unlisten();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFocused, id, setFocusedPane]);
 
   // Keep the live PTY handle in sync with the store (audit fix for swapPanes):
@@ -375,7 +388,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     if (currentNode?.paneId) {
       ptyPaneIdRef.current = currentNode.paneId;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNode?.paneId]);
 
   // Focus requests from the voice hook (gap 4): after inserting dictation the
@@ -694,8 +706,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             term.scrollToBottom();
           }
           // Surface activity in unfocused panes so users can monitor agents at a glance
-          if (!isFocused) {
-            onActivity?.();
+          if (!isFocusedRef.current) {
+            onActivityRef.current?.();
           }
         });
         if (disposed) return;
@@ -952,56 +964,55 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   return (
     <div
-      className={`relative h-full w-full bg-background p-1.5 overflow-hidden border ${
+      className={`relative h-full w-full bg-[#131420] p-1.5 overflow-hidden border transition-all ${
         isFocused
-          ? 'border-forest/30 shadow-[0_0_15px_rgba(var(--color-accent-rgba),0.07)]'
-          : 'border-border/[0.08]'
+          ? 'border-violet-400/50 shadow-[0_0_20px_var(--accent-glow)]'
+          : 'border-white/[0.08]'
       } ${fontLigatures ? 'font-ligatures' : ''}`}
       style={{ opacity: effOpacity }}
       onContextMenu={handleContextMenu}
     >
       {isSearchOpen && (
-        <SearchBar searchAddon={searchAddonRef.current} onClose={() => setIsSearchOpen(false)} />
+        <SearchBar searchAddon={searchAddonRef.current} onClose={handleCloseSearch} />
       )}
       <div ref={containerRef} className="h-full w-full overflow-hidden" />
 
-      {/* Drag-over highlight (gap 8): dashed forest border while files hover the pane */}
+      {/* Drag-over highlight: dashed accent border while files hover the pane */}
       {isDragOver && (
-        <div className="pointer-events-none absolute inset-1 z-30 rounded-lg border-2 border-dashed border-forest-bright bg-forest/10 flex items-center justify-center animate-fade-in">
-          <span className="px-3 py-1.5 rounded-full bg-surfaceCard/95 border border-forest/40 text-[11px] text-forest-light shadow-lg backdrop-blur-md">
+        <div className="pointer-events-none absolute inset-1 z-30 rounded-xl border-2 border-dashed border-violet-400 bg-violet-500/10 flex items-center justify-center  animate-fade-in">
+          <span className="px-3 py-1.5 rounded-lg text-xs text-white bg-black/80 border border-white/[0.10] shadow-xl">
             Release to insert path(s)
           </span>
         </div>
       )}
 
-      {/* UX audit P1 #11: explain that a shell override only applies to the
-          NEXT spawn — a running shell won't restart just because you changed it. */}
+      {/* Shell override notice */}
       {showShellModal && Boolean(ptyPaneIdRef.current) && (
-        <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-lg border border-forest/30 bg-surfaceCard/95 px-3 py-2 text-[10px] text-white/60 shadow-lg backdrop-blur-md">
+        <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-xl bg-[#1A1B26] border border-white/[0.06] p-2.5 text-[10px] text-white/70 shadow-lg">
           This pane is already running a shell — the new shell applies to the
           next session (Relaunch after the process exits, or reopen the pane).
         </div>
       )}
 
-      {/* Process exited banner (audit fix) — relaunch or close */}
+      {/* Process exited banner — relaunch or close */}
       {hasExited && (
-        <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-lg border border-amber-500/30 bg-[#1a1408]/95 px-3 py-1.5 text-[11px] text-amber-300 shadow-lg backdrop-blur-md animate-fade-in-up">
+        <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-[#1a1408]/90 px-3 py-1.5 text-[11px] text-amber-300 shadow-lg  animate-fade-in-up">
           <span className="relative flex h-2 w-2 shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
           </span>
-          <span className="truncate">Process exited</span>
+          <span className="truncate font-medium">Process exited</span>
           <button
             onClick={relaunch}
             title="Start a new shell in this pane"
-            className="shrink-0 px-2 py-0.5 rounded-md bg-forest/20 border border-forest/40 text-forest-light hover:bg-forest/30 transition-colors"
+            className="px-2.5 py-0.5 rounded-md bg-violet-400/10 hover:bg-violet-400/20 border border-violet-400/20 text-violet-400 text-xs"
           >
             Relaunch
           </button>
           <button
             onClick={() => requestClosePane(id)}
             title="Close this terminal"
-            className="shrink-0 px-2 py-0.5 rounded-md bg-rose-950/50 border border-rose-500/30 text-rose-300 hover:bg-rose-950/80 transition-colors"
+            className="px-2.5 py-0.5 rounded-md bg-red-400/10 hover:bg-red-400/20 border border-red-400/20 text-red-400 text-xs"
           >
             Close
           </button>
@@ -1033,7 +1044,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         <>
           <div className="fixed inset-0 z-[59]" onClick={() => setShowAppearanceMenu(false)} />
           <div
-            className="fixed z-[60] w-[230px] rounded-xl bg-surface/95 border border-border/[0.08] shadow-2xl backdrop-blur-xl p-3 text-xs space-y-2.5 animate-fade-in font-mono"
+            className="fixed z-[60] w-[230px] rounded-xl bg-surface/95 border border-border/[0.08] shadow-2xl  p-3 text-xs space-y-2.5 animate-fade-in font-mono"
             style={{ left: appearancePos.x, top: appearancePos.y }}
           >
             <div className="flex items-center justify-between">

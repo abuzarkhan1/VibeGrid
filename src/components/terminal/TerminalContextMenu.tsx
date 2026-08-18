@@ -24,8 +24,8 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
-    if (rect.right > window.innerWidth) el.style.left = `${window.innerWidth - rect.width - 8}px`;
-    if (rect.bottom > window.innerHeight) el.style.top = `${window.innerHeight - rect.height - 8}px`;
+    if (rect.right > window.innerWidth) el.style.left = `${Math.max(8, window.innerWidth - rect.width - 8)}px`;
+    if (rect.bottom > window.innerHeight) el.style.top = `${Math.max(8, window.innerHeight - rect.height - 8)}px`;
   }, [x, y]);
 
   // Dismiss on Escape
@@ -42,13 +42,13 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
       ref={ref}
       role="menu"
       aria-label="Terminal actions"
-      className="fixed z-[60] min-w-[190px] py-1.5 rounded-xl bg-surface/95 border border-white/[0.08] shadow-2xl backdrop-blur-xl font-mono text-xs animate-fade-in"
+      className="fixed z-[60] min-w-[200px] py-1.5 rounded-2xl bg-[#1A1B26] border border-white/10 shadow-2xl  font-sans text-xs animate-fade-in select-none"
       style={{ left: x, top: y }}
       onClick={(e) => e.stopPropagation()}
     >
       {items.map((item, idx) =>
         item.divider ? (
-          <div key={`div-${idx}`} className="my-1 h-px bg-white/[0.06]" />
+          <div key={`div-${idx}`} className="my-1 h-px bg-white/[0.08]" />
         ) : (
           <button
             key={item.id || idx}
@@ -61,17 +61,17 @@ export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, 
             }}
             className={`w-full flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
               item.disabled
-                ? 'text-white/25 cursor-not-allowed'
-                : 'text-zinc-300 hover:bg-white/10 hover:text-white'
+                ? 'text-white/40 cursor-not-allowed opacity-50'
+                : 'text-white/90 hover:bg-white/10 hover:text-white'
             }`}
           >
-            <span className="w-4 flex justify-center text-zinc-400">{item.icon}</span>
-            <span>{item.label}</span>
+            <span className="w-4 flex justify-center text-white/70">{item.icon}</span>
+            <span className="font-medium">{item.label}</span>
           </button>
         )
       )}
-      <div className="my-1 h-px bg-white/[0.06]" />
-      <div className="px-3 py-1 text-[10px] text-zinc-500">Right-click actions · drag &amp; drop paths to insert</div>
+      <div className="my-1 h-px bg-white/[0.08]" />
+      <div className="px-3 py-1 text-[10px] font-mono text-white/40">Right-click actions · drag &amp; drop paths</div>
     </div>
   );
 };

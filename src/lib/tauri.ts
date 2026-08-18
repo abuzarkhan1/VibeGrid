@@ -29,6 +29,67 @@ export async function spawnPty(
   return await invoke<string>('spawn_pty', { cols, rows, cwd, shell, shellArgs, shellEnv });
 }
 
+export interface PaneSpawnSpec {
+  nodeId: string;
+  cols: number;
+  rows: number;
+  cwd?: string;
+  shell?: string;
+  shellArgs?: string[];
+  env?: Record<string, string>;
+  initialCommand?: string;
+}
+
+export interface BatchSpawnResult {
+  nodeId: string;
+  paneId: string;
+  success: boolean;
+  error?: string;
+}
+
+export async function batchSpawnPanes(
+  specs: PaneSpawnSpec[]
+): Promise<BatchSpawnResult[]> {
+  if (!isTauri()) {
+    return specs.map((s, i) => ({
+      nodeId: s.nodeId,
+      paneId: `mock-pty-${Date.now()}-${i}`,
+      success: true,
+    }));
+  }
+  return await invoke<BatchSpawnResult[]>('batch_spawn_panes', { specs });
+}
+
+export interface AgentDiscoveryResult {
+  agentId: string;
+  isInstalled: boolean;
+  binaryPath?: string;
+  detectedVersion?: string;
+  binarySource?: string;
+}
+
+export async function discoverInstalledAgents(): Promise<AgentDiscoveryResult[]> {
+  if (!isTauri()) {
+    return [
+      { agentId: 'shell', isInstalled: true, binaryPath: '/bin/zsh', detectedVersion: 'zsh 5.9' },
+      { agentId: 'claude-code', isInstalled: true, binaryPath: '/usr/local/bin/claude', detectedVersion: 'claude 0.2.29' },
+      { agentId: 'aider', isInstalled: true, binaryPath: '/usr/local/bin/aider', detectedVersion: 'aider 0.72.0' },
+      { agentId: 'antigravity', isInstalled: false },
+      { agentId: 'codex', isInstalled: false },
+      { agentId: 'grok', isInstalled: false },
+      { agentId: 'kimi', isInstalled: false },
+      { agentId: 'qwen', isInstalled: false },
+      { agentId: 'openhands', isInstalled: false },
+      { agentId: 'ollama', isInstalled: false },
+      { agentId: 'deepseek', isInstalled: false },
+      { agentId: 'gemini', isInstalled: false },
+      { agentId: 'goose', isInstalled: false },
+      { agentId: 'cline', isInstalled: false },
+    ];
+  }
+  return await invoke<AgentDiscoveryResult[]>('discover_installed_agents');
+}
+
 export async function writeToPty(paneId: string, data: string): Promise<void> {
   if (!isTauri()) {
     return;

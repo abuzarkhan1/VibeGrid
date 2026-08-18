@@ -1,9 +1,11 @@
+pub mod agent_commands;
 pub mod global_commands;
 pub mod ipc_commands;
 pub mod pty_commands;
 pub mod voice_commands;
 pub mod workspace_commands;
 
+pub use agent_commands::*;
 pub use global_commands::*;
 pub use ipc_commands::*;
 pub use pty_commands::*;
