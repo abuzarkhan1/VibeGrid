@@ -6,45 +6,108 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: 'rgb(var(--color-bg-rgb, 8 8 10) / <alpha-value>)',
-        surface: 'rgb(var(--color-surface-rgb, 15 17 21) / <alpha-value>)',
-        'surface-hover': 'rgb(var(--color-surface-hover-rgb, 24 26 32) / <alpha-value>)',
-        surfaceCard: 'rgb(var(--color-surface-card-rgb, 15 17 21) / <alpha-value>)',
-        border: 'rgb(var(--color-border-rgb, 255 255 255) / <alpha-value>)',
+        // Structural chrome & backgrounds
+        background: 'var(--color-bg, #090a0f)',
+        sidebar: 'var(--color-sidebar, #0f1117)',
+        surface: 'var(--color-surface, #141721)',
+        'surface-hover': 'var(--color-surface-hover, #1c202e)',
+        'surface-active': 'var(--color-surface-active, #24293b)',
+        surfaceCard: 'var(--color-surface, #141721)',
+        border: 'var(--color-border, rgba(255, 255, 255, 0.08))',
+        'border-subtle': 'var(--color-border-subtle, rgba(255, 255, 255, 0.04))',
+        foreground: 'var(--ink-primary, #F3F4F6)',
+
+        // Functional Glass Densities
+        glass: {
+          1: 'var(--glass-density-1, rgba(255, 255, 255, 0.03))',
+          2: 'var(--glass-density-2, rgba(255, 255, 255, 0.06))',
+          3: 'var(--glass-density-3, rgba(255, 255, 255, 0.10))',
+          4: 'var(--glass-density-4, rgba(255, 255, 255, 0.15))',
+          5: 'var(--glass-density-5, rgba(255, 255, 255, 0.25))',
+          'border-light': 'var(--glass-border-light, rgba(255, 255, 255, 0.15))',
+          'border-dark': 'var(--glass-border-dark, rgba(0, 0, 0, 0.30))',
+        },
+
+        // Solid Text (Ink) Tokens
+        ink: {
+          DEFAULT: 'var(--ink-primary, #F3F4F6)',
+          primary: 'var(--ink-primary, #F3F4F6)',
+          secondary: 'var(--ink-secondary, #9CA3AF)',
+          muted: 'var(--ink-muted, #6B7280)',
+        },
+        'text-secondary': 'var(--ink-secondary, #9CA3AF)',
+        muted: 'var(--ink-muted, #6B7280)',
+
+        // Luminous Accent Tokens
+        accent: {
+          DEFAULT: 'var(--accent-primary, #8B5CF6)',
+          primary: 'var(--accent-primary, #8B5CF6)',
+          secondary: 'var(--color-accent-secondary, #8B5CF6)',
+          glow: 'var(--accent-glow, rgba(139, 92, 246, 0.4))',
+        },
+        'accent-primary': 'var(--accent-primary, #8B5CF6)',
+        'accent-secondary': 'var(--color-accent-secondary, #8B5CF6)',
+        'accent-glow': 'var(--accent-glow, rgba(139, 92, 246, 0.4))',
+
+        // Semantic Diff Tokens
+        diff: {
+          add: {
+            DEFAULT: 'var(--diff-add-text, #4ADE80)',
+            text: 'var(--diff-add-text, #4ADE80)',
+            bg: 'var(--diff-add-bg, rgba(34, 197, 94, 0.15))',
+          },
+          remove: {
+            DEFAULT: 'var(--diff-remove-text, #F87171)',
+            text: 'var(--diff-remove-text, #F87171)',
+            bg: 'var(--diff-remove-bg, rgba(239, 68, 68, 0.15))',
+          },
+          warning: '#d29922',
+        },
+        'diff-add': 'var(--diff-add-text, #4ADE80)',
+        'diff-add-bg': 'var(--diff-add-bg, rgba(34, 197, 94, 0.15))',
+        'diff-remove': 'var(--diff-remove-text, #F87171)',
+        'diff-remove-bg': 'var(--diff-remove-bg, rgba(239, 68, 68, 0.15))',
+        'diff-warning': '#d29922',
+
         forest: {
-          DEFAULT: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
-          bright: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
-          light: 'rgb(var(--color-accent-rgb, 255 255 255) / <alpha-value>)',
-          dark: 'rgb(var(--color-accent-rgb, 200 200 200) / <alpha-value>)',
+          DEFAULT: 'var(--accent-primary, #8B5CF6)',
+          bright: 'var(--accent-primary, #8B5CF6)',
+          light: 'var(--accent-primary, #8B5CF6)',
+          dark: '#7C3AED',
         },
-        neon: 'var(--color-accent, #ffffff)',
-        bgDark: 'rgb(var(--color-bg-rgb, 8 8 10) / <alpha-value>)',
-        'accent-primary': 'var(--color-accent, #ffffff)',
-        'accent-secondary': 'var(--color-accent, #ffffff)',
-        'accent-glow': 'transparent',
-        foreground: 'rgb(var(--color-fg-rgb, 244 244 245) / <alpha-value>)',
-        muted: 'rgb(var(--color-muted-rgb, 139 147 161) / <alpha-value>)',
+        neon: 'var(--accent-primary, #8B5CF6)',
+        bgDark: 'var(--color-bg, #090a0f)',
         pane: {
-          bg: 'rgb(var(--color-bg-rgb, 8 8 10) / <alpha-value>)',
-          header: 'rgb(var(--color-surface-rgb, 15 17 21) / <alpha-value>)',
-          border: 'rgb(var(--color-border-rgb, 255 255 255) / <alpha-value>)',
-          activeBorder: 'var(--color-accent, #ffffff)',
+          bg: 'var(--glass-density-2, rgba(255, 255, 255, 0.06))',
+          header: 'var(--glass-density-3, rgba(255, 255, 255, 0.10))',
+          border: 'var(--glass-border-light, rgba(255, 255, 255, 0.15))',
+          activeBorder: 'var(--accent-primary, #8B5CF6)',
         },
+      },
+      boxShadow: {
+        'glass-edge': 'var(--glass-edge-effect)',
+        'glass-panel': 'var(--glass-edge-effect), 0 8px 32px 0 rgba(0, 0, 0, 0.25)',
+        'glass-panel-dense': 'var(--glass-edge-effect), 0 12px 36px 0 rgba(0, 0, 0, 0.35)',
+        'glass-pill': 'var(--glass-edge-effect)',
+        'accent-glow': '0 0 20px var(--accent-glow, rgba(139, 92, 246, 0.4))',
+      },
+      backdropBlur: {
+        'glass-sm': '8px',
+        'glass': '16px',
+        'glass-dense': '24px',
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        serif: ['Newsreader', 'Georgia', 'serif'],
-        newsreader: ['Newsreader', 'Georgia', 'serif'],
-        space: ['"Space Grotesk"', 'sans-serif'],
-        grotesk: ['"Space Grotesk"', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
+        ui: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        code: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
       },
       animation: {
-        'fade-in': 'fadeIn 0.15s ease-out forwards',
+        'fade-in': 'fadeIn 0.12s ease-out forwards',
       },
       keyframes: {
         fadeIn: {
-          '0%': { opacity: '0', transform: 'scale(0.98)' },
+          '0%': { opacity: '0', transform: 'scale(0.99)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
       },

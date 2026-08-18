@@ -4,30 +4,67 @@
 
 @layer base {
   :root {
-    --color-bg: #08080a;
-    --color-bg-rgb: 8 8 10;
-    --color-surface: #0f1115;
-    --color-surface-rgb: 15 17 21;
-    --color-surface-card-rgb: 15 17 21;
-    --color-surface-hover: #181a20;
-    --color-surface-hover-rgb: 24 26 32;
+    /* ── Core Semantic Variables ── */
+    --color-bg: #1A1B26;
+    --color-bg-rgb: 9 10 15;
+    --color-sidebar: #0f1117;
+    --color-sidebar-rgb: 15 17 23;
+    --color-surface: #1A1B26;
+    --color-surface-rgb: 20 23 33;
+    --color-surface-card-rgb: 20 23 33;
+    --color-surface-hover: #1c202e;
+    --color-surface-hover-rgb: 28 32 46;
+    --color-surface-active: #24293b;
+    --color-surface-active-rgb: 36 41 59;
     --color-border: rgba(255, 255, 255, 0.08);
     --color-border-rgb: 255 255 255;
-    --color-accent: #ffffff;
-    --color-accent-secondary: #ffffff;
-    /* RGB channel triplets backing the alpha-capable Tailwind colors
-       (forest*, surface, surface-hover, surfaceCard, background, foreground,
-       muted, border). Kept in sync by applyThemeVariables on every theme change
-       so opacity modifiers work for ALL components, not just the terminal. */
-    --color-accent-rgb: 255 255 255;
-    /* Comma-separated channels for legacy-safe rgba(var(--x), a) in plain CSS. */
-    --color-accent-rgba: 255, 255, 255;
-    --color-fg: #f4f4f5;
-    --color-fg-rgb: 244 244 245;
-    --color-muted: #8b93a1;
-    --color-muted-rgb: 139 147 161;
-    --color-selection: rgba(255, 255, 255, 0.25);
+    --color-border-subtle: rgba(255, 255, 255, 0.04);
+    --color-border-subtle-rgb: 255 255 255;
+    --color-fg: #F3F4F6;
+    --color-fg-rgb: 243 244 246;
+    --color-text-secondary: #9CA3AF;
+    --color-text-secondary-rgb: 156 163 175;
+    --color-muted: #6B7280;
+    --color-muted-rgb: 107 114 128;
+    --color-selection: rgba(139, 92, 246, 0.3);
+    --font-ui: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
     color-scheme: dark;
+
+    /* ── Functional Glassmorphism Density Scale ── */
+    --glass-density-1: rgba(255, 255, 255, 0.03); /* Base OS/Desktop layer */
+    --glass-density-2: rgba(255, 255, 255, 0.06); /* Sidebar, Background panels */
+    --glass-density-3: rgba(255, 255, 255, 0.10); /* Active cards, Hover states */
+    --glass-density-4: rgba(255, 255, 255, 0.15); /* Code editor / Diff background */
+    --glass-density-5: rgba(255, 255, 255, 0.25); /* Modals, Dropdowns, Tooltips */
+
+    /* Glass Refraction Edges */
+    --glass-border-light: rgba(255, 255, 255, 0.15); /* Top and Left */
+    --glass-border-dark: rgba(0, 0, 0, 0.30);       /* Bottom and Right */
+    --glass-edge-effect: 
+      inset 1px 1px 0px 0px var(--glass-border-light),
+      inset -1px -1px 0px 0px var(--glass-border-dark);
+
+    /* Solid Ink Tokens (Opaque High-Contrast) */
+    --ink-primary: #F3F4F6;      /* 95% opacity white for main text */
+    --ink-secondary: #9CA3AF;    /* 60% opacity white for metadata */
+    --ink-muted: #6B7280;        /* 40% opacity white for disabled/muted */
+
+    /* Luminous Accents & Glow */
+    --accent-primary: #8B5CF6;
+    --color-accent: #8B5CF6;
+    --color-accent-secondary: #8B5CF6;
+    --color-accent-rgb: 139 92 246;
+    --color-accent-rgba: 139, 92, 246;
+    --accent-glow: rgba(139, 92, 246, 0.4);
+
+    /* Semantic Diff Tokens */
+    --diff-add-bg: rgba(34, 197, 94, 0.15);  /* Transparent green for line bg */
+    --diff-add-text: #4ADE80;               /* Solid bright green for text */
+    --color-diff-add: #4ADE80;
+    --diff-remove-bg: rgba(239, 68, 68, 0.15); /* Transparent red for line bg */
+    --diff-remove-text: #F87171;            /* Solid bright red for text */
+    --color-diff-remove: #F87171;
   }
 
   html {
@@ -35,51 +72,111 @@
   }
 
   body {
-    background-color: var(--color-bg, #08080a);
-    color: var(--color-fg, #f4f4f5);
-    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
-    font-weight: 400;
+    background-color: var(--color-bg, #1A1B26);
+    color: var(--ink-primary, #F3F4F6);
+    font-family: var(--font-ui);
+    font-weight: 450;
     user-select: none;
     -webkit-user-select: none;
     overflow: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-ui);
+    color: var(--ink-primary);
+    font-weight: 600;
   }
 
   button, input, optgroup, select, textarea {
-    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-ui);
   }
 
   code, kbd, samp, pre {
-    font-family: 'JetBrains Mono', Menlo, monospace;
+    font-family: var(--font-mono);
   }
 
   ::selection {
-    background: var(--color-selection, rgba(255, 255, 255, 0.25));
+    background: var(--color-selection, rgba(139, 92, 246, 0.3));
     color: #ffffff;
   }
 
-  /* Vertical label helper (collapsed sidebar) */
   .writing-mode-vertical {
     writing-mode: vertical-rl;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-accent);
+    outline: 2px solid var(--accent-primary);
     outline-offset: 1px;
-    border-radius: 3px;
+    border-radius: 6px;
   }
+}
+
+/* ================================================================
+   FUNCTIONAL GLASSMORPHISM UTILITIES
+   ================================================================ */
+@layer utilities {
+  /* Dynamic Mesh Gradient Background */
+  .glass-mesh-bg {
+    background-color: #1A1B26;
+  }
+
+  /* 1. Standard Glass Panel → Codex dark surface */
+  .glass-panel {
+    background: #1A1B26;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+
+  .glass-panel:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* 2. Dense panel → same dark but with slightly stronger border */
+  .glass-panel--dense {
+    background: #1A1B26;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* 3. Glass Pill → slim dark tag/badge */
+  .glass-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-family: monospace;
+    transition: all 0.15s ease;
+  }
+
+  .glass-pill:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .glass-pill--active {
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+    border-color: rgba(139, 92, 246, 0.35);
+  }
+
+  /* 4. Glass Densities directly as utility classes */
+  .glass-d1 { background: rgba(255, 255, 255, 0.02); }
+  .glass-d2 { background: rgba(255, 255, 255, 0.04); }
+  .glass-d3 { background: rgba(255, 255, 255, 0.06); }
+  .glass-d4 { background: rgba(255, 255, 255, 0.08); }
+  .glass-d5 { background: rgba(255, 255, 255, 0.12); }
 }
 
 /* ================================================================
    CUSTOMIZATION AUDIT: global appearance classes
    ================================================================ */
 
-/* Master animation switch: applied to <html> when animations are disabled.
-   Kills CSS transitions/animations app-wide without touching component code
-   (customization audit C26). Also honors prefers-reduced-motion. */
+/* Master animation switch: applied to <html> when animations are disabled. */
 .vibegrid-no-anim *,
 .vibegrid-no-anim *::before,
 .vibegrid-no-anim *::after {
@@ -96,54 +193,26 @@
   }
 }
 
-/* Compact chrome: slightly tighter header/status/pane padding (audit C14). */
+/* Compact chrome: slightly tighter header/status/pane padding. */
 .vibegrid-compact header {
-  height: 28px !important;
-  min-height: 28px;
+  height: 36px !important;
+  min-height: 36px;
   padding-left: 8px !important;
   padding-right: 8px !important;
 }
 .vibegrid-compact footer {
-  height: 20px !important;
-  min-height: 20px;
-}
-.vibegrid-compact .p-2\.5 {
-  padding: 6px !important;
+  height: 24px !important;
+  min-height: 24px;
 }
 
-/* ================================================================
-   MOTION & BRAND HELPERS (VibeGrid vg-* system, used by the app)
-   ================================================================ */
-
-/* Fade-in-up (first-run hint) */
+/* Fade-in animations */
 @keyframes fade-in-up {
-  0%   { opacity: 0; transform: translateY(20px); }
+  0%   { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* Serif heading helper (Instrument Serif, as used on the site) */
-.vg-serif {
-  font-optical-sizing: auto;
-  font-family: 'Instrument Serif', Georgia, serif;
-  font-weight: 400;
-}
+.animate-fade-in-up { animation: 0.2s ease-out both fade-in-up; }
 
-/* Text glow: azure accent (vg-text-glow) */
-.vg-text-glow {
-  text-shadow: 0 0 16px rgba(11,107,196,0.4);
-}
-
-/* Hover accent glow flare (vg-glow-flare) */
-.vg-glow-flare { transition: text-shadow 0.5s, filter 0.5s; }
-.vg-glow-flare:hover {
-  text-shadow: 0 0 30px rgba(92,194,255,0.55), 0 0 60px rgba(92,194,255,0.3), 0 0 120px rgba(92,194,255,0.15);
-  filter: brightness(1.2);
-}
-
-/* Useful generic entry animation */
-.animate-fade-in-up { animation: 0.6s ease-out both fade-in-up; }
-
-/* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in-up,
   .animate-fade-in { animation: none !important; }
@@ -152,32 +221,17 @@
 /* ================================================================
    Custom styling for Allotment dividers & containers
    ================================================================ */
-/* Brand the divider system through allotment's own CSS variables (no
-   hashed-class dependency): the 1px separator line, the sash hover
-   highlight, the 8px drag hit-area and the 5px hover bar. */
 .vibegrid-allotment {
-  /* Separator and focus border now follow --color-accent so custom themes
-     change divider colors too. Fallback to azure when JS hasn't run yet. */
-  --separator-border: rgba(var(--color-accent-rgba, 60, 149, 240), 0.5);
-  --focus-border: var(--color-accent, #3c95f0);
-  --sash-size: 8px;
-  --sash-hover-size: 5px;
-}
-
-/* CRITICAL: only the ALLOTMENT CONTAINER is sized here. Allotment's panes
-   (class split-view-view, position:absolute) carry their own inline
-   left/width/height — a broad [class*="splitView"] match would also hit
-   splitViewView__* and force every pane to 100% of the container, stacking
-   them on top of each other (the 'panes merging' bug for grids > 1 row). */
-.vibegrid-allotment {
+  --separator-border: var(--color-border, rgba(255, 255, 255, 0.08));
+  --focus-border: var(--accent-primary, #8B5CF6);
+  --sash-size: var(--sash-size, 6px);
+  --sash-hover-size: calc(var(--sash-size, 6px) + 2px);
   height: 100% !important;
   width: 100% !important;
   min-height: 0 !important;
   min-width: 0 !important;
 }
 
-/* Sash (draggable divider): subtle rest state, accent fill on hover/active.
-   [class*="sash"] is a stable match across allotment versions. */
 .vibegrid-allotment [class*="sash"] {
   background-color: transparent !important;
   transition: background-color 0.12s ease;
@@ -185,18 +239,16 @@
 
 .vibegrid-allotment [class*="sash"]:hover,
 .vibegrid-allotment [class*="sash-active"] {
-  background-color: rgba(var(--color-accent-rgba, 60, 149, 240), 0.4) !important;
+  background-color: rgba(139, 92, 246, 0.35) !important;
 }
 
-/* Crisp center handle on the drag line while hovering/active */
 .vibegrid-allotment [class*="sash"]:hover:before,
 .vibegrid-allotment [class*="sash-active"]:before {
-  background: var(--color-accent, #3c95f0) !important;
+  background: var(--accent-primary, #8B5CF6) !important;
   border-radius: 2px;
-  box-shadow: 0 0 10px rgba(var(--color-accent-rgba, 60, 149, 240), 0.55);
 }
 
-/* Custom thin dark scrollbars (neutral, professional) */
+/* Custom thin glass scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -207,12 +259,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* xterm.js custom styling overrides */
@@ -225,20 +277,15 @@
 }
 
 .xterm-viewport::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 3px;
 }
 
 .xterm-viewport::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.22);
 }
 
-/* xterm selection is now handled dynamically by xterm.js theme options */
-.xterm .xterm-selection div {
-  /* removed !important override */
-}
-
-/* Font ligatures for monospace fonts that support them (Fira Code, JetBrains Mono) */
+/* Font ligatures for monospace fonts */
 .font-ligatures .xterm-rows {
   font-variant-ligatures: normal;
   font-feature-settings: "liga" 1, "calt" 1;
@@ -250,105 +297,339 @@
 }
 
 /* ================================================================
-   PANE FRAME — explicit pane boundaries (independent of Tailwind)
-   ================================================================
-   These rules are written in plain CSS (no Tailwind class generation) so the
-   boundary between split panes ALWAYS renders — even if a utility class is
-   missing from the build, cached, or a color/NN opacity class fails to
-   compile. Applied to the TerminalContainer root via .vg-pane-frame.
-
-   Colors derive from the accent channel vars (--color-accent-rgb) so a
-   custom/accent theme change flows into the frame too; the fallbacks keep
-   the boundary visible even before JS runs.
+   PANE FRAME — explicit pane boundaries with Glass Refraction
    ================================================================ */
 .vg-pane-frame {
-  border: 1px solid var(--color-border, rgba(255, 255, 255, 0.08));
-  background-color: var(--color-bg, #08080a);
+  border-radius: var(--pane-radius, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-density-2);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: var(--glass-edge-effect);
 }
-/* Permanent colored identity rail: a solid 4px strip in this pane's badge
-   color (--pane-accent set per pane index). Solid background paint only —
-   cannot be dropped by opacity-class generation or webview compositing. */
+
 .vg-pane-frame::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  border-radius: 7px 7px 0 0;
-  background-color: var(--pane-accent, var(--color-accent, #3c95f0));
+  height: 2px;
+  border-radius: 11px 11px 0 0;
+  background-color: var(--pane-accent, var(--accent-primary, #8B5CF6));
   z-index: 30;
   pointer-events: none;
 }
-/* Focused pane: accent border with subtle accent glow */
+
 .vg-pane-frame.vg-pane-focused {
-  border-color: rgba(var(--color-accent-rgba, 255, 255, 255), 0.3);
-  box-shadow: 0 0 15px rgba(var(--color-accent-rgba, 255, 255, 255), 0.07);
-}
-/* Alternate pane tint: slightly lighter than bg (derived via opacity) */
-.vg-pane-frame.vg-pane-alt {
-  background-color: rgb(var(--color-surface-rgb, 12 12 15));
-}
-.vg-pane-frame.vg-pane-focused.vg-pane-alt {
-  background-color: rgb(var(--color-surface-hover-rgb, 21 34 56));
-}
-/* Light chrome: keep the frame visible on light surfaces */
-html.vibegrid-light .vg-pane-frame {
-  border-color: rgba(var(--color-accent-rgba, 9, 105, 218), 0.75);
-}
-html.vibegrid-light .vg-pane-frame.vg-pane-focused {
-  background-color: rgba(var(--color-accent-rgba, 9, 105, 218), 0.08);
-}
-html.vibegrid-light .vg-pane-frame.vg-pane-alt {
-  background-color: rgba(var(--color-border-rgb, 0, 0, 0), 0.03);
-}
-html.vibegrid-light .vg-pane-frame.vg-pane-focused.vg-pane-alt {
-  background-color: rgba(var(--color-accent-rgba, 9, 105, 218), 0.1);
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: var(--glass-edge-effect), 0 0 20px var(--accent-glow);
 }
 
 /* ================================================================
-   LIGHT CHROME (customization audit C3): html.vibegrid-light is toggled by
-   applyThemeVariables when themeMode resolves to 'light'. The Tailwind config
-   maps the structural chrome colors (bg/surface/card/foreground/accent) to CSS
-   variables, which flip automatically — these overrides remap the hardcoded
-   white-alpha utilities (text/surfaces/inputs/borders) that would otherwise
-   stay white-on-light and become unreadable.
+   LIGHT CHROME ADAPTATIONS
    ================================================================ */
-html.vibegrid-light .text-white { color: rgba(13, 17, 23, 0.92); }
-html.vibegrid-light .text-white\/90 { color: rgba(13, 17, 23, 0.9); }
-html.vibegrid-light .text-white\/85 { color: rgba(13, 17, 23, 0.85); }
-html.vibegrid-light .text-white\/80 { color: rgba(13, 17, 23, 0.8); }
-html.vibegrid-light .text-white\/75 { color: rgba(13, 17, 23, 0.75); }
-html.vibegrid-light .text-white\/70 { color: rgba(13, 17, 23, 0.7); }
-html.vibegrid-light .text-white\/65 { color: rgba(13, 17, 23, 0.65); }
-html.vibegrid-light .text-white\/60 { color: rgba(13, 17, 23, 0.6); }
-html.vibegrid-light .text-white\/50 { color: rgba(13, 17, 23, 0.5); }
-html.vibegrid-light .text-white\/45 { color: rgba(13, 17, 23, 0.45); }
-html.vibegrid-light .text-white\/40 { color: rgba(13, 17, 23, 0.4); }
-html.vibegrid-light .text-white\/35 { color: rgba(13, 17, 23, 0.35); }
-html.vibegrid-light .text-white\/30 { color: rgba(13, 17, 23, 0.3); }
-html.vibegrid-light .text-white\/25 { color: rgba(13, 17, 23, 0.25); }
-html.vibegrid-light [class*="bg-white/[0.02]"] { background-color: rgba(13, 17, 23, 0.02); }
-html.vibegrid-light [class*="bg-white/[0.03]"] { background-color: rgba(13, 17, 23, 0.03); }
-html.vibegrid-light [class*="bg-white/[0.04]"] { background-color: rgba(13, 17, 23, 0.04); }
-html.vibegrid-light [class*="bg-white/[0.05]"] { background-color: rgba(13, 17, 23, 0.05); }
-html.vibegrid-light [class*="bg-white/[0.06]"] { background-color: rgba(13, 17, 23, 0.06); }
-html.vibegrid-light .bg-white\/5 { background-color: rgba(13, 17, 23, 0.05); }
-html.vibegrid-light .bg-white\/10 { background-color: rgba(13, 17, 23, 0.1); }
-html.vibegrid-light [class*="border-white/[0.04]"] { border-color: rgba(13, 17, 23, 0.04); }
-html.vibegrid-light [class*="border-white/[0.06]"] { border-color: rgba(13, 17, 23, 0.06); }
-html.vibegrid-light [class*="border-white/[0.08]"] { border-color: rgba(13, 17, 23, 0.08); }
-html.vibegrid-light .border-white\/10 { border-color: rgba(13, 17, 23, 0.14); }
-html.vibegrid-light .bg-black\/50 { background-color: rgba(255, 255, 255, 0.7); }
-html.vibegrid-light .bg-black\/40 { background-color: rgba(255, 255, 255, 0.65); }
-html.vibegrid-light .hover\:bg-black\/40:hover { background-color: rgba(255, 255, 255, 0.75); }
-html.vibegrid-light .hover\:text-white\/75:hover { color: rgba(13, 17, 23, 0.75); }
-html.vibegrid-light .bg-black\/30 { background-color: rgba(255, 255, 255, 0.6); }
-html.vibegrid-light .bg-black\/20 { background-color: rgba(255, 255, 255, 0.55); }
-html.vibegrid-light .placeholder-white\/30 { color: rgba(13, 17, 23, 0.4); }
-html.vibegrid-light ::-webkit-scrollbar-thumb {
-  background: rgba(13, 17, 23, 0.25);
+html.vibegrid-light {
+  --glass-density-1: rgba(0, 0, 0, 0.02);
+  --glass-density-2: rgba(0, 0, 0, 0.04);
+  --glass-density-3: rgba(0, 0, 0, 0.07);
+  --glass-density-4: rgba(0, 0, 0, 0.10);
+  --glass-density-5: rgba(0, 0, 0, 0.15);
+  --glass-border-light: rgba(255, 255, 255, 0.70);
+  --glass-border-dark: rgba(0, 0, 0, 0.08);
+  --ink-primary: #111827;
+  --ink-secondary: #4B5563;
+  --ink-muted: #9CA3AF;
+  --diff-add-bg: rgba(34, 197, 94, 0.12);
+  --diff-add-text: #15803D;
+  --diff-remove-bg: rgba(239, 68, 68, 0.12);
+  --diff-remove-text: #B91C1C;
 }
-html.vibegrid-light ::-webkit-scrollbar-thumb:hover {
-  background: rgba(13, 17, 23, 0.4);
+
+html.vibegrid-light .glass-mesh-bg {
+  background-color: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.04) 0px, transparent 60%);
 }
+
+/* ================================================================
+   VIBEGRID MASTER SPLASH ANIMATION SPECIFICATION
+   ================================================================ */
+
+.splash {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(255, 255, 255, 0.035),
+      transparent 38%
+    ),
+    #050608;
+  animation: splashFadeOut 0.8s ease forwards;
+  animation-delay: 6.8s;
+}
+
+.logo-container {
+  position: relative;
+  width: 260px;
+  height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(20px);
+}
+
+.logo {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.circle {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 660;
+  stroke-dashoffset: 660;
+  filter:
+    drop-shadow(0 0 4px rgba(255,255,255,0.65))
+    drop-shadow(0 0 14px rgba(255,255,255,0.15));
+  animation:
+    drawCircle 1.05s
+    cubic-bezier(.65,0,.35,1)
+    forwards;
+  animation-delay: 1.25s;
+}
+
+.side {
+  fill: none;
+  stroke: rgba(255,255,255,0.95);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-dasharray: 55;
+  stroke-dashoffset: 55;
+  filter:
+    drop-shadow(0 0 5px rgba(255,255,255,0.6));
+  animation:
+    drawSide 0.45s
+    cubic-bezier(.65,0,.35,1)
+    forwards;
+}
+
+.side-1 {
+  animation-delay: 0.10s;
+}
+
+.side-2 {
+  animation-delay: 0.18s;
+}
+
+.side-3 {
+  animation-delay: 0.26s;
+}
+
+.side-4 {
+  animation-delay: 0.34s;
+}
+
+.card {
+  fill: #ffffff;
+  filter:
+    drop-shadow(0 5px 8px rgba(0,0,0,0.55))
+    drop-shadow(0 0 7px rgba(255,255,255,0.08));
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation:
+    cardAppear 0.75s
+    cubic-bezier(.16,1,.3,1)
+    forwards;
+}
+
+.card-1 {
+  --x: -75px;
+  --y: -75px;
+  animation-delay: 1.75s;
+}
+
+.card-2 {
+  --x: 75px;
+  --y: -75px;
+  animation-delay: 1.85s;
+}
+
+.card-3 {
+  --x: -75px;
+  --y: 75px;
+  animation-delay: 1.95s;
+}
+
+.card-4 {
+  --x: 75px;
+  --y: 75px;
+  animation-delay: 2.05s;
+}
+
+.logo-glow {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  filter: blur(35px);
+  opacity: 0;
+  animation:
+    glowIn 0.8s ease forwards;
+  animation-delay: 2.55s;
+}
+
+.brand {
+  margin-top: 18px;
+  display: flex;
+  font-size: 48px;
+  font-weight: 600;
+  letter-spacing: -2px;
+  color: white;
+  opacity: 0;
+  transform: translateY(18px);
+  animation:
+    textReveal 0.9s
+    cubic-bezier(.16,1,.3,1)
+    forwards;
+  animation-delay: 3.05s;
+}
+
+.brand span {
+  display: inline-block;
+}
+
+.brand .vibe {
+  color: #ffffff;
+}
+
+.brand .grid {
+  color: #aeb1b7;
+}
+
+.underline {
+  width: 0;
+  height: 1px;
+  margin-top: 16px;
+  background: rgba(255,255,255,0.7);
+  box-shadow:
+    0 0 8px rgba(255,255,255,0.5),
+    0 0 20px rgba(255,255,255,0.2);
+  animation:
+    lineReveal 0.7s ease forwards;
+  animation-delay: 3.75s;
+}
+
+@keyframes drawSide {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes drawCircle {
+  0% {
+    stroke-dashoffset: 660;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes cardAppear {
+  0% {
+    opacity: 0;
+    transform:
+      translate(var(--x), var(--y))
+      scale(0.45);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform:
+      translate(0, 0)
+      scale(1);
+  }
+}
+
+@keyframes glowIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  60% {
+    opacity: 0.8;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+}
+
+@keyframes textReveal {
+  0% {
+    opacity: 0;
+    transform:
+      translateY(18px)
+      scale(0.96);
+    filter: blur(8px);
+  }
+  70% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes lineReveal {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    width: 150px;
+    opacity: 1;
+  }
+}
+
+@keyframes splashFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .logo-container {
+    width: 210px;
+    height: 210px;
+  }
+  .brand {
+    font-size: 38px;
+  }
+}
+
