@@ -26,19 +26,24 @@ export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node, dep
   // If a pane is maximized, render only that pane
   if (maximizedPaneId) {
     return (
-      <div className="h-full w-full p-1 bg-bgDark">
-        <TerminalContainer id={maximizedPaneId} title="Maximized Pane" />
+      // Pure Black background for maximized state gutter
+      <div className="h-full w-full p-1 bg-black">
+        <div className="h-full w-full rounded-lg overflow-hidden border border-white/5 bg-black">
+          <TerminalContainer id={maximizedPaneId} title="Maximized Pane" />
+        </div>
       </div>
     );
   }
 
   // If node is a terminal leaf. The wrapper adds a visible gutter around
-  // every pane (the page bg shows through), so adjacent panes read as distinct
-  // tiles even before you notice the azure border.
+  // every pane (the pure black bg shows through), so adjacent panes read as distinct
+  // tiles even before you notice the subtle white border.
   if (node.type === 'terminal') {
     return (
-      <div className="h-full w-full p-1 min-h-0 min-w-0 overflow-hidden">
-        <TerminalContainer id={node.id} title={node.title} />
+      <div className="h-full w-full p-1 min-h-0 min-w-0 overflow-hidden bg-black">
+        <div className="h-full w-full rounded-lg overflow-hidden border border-white/5 bg-black transition-colors duration-300 hover:border-white/10">
+          <TerminalContainer id={node.id} title={node.title} />
+        </div>
       </div>
     );
   }
@@ -104,9 +109,11 @@ const SplitView: React.FC<{ node: SplitNode; depth: number }> = React.memo(({ no
   //     because any structural re-grid bumps gridVersion and remounts the whole
   //     tree first. And it can never fire during a divider drag: setRatio
   //     changes the ratio, not the child identities.
+  const leftChildId = node.children[0].id;
+  const rightChildId = node.children[1].id;
   useEffect(() => {
     allotmentRef.current?.reset();
-  }, [node.children[0].id, node.children[1].id]);
+  }, [leftChildId, rightChildId]);
 
   useEffect(() => {
     allotmentRef.current?.reset();
@@ -191,8 +198,9 @@ const SplitView: React.FC<{ node: SplitNode; depth: number }> = React.memo(({ no
   );
 
   return (
+    // Pure Black background for the split container
     <div
-      className="relative h-full w-full bg-bgDark overflow-hidden min-h-0 min-w-0"
+      className="relative h-full w-full bg-black overflow-hidden min-h-0 min-w-0"
       onDoubleClick={handleDoubleClick}
     >
       <div ref={containerRef} className="h-full w-full min-h-0 min-w-0">
