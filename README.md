@@ -14,9 +14,6 @@
   [![Status](https://img.shields.io/badge/Version-v0.1.0_Beta-10b981.svg?style=for-the-badge)](#)
 
   <p align="center">
-    <a href="http://localhost:3000"><strong>Explore Marketing Website »</strong></a>
-    <br />
-    <br />
     <a href="#-quick-start">Quick Start</a>
     ·
     <a href="#-key-features">Key Features</a>

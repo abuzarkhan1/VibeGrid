@@ -126,8 +126,6 @@ impl<R: Runtime> PtyManager<R> {
             .take_writer()
             .map_err(|e| format!("Failed to take PTY writer: {}", e))?;
 
-        spawn_pty_reader(pane_id.clone(), reader, batcher, self.clone());
-
         let session = PaneSession {
             master: pair.master,
             writer,
@@ -135,6 +133,8 @@ impl<R: Runtime> PtyManager<R> {
         };
 
         self.sessions.lock().insert(pane_id.clone(), session);
+
+        spawn_pty_reader(pane_id.clone(), reader, batcher, self.clone());
 
         Ok(pane_id)
     }

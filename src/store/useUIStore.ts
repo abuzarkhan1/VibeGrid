@@ -17,6 +17,7 @@ export interface ToastMessage {
 interface UIState {
   isCommandPaletteOpen: boolean;
   isSettingsOpen: boolean;
+  isAboutOpen: boolean;
   activeSettingsTab: 'font' | 'theme' | 'terminal' | 'workspaces' | 'limits' | 'appearance' | 'keyboard' | 'profiles';
   isCheatsheetOpen: boolean;
   isDiffViewerOpen: boolean;
@@ -39,6 +40,8 @@ interface UIState {
   toggleCommandPalette: () => void;
   setCommandPaletteOpen: (open: boolean) => void;
   toggleSettings: () => void;
+  setAboutOpen: (open: boolean) => void;
+  toggleAbout: () => void;
   setActiveSettingsTab: (tab: 'font' | 'theme' | 'terminal' | 'workspaces' | 'limits' | 'appearance' | 'keyboard' | 'profiles') => void;
   setCheatsheetOpen: (open: boolean) => void;
   toggleDiffViewer: () => void;
@@ -75,6 +78,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set, get) => ({
   isCommandPaletteOpen: false,
   isSettingsOpen: false,
+  isAboutOpen: false,
   activeSettingsTab: 'font',
   isCheatsheetOpen: false,
   isDiffViewerOpen: false,
@@ -97,6 +101,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
   toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
+  setAboutOpen: (open: boolean) => set({ isAboutOpen: open }),
+  toggleAbout: () => set((state) => ({ isAboutOpen: !state.isAboutOpen })),
   setActiveSettingsTab: (tab) => set({ activeSettingsTab: tab }),
   setCheatsheetOpen: (open: boolean) => set({ isCheatsheetOpen: open }),
   toggleDiffViewer: () => set((state) => ({ isDiffViewerOpen: !state.isDiffViewerOpen })),

@@ -978,6 +978,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           title="Set Shell for This Pane"
           placeholder="/bin/zsh"
           initialValue={currentNode?.shell || ''}
+          description={ptyPaneIdRef.current ? 'Change takes effect when you relaunch this pane.' : undefined}
           onSave={(shell) => setPaneShell(id, shell.trim())}
           onClose={() => setShowShellModal(false)}
         />

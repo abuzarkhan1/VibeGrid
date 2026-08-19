@@ -71,7 +71,7 @@ function getFocusedPtyId(): string | undefined {
 }
 
 export const CommandPalette: React.FC = () => {
-  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace, requestCreateWorkspace, requestSetLayoutPreset, requestResetLayout, notifyMaxPanes } = useUIStore();
+  const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, setAboutOpen, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace, requestCreateWorkspace, requestSetLayoutPreset, requestResetLayout, notifyMaxPanes } = useUIStore();
   const { splitPane, toggleMaximize, setPaneTitle, setPaneCwd, focusedPaneId, paneCount, maxPanes } = usePaneStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings, userCommands, updateSettings } = useSettingsStore();
   const { workspaces, saveCurrentWorkspace } = useWorkspaceStore();
@@ -273,6 +273,7 @@ export const CommandPalette: React.FC = () => {
       icon: <Plus className="w-4 h-4 text-[#a3a3ab]" />,
       action: () => {
         useWorkspaceStore.getState().duplicateWorkspace(ws.id);
+        addToast({ type: 'success', title: 'Workspace duplicated' });
       },
     })),
     {
@@ -330,7 +331,7 @@ export const CommandPalette: React.FC = () => {
       label: 'About VibeGrid',
       category: 'Application',
       icon: <Info className="w-4 h-4 text-white/80" />,
-      action: () => toggleSettings(),
+      action: () => setAboutOpen(true),
     },
     {
       id: 'export-settings',

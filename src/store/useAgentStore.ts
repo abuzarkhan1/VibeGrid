@@ -3,6 +3,7 @@ import { DiscoveredAgent, PaneAgentConfig, HeterogeneousRolePod } from '@/types/
 import { BUILTIN_AGENTS, buildAgentCommand } from '@/lib/agentRegistry';
 import { discoverInstalledAgents, writeToPty } from '@/lib/tauri';
 import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
+import { useUIStore } from '@/store/useUIStore';
 
 interface AgentStoreState {
   isOpen: boolean;
@@ -132,6 +133,11 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
       set({ agents: updated, isScanning: false });
     } catch (e) {
       console.warn('[VibeGrid] Agent discovery failed, keeping defaults:', e);
+      useUIStore.getState().addToast({
+        type: 'error',
+        title: 'Agent scan failed',
+        description: 'Could not detect installed agents. Check terminal permissions.',
+      });
       set({ isScanning: false });
     }
   },

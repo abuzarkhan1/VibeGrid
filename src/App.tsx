@@ -77,6 +77,8 @@ export const App: React.FC = () => {
       setDiffViewerOpen: s.setDiffViewerOpen,
       isChatOpen: s.isChatOpen,
       setChatOpen: s.setChatOpen,
+      isAboutOpen: s.isAboutOpen,
+      setAboutOpen: s.setAboutOpen,
     }))
   );
   const {
@@ -98,6 +100,8 @@ export const App: React.FC = () => {
     setDiffViewerOpen,
     isChatOpen,
     setChatOpen,
+    isAboutOpen,
+    setAboutOpen,
   } = ui;
   const { increaseFontSize, decreaseFontSize, resetFontSize } = useSettingsStore(
     useShallow((s) => ({
@@ -116,7 +120,6 @@ export const App: React.FC = () => {
   );
   const matchesKeybinding = useKeybindingsStore((s) => s.matchesKeybinding);
 
-  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [splashDismissed, setSplashDismissed] = useState(false);
 
@@ -575,7 +578,7 @@ export const App: React.FC = () => {
       <VoiceIndicator />
       <CommandPalette />
       <ShortcutsModal />
-      {isAboutOpen && <AboutModal onClose={() => setIsAboutOpen(false)} />}
+      {isAboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
       <NotificationToastContainer />
       {}
       {showSplash && !splashDismissed && !useOnboardingStore.getState().isOpen && (

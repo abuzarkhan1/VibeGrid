@@ -5,6 +5,7 @@ import { isTauri } from '@/lib/tauri';
 
 interface InputModalProps {
   title: string;
+  description?: string;
   placeholder?: string;
   initialValue?: string;
   maxLength?: number;
@@ -15,6 +16,7 @@ interface InputModalProps {
 
 export const InputModal: React.FC<InputModalProps> = ({
   title,
+  description,
   placeholder = '',
   initialValue = '',
   maxLength = 50,
@@ -87,6 +89,9 @@ export const InputModal: React.FC<InputModalProps> = ({
         </div>
 
         <div className="p-6 space-y-4">
+          {description && (
+            <p className="text-xs text-white/50 leading-relaxed font-sans">{description}</p>
+          )}
           <div className="flex gap-2">
             <input
               ref={inputRef}
