@@ -85,7 +85,7 @@ describe('Customizer Components & ICE UI', () => {
       useCustomizationStore.setState({ isOpen: true });
       render(<WorkspaceCustomizerModal />);
 
-      expect(screen.getByRole('dialog', { name: /Codex Customization Studio/i })).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: /VibeGrid Customization Studio/i })).toBeTruthy();
 
       // Click Save & Apply
       const saveBtn = screen.getByRole('button', { name: /Save & Apply/i });

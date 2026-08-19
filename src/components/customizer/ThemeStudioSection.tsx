@@ -52,7 +52,7 @@ const SHADER_PRESETS: { id: RetroShaderPresetName; label: string }[] = [
 ];
 
 const ACCENT_SWATCHES = [
-  '#6366f1', // Indigo / Codex Default
+  '#6366f1', // Indigo / VibeGrid Default
   '#3c95f0', // Electric Azure
   '#06b6d4', // Cyber Cyan
   '#10b981', // Matrix Emerald
@@ -641,7 +641,7 @@ export const ThemeStudioSection: React.FC = () => {
               <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
               <span className="w-2.5 h-2.5 rounded-full bg-white/30" />
               <span className="text-xs font-sans font-bold text-white ml-2">
-                Codex Diff Viewer · session/supervisor.ts
+                VibeGrid Diff Viewer · session/supervisor.ts
               </span>
             </div>
             <span

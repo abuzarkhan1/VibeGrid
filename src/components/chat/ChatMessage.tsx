@@ -29,7 +29,7 @@ export const ChatMessage: React.FC<{ message: MessageItem }> = ({ message }) => 
       <div className={`flex flex-col max-w-[88%] sm:max-w-[80%] ${isUser ? 'items-end' : 'items-start'}`}>
         {/* Author / Timestamp Label */}
         <div className="flex items-center gap-1.5 mb-1 px-1 text-[11px] font-mono text-white/40">
-          <span>{isUser ? 'You' : message.agentName || 'Codex Agent'}</span>
+          <span>{isUser ? 'You' : message.agentName || 'VibeGrid Agent'}</span>
           <span>·</span>
           <span>{message.timestamp}</span>
         </div>

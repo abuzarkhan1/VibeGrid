@@ -24,7 +24,7 @@ const EMOJI_CATEGORIES: { name: string; items: string[] }[] = [
 ];
 
 const COLOR_RINGS = [
-  { hex: '#8B5CF6', label: 'Codex Violet' },
+  { hex: '#8B5CF6', label: 'VibeGrid Violet' },
   { hex: '#3c95f0', label: 'Electric Azure' },
   { hex: '#06b6d4', label: 'Cyber Cyan' },
   { hex: '#4ADE80', label: 'Matrix Emerald' },

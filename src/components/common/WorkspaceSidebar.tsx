@@ -266,14 +266,14 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                 {isFolderOpen && (
                   <div className="pl-4 space-y-0.5">
                     <div
-                      onClick={() => handleOpenThread(ws.id, activeThreadTitle || 'Codex UI Design Alignment')}
+                      onClick={() => handleOpenThread(ws.id, activeThreadTitle || 'VibeGrid')}
                       className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all cursor-pointer ${
                         isWsActive && activeViewMode === 'grid'
                           ? 'bg-white/[0.06] text-white font-normal border border-white/10'
                           : 'text-white/40 hover:text-white/80 hover:bg-white/[0.03]'
                       }`}
                     >
-                      <span className="truncate pr-2">{activeThreadTitle || 'Codex UI Design Alignment'}</span>
+                      <span className="truncate pr-2">{activeThreadTitle || 'VibeGrid'}</span>
                       <span className="text-[10px] text-white/20 shrink-0 font-mono">now</span>
                     </div>
                   </div>

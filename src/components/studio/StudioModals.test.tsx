@@ -107,8 +107,8 @@ describe('Studio Modals & Chained Workflow', () => {
       useCustomizationStore.setState({ isOpen: true });
       render(<WorkspaceCustomizerModal />);
 
-      expect(screen.getByRole('dialog', { name: /Codex Customization Studio/i })).toBeTruthy();
-      expect(screen.getByText('Codex Customization Studio')).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: /VibeGrid Customization Studio/i })).toBeTruthy();
+      expect(screen.getByText('VibeGrid Customization Studio')).toBeTruthy();
 
       // Switch to Theme Studio tab
       const themeTab = screen.getByRole('button', { name: /Theme Studio/i });

@@ -48,7 +48,7 @@ export const OnboardingWizard: React.FC = () => {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Codex Grid Setup & Onboarding Wizard"
+      aria-label="VibeGrid Setup & Onboarding Wizard"
       className={
         currentStep === 'splash'
           ? 'fixed inset-0 z-50 overflow-hidden'

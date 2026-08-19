@@ -11,7 +11,7 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
     {
       id: '1',
       sender: 'agent',
-      agentName: 'Codex Supervisor',
+      agentName: 'VibeGrid Supervisor',
       content: 'Agent fleet initialized. All 4 terminal panes connected to PTY context.',
       timestamp: '12:04 PM',
       codeBlocks: [
@@ -31,7 +31,7 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
     {
       id: '3',
       sender: 'agent',
-      agentName: 'Codex Supervisor',
+      agentName: 'VibeGrid Supervisor',
       content: 'Applying Functional Glassmorphism. Implementing density scale, refraction edges, and high-readability diff viewers.',
       timestamp: '12:05 PM',
     },

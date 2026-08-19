@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -48,31 +48,7 @@ export const WorkspaceCustomizerModal: React.FC = () => {
     }
   }, [isOpen, syncFromCurrentState]);
 
-  // Keyboard shortcut listener (Escape to close, Cmd/Ctrl+S to save)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        closeCustomizer();
-        return;
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        handleSaveAndApply();
-        return;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, closeCustomizer]);
-
-  if (!isOpen) return null;
-
-  const handleSaveAndApply = () => {
+  const handleSaveAndApply = useCallback(() => {
     // 1. Update active workspace state
     if (activeWorkspaceId) {
       if (workspaceName.trim()) {
@@ -119,10 +95,59 @@ export const WorkspaceCustomizerModal: React.FC = () => {
 
     addToast({
       type: 'success',
-      title: 'Codex Customizations Applied',
-      description: `Saved workspace identity, 3-role theme, and telemetry rules for "${workspaceName}".`,
+      title: 'Customizations Applied',
+      description: `Saved workspace identity, theme, and environment rules for "${workspaceName}".`,
     });
-  };
+  }, [
+    activeWorkspaceId,
+    workspaceName,
+    renameWorkspace,
+    workspaceIcon,
+    setWorkspaceEmoji,
+    setWorkspaceOverrides,
+    themeName,
+    fontSize,
+    fontFamily,
+    defaultCwd,
+    terminalOpacity,
+    saveCurrentWorkspace,
+    envVars,
+    updateSettings,
+    themeMode,
+    fontLigatures,
+    lineHeight,
+    cursorStyle,
+    cursorBlink,
+    themeAccent,
+    uiAccentColor,
+    uiFont,
+    closeCustomizer,
+    addToast,
+  ]);
+
+  // Keyboard shortcut listener (Escape to close, Cmd/Ctrl+S to save)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeCustomizer();
+        return;
+      }
+
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        handleSaveAndApply();
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, closeCustomizer, handleSaveAndApply]);
+
+  if (!isOpen) return null;
 
   return (
     <div
@@ -144,9 +169,9 @@ export const WorkspaceCustomizerModal: React.FC = () => {
                 id="customizer-modal-title"
                 className="font-sans font-bold text-base text-white/90 tracking-tight flex items-center gap-2"
               >
-                Codex Customization Studio
+                VibeGrid Customization Studio
                 <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/60 font-mono">
-                  codex-v1
+                  vg-v1
                 </span>
               </h2>
               <p className="text-[11px] text-white/40 font-sans">
