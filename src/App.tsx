@@ -158,29 +158,36 @@ export const App: React.FC = () => {
     mq.addEventListener('change', onChange);
     // Tauri reports the window theme more reliably than the CSS media query in
     // some webviews — adopt it when it resolves to a concrete value.
+    let cancelled = false;
     let unlisten: (() => void) | undefined;
     if (isTauri()) {
       import('@tauri-apps/api/window')
         .then(({ getCurrentWindow }) => {
+          if (cancelled) return;
           const win = getCurrentWindow();
           win
             .theme()
             .then((t) => {
-              if (t === 'dark' || t === 'light') apply(t === 'dark');
+              if (!cancelled && (t === 'dark' || t === 'light')) apply(t === 'dark');
             })
             .catch(() => {});
           win
             .onThemeChanged(({ payload }) => {
-              if (payload === 'dark' || payload === 'light') apply(payload === 'dark');
+              if (!cancelled && (payload === 'dark' || payload === 'light')) apply(payload === 'dark');
             })
             .then((fn) => {
-              unlisten = fn;
+              if (cancelled) {
+                fn();
+              } else {
+                unlisten = fn;
+              }
             })
             .catch(() => {});
         })
         .catch(() => {});
     }
     return () => {
+      cancelled = true;
       mq.removeEventListener('change', onChange);
       unlisten?.();
     };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Check,
   Copy,
@@ -45,6 +45,39 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
   stats = { additions: 6, deletions: 4 },
 }) => {
   const [copied, setCopied] = useState(false);
+
+  // Memoize per-line style derivation so parent re-renders don't recompute
+  // row styles for every line when diffLines itself hasn't changed.
+  const renderedRows = useMemo(
+    () =>
+      diffLines.map((line, idx) => {
+        const isAdd = line.type === 'add';
+        const isRemove = line.type === 'remove';
+
+        let rowStyle: React.CSSProperties = {};
+        let textStyle: React.CSSProperties = { color: 'rgba(255,255,255,0.8)' };
+        let marker = ' ';
+
+        if (isAdd) {
+          rowStyle = {
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.8)',
+          };
+          textStyle = { color: '#ffffff', fontWeight: 500 };
+          marker = '+';
+        } else if (isRemove) {
+          rowStyle = {
+            backgroundColor: 'rgba(255,255,255,0.02)',
+            boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.3)',
+          };
+          textStyle = { color: 'rgba(255,255,255,0.4)', fontWeight: 500 };
+          marker = '-';
+        }
+
+        return { line, idx, rowStyle, textStyle, marker };
+      }),
+    [diffLines]
+  );
 
   const handleCopyDiff = () => {
     const raw = diffLines.map((l) => l.text).join('\n');
@@ -105,54 +138,29 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.03]">
-              {diffLines.map((line, idx) => {
-                const isAdd = line.type === 'add';
-                const isRemove = line.type === 'remove';
-
-                let rowStyle: React.CSSProperties = {};
-                let textStyle: React.CSSProperties = { color: 'rgba(255,255,255,0.8)' };
-                let marker = ' ';
-
-                if (isAdd) {
-                  rowStyle = {
-                    backgroundColor: 'rgba(255,255,255,0.05)',
-                    boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.8)',
-                  };
-                  textStyle = { color: '#ffffff', fontWeight: 500 };
-                  marker = '+';
-                } else if (isRemove) {
-                  rowStyle = {
-                    backgroundColor: 'rgba(255,255,255,0.02)',
-                    boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.3)',
-                  };
-                  textStyle = { color: 'rgba(255,255,255,0.4)', fontWeight: 500 };
-                  marker = '-';
-                }
-
-                return (
-                  <tr
-                    key={idx}
-                    style={rowStyle}
-                    className="hover:bg-white/[0.04] transition-colors group"
+              {renderedRows.map(({ line, idx, rowStyle, textStyle, marker }) => (
+                <tr
+                  key={idx}
+                  style={rowStyle}
+                  className="hover:bg-white/[0.04] transition-colors group"
+                >
+                  <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
+                    {line.lineOld ?? ''}
+                  </td>
+                  <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
+                    {line.lineNew ?? ''}
+                  </td>
+                  <td
+                    className="w-6 py-0.5 text-center select-none text-[12px] font-bold"
+                    style={textStyle}
                   >
-                    <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
-                      {line.lineOld ?? ''}
-                    </td>
-                    <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
-                      {line.lineNew ?? ''}
-                    </td>
-                    <td
-                      className="w-6 py-0.5 text-center select-none text-[12px] font-bold"
-                      style={textStyle}
-                    >
-                      {marker}
-                    </td>
-                    <td className="py-0.5 px-3 whitespace-pre font-mono text-[12px]" style={textStyle}>
-                      {line.text.replace(/^[+-]\s*/, '')}
-                    </td>
-                  </tr>
-                );
-              })}
+                    {marker}
+                  </td>
+                  <td className="py-0.5 px-3 whitespace-pre font-mono text-[12px]" style={textStyle}>
+                    {line.text.replace(/^[+-]\s*/, '')}
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

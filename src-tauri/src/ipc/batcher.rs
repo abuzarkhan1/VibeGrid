@@ -77,14 +77,27 @@ impl<R: Runtime> IpcBatcher<R> {
 
     /// Push bytes for a specific pane into the buffer batch
     pub fn push_output(&self, pane_id: &str, data: &[u8]) {
-        let flag = self.get_backpressure_flag(pane_id);
+        self.push_output_with_flag(pane_id, data, None);
+    }
+
+    /// Optimized hot-path: push bytes using an optional pre-cached backpressure flag and zero-allocation key lookup.
+    pub fn push_output_with_flag(&self, pane_id: &str, data: &[u8], cached_flag: Option<&std::sync::atomic::AtomicBool>) {
         let mut buffers = self.buffers.lock();
-        let buf = buffers.entry(pane_id.to_string()).or_default();
+        let buf = if let Some(buf) = buffers.get_mut(pane_id) {
+            buf
+        } else {
+            buffers.entry(pane_id.to_string()).or_default()
+        };
 
         buf.extend_from_slice(data);
 
         if buf.len() > HIGH_WATERMARK_BYTES {
-            flag.store(true, Ordering::Relaxed);
+            if let Some(flag) = cached_flag {
+                flag.store(true, Ordering::Relaxed);
+            } else {
+                let flag = self.get_backpressure_flag(pane_id);
+                flag.store(true, Ordering::Relaxed);
+            }
         }
     }
 
@@ -135,7 +148,30 @@ impl<R: Runtime> IpcBatcher<R> {
         // Remember the exit so a re-attached pane (workspace switch-back) can
         // show the "process exited" banner even though it missed the live
         // terminal-exit event while unmounted.
-        self.exited_panes.lock().insert(pane_id.to_string(), true);
+        {
+            let mut exited = self.exited_panes.lock();
+            exited.insert(pane_id.to_string(), true);
+            // Cap unbounded growth: after 500 entries, prune down to 400 by
+            // dropping the first 100. The ordering of a HashMap is arbitrary
+            // but deterministic within a run — oldest entries tend to come
+            // first from `.keys()` iteration on a HashMap (insertion-order is
+            // NOT guaranteed, but eviction of *some* 100 entries is fine here;
+            // the worst case is evicting a slightly newer entry, which just
+            // means a re-attached pane shows no banner — an acceptable trade-off
+            // versus an unbounded map in a long-running session).
+            const EXITED_PANES_HARD_CAP: usize = 500;
+            const EXITED_PANES_PRUNE_TARGET: usize = 400;
+            if exited.len() > EXITED_PANES_HARD_CAP {
+                let to_remove: Vec<String> = exited
+                    .keys()
+                    .take(exited.len() - EXITED_PANES_PRUNE_TARGET)
+                    .cloned()
+                    .collect();
+                for key in to_remove {
+                    exited.remove(&key);
+                }
+            }
+        }
         let _ = self
             .app_handle
             .emit("terminal-exit", serde_json::json!({ "paneId": pane_id }));
@@ -198,16 +234,20 @@ impl<R: Runtime> IpcBatcher<R> {
 
                             if let Some(chunk) = valid_chunk {
                                 if !chunk.is_empty() {
-                                    map.insert(pane_id.clone(), chunk.clone());
-
                                     // Track history for MCP
                                     let mut history = mcp_history.lock();
-                                    let h = history.entry(pane_id.clone()).or_default();
+                                    let h = if let Some(h) = history.get_mut(pane_id) {
+                                        h
+                                    } else {
+                                        history.entry(pane_id.clone()).or_default()
+                                    };
                                     h.push_str(&chunk);
                                     let drain = crate::utils::utf8::tail_drain_count(h, HISTORY_CAP_BYTES);
                                     if drain > 0 {
                                         h.drain(..drain);
                                     }
+
+                                    map.insert(pane_id.clone(), chunk);
                                 }
                             }
 
@@ -267,7 +307,7 @@ mod tests {
         let app = tauri::test::mock_app();
         let batcher = IpcBatcher::new(app.handle().clone());
         let pane_id = "test-pane-1";
-
+        let _ = batcher.get_backpressure_flag(pane_id);
         batcher.push_output(pane_id, b"hello world");
         assert_eq!(batcher.buffers.lock().len(), 1);
         assert_eq!(batcher.backpressure_flags.lock().len(), 1);

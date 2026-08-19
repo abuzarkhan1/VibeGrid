@@ -253,3 +253,27 @@ html.vibegrid-light {
   --diff-remove-text: #B91C1C;
 }
 
+/* ================================================================
+   CUSTOM SCROLLBAR UTILITY — mirrors the global thin glass scrollbar
+   styles but scoped to an explicit class so components can opt-in.
+   Referenced by SettingsModal, AgentSidebar, and similar scrollable
+   panels that need the styled scrollbar without relying on the global
+   ::-webkit-scrollbar selector being present.
+   ================================================================ */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}

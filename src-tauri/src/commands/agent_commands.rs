@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
+use std::time::Duration;
 use tauri::{async_runtime::spawn_blocking, command};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -117,10 +118,19 @@ pub async fn discover_installed_agents() -> Result<Vec<AgentDiscoveryResult>, St
 
         for (id, binary_candidates, version_args) in agent_definitions {
             if let Some(path) = search_first_available_binary(&binary_candidates) {
-                let output = Command::new(&path)
-                    .args(&version_args)
-                    .output()
-                    .ok();
+                // Run the version-check with a 3-second wall-clock timeout.
+                // Some CLI binaries hang indefinitely on `--version` if they
+                // try to reach a remote server; a bare `.output()` call would
+                // block this spawn_blocking thread forever, eventually starving
+                // the Tokio worker pool.
+                let (tx, rx) = std::sync::mpsc::channel();
+                let path_clone = path.clone();
+                let args_clone = version_args.clone();
+                std::thread::spawn(move || {
+                    let result = Command::new(&path_clone).args(&args_clone).output().ok();
+                    let _ = tx.send(result);
+                });
+                let output = rx.recv_timeout(Duration::from_secs(3)).ok().flatten();
 
                 let version = output.and_then(|out| {
                     let text = String::from_utf8(out.stdout).ok().or_else(|| String::from_utf8(out.stderr).ok())?;

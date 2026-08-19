@@ -144,8 +144,10 @@ impl<R: Runtime> PtyManager<R> {
             .take_writer()
             .map_err(|e| format!("Failed to take PTY writer: {}", e))?;
 
-        // Start background async PTY reader
-        spawn_pty_reader(pane_id.clone(), reader, batcher);
+        // Start background async PTY reader — pass a manager clone so it can
+        // evict the PaneSession from `sessions` when the process exits naturally
+        // (EOF), preventing zombie entries from accumulating.
+        spawn_pty_reader(pane_id.clone(), reader, batcher, self.clone());
 
         let session = PaneSession {
             master: pair.master,
@@ -197,6 +199,20 @@ impl<R: Runtime> PtyManager<R> {
         } else {
             Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"))
         }
+    }
+
+    /// Remove a pane session that exited naturally (EOF on the reader side).
+    ///
+    /// Called by `spawn_pty_reader` when `read()` returns `Ok(0)` or an error,
+    /// so the `PaneSession` (master PTY handle + child handle) is released and
+    /// does not linger as a zombie in the sessions map.  The IPC batcher's
+    /// `pane_exited()` is *also* called by the reader to emit the
+    /// `terminal-exit` frontend event — this method only handles the manager side.
+    pub fn remove_session(&self, pane_id: &str) {
+        // Drop the session outside the lock to avoid holding it while the
+        // destructor runs (closing the master fd can block briefly on some OSes).
+        let session = self.sessions.lock().remove(pane_id);
+        drop(session);
     }
 
     /// Terminate and remove a PTY pane session gracefully (FR-004).

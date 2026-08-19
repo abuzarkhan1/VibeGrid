@@ -304,10 +304,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   useEffect(() => {
     if (!isTauri()) return;
+    let cancelled = false;
     let unlisten: (() => void) | null = null;
 
     import('@tauri-apps/api/window')
       .then(({ getCurrentWindow }) => {
+        if (cancelled) return;
         getCurrentWindow()
           .onDragDropEvent((event) => {
             switch (event.payload.type) {
@@ -333,12 +335,18 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             }
           })
           .then((fn) => {
-            unlisten = fn;
-          });
+            if (cancelled) {
+              fn();
+            } else {
+              unlisten = fn;
+            }
+          })
+          .catch(() => {});
       })
       .catch(() => {});
 
     return () => {
+      cancelled = true;
       setIsDragOver(false);
       if (unlisten) unlisten();
     };
