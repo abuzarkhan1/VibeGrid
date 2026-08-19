@@ -84,8 +84,8 @@ impl AudioMeter {
 struct ActiveRecording {
     /// Keeping the stream alive keeps capture running.
     _stream: cpal::Stream,
-    /// Mono f32 samples captured at the device sample rate.
-    samples: Arc<Mutex<Vec<f32>>>,
+    /// Receiver for mono f32 chunks captured by the real-time callback without locking.
+    receiver: Mutex<std::sync::mpsc::Receiver<Vec<f32>>>,
     sample_rate: u32,
     /// Live RMS level for the waveform + auto-stop watcher.
     meter: Arc<AudioMeter>,
@@ -94,7 +94,7 @@ struct ActiveRecording {
 /// Managed speech state shared with Tauri commands.
 pub struct SpeechManager {
     recorder: Mutex<Option<ActiveRecording>>,
-    whisper: Mutex<Option<WhisperContext>>,
+    whisper: Mutex<Option<Arc<WhisperContext>>>,
     /// Auto-stop silence timeout in ms (gap 10) — read by the watcher thread.
     silence_timeout_ms: AtomicU64,
     /// Preferred input device name ('' = system default) (gap 14).
@@ -149,6 +149,19 @@ impl SpeechManager {
         };
     }
 
+    /// Resolve the current model file path inside the app data dir.
+    pub fn model_path(&self, app: &AppHandle) -> Result<PathBuf, String> {
+        let dir = crate::utils::paths::get_models_dir()
+            .or_else(|| app.path().app_data_dir().ok().map(|d| d.join("models")))
+            .ok_or_else(|| "Could not resolve models directory".to_string())?;
+        Ok(dir.join(self.model_file_name()))
+    }
+
+    /// True when the current model file already exists on disk.
+    pub fn model_ready(&self, app: &AppHandle) -> bool {
+        self.model_path(app).map(|p| p.exists()).unwrap_or(false)
+    }
+
     /// Set the Whisper transcription language ('auto' = auto-detect, '' same).
     /// Changing it may swap the MODEL file used (English .en build vs the
     /// multilingual build), so the cached Whisper context is dropped and
@@ -156,9 +169,10 @@ impl SpeechManager {
     pub fn set_language(&self, language: String) -> String {
         let lang = language.trim().to_lowercase();
         let lang = if lang.is_empty() { String::from("auto") } else { lang };
-        let changed = *self.language.lock() != lang;
-        *self.language.lock() = lang.clone();
+        let mut guard = self.language.lock();
+        let changed = *guard != lang;
         if changed {
+            *guard = lang.clone();
             *self.whisper.lock() = None;
         }
         lang
@@ -174,9 +188,10 @@ impl SpeechManager {
         } else {
             String::from("base")
         };
-        let changed = *self.model_size.lock() != size;
-        *self.model_size.lock() = size.clone();
+        let mut guard = self.model_size.lock();
+        let changed = *guard != size;
         if changed {
+            *guard = size.clone();
             *self.whisper.lock() = None;
         }
         size
@@ -199,8 +214,6 @@ impl SpeechManager {
     pub fn list_input_devices() -> Vec<String> {
         let host = cpal::default_host();
         match host.input_devices() {
-            // cpal 0.18 exposes the device name via Display (DeviceTrait::name was
-            // replaced by `description()` / `to_string()`).
             Ok(devices) => devices
                 .map(|d| d.to_string())
                 .filter(|n| !n.is_empty())
@@ -229,20 +242,6 @@ impl SpeechManager {
             .ok_or_else(|| "No microphone input device found. Connect a microphone or grant microphone access in System Settings → Privacy & Security → Microphone.".to_string())
     }
 
-    /// Resolve the current model file path inside the app data dir.
-    pub fn model_path(&self, app: &AppHandle) -> Result<PathBuf, String> {
-        let dir = app
-            .path()
-            .app_data_dir()
-            .map_err(|e| format!("Could not resolve app data dir: {e}"))?
-            .join("models");
-        Ok(dir.join(self.model_file_name()))
-    }
-
-    /// True when the current model file already exists on disk.
-    pub fn model_ready(&self, app: &AppHandle) -> bool {
-        self.model_path(app).map(|p| p.exists()).unwrap_or(false)
-    }
 
     /// Start capturing microphone audio into a buffer.
     pub fn start_recording(&self) -> Result<(), String> {
@@ -258,7 +257,7 @@ impl SpeechManager {
         let sample_rate = config.sample_rate();
         let channels = config.channels() as usize;
         let stream_config: cpal::StreamConfig = config.config();
-        let samples: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(Vec::new()));
+        let (sender, receiver) = std::sync::mpsc::channel::<Vec<f32>>();
         let meter = Arc::new(AudioMeter::new());
         let err_fn = |e| eprintln!("[VibeGrid] audio stream error: {e}");
 
@@ -267,7 +266,7 @@ impl SpeechManager {
                 cpal::SampleFormat::F32 => Self::build_input::<f32>(
                     &device,
                     &stream_config,
-                    samples.clone(),
+                    sender.clone(),
                     meter.clone(),
                     channels,
                     err_fn,
@@ -275,7 +274,7 @@ impl SpeechManager {
                 cpal::SampleFormat::I16 => Self::build_input::<i16>(
                     &device,
                     &stream_config,
-                    samples.clone(),
+                    sender.clone(),
                     meter.clone(),
                     channels,
                     err_fn,
@@ -283,7 +282,7 @@ impl SpeechManager {
                 cpal::SampleFormat::U16 => Self::build_input::<u16>(
                     &device,
                     &stream_config,
-                    samples.clone(),
+                    sender.clone(),
                     meter.clone(),
                     channels,
                     err_fn,
@@ -299,7 +298,7 @@ impl SpeechManager {
 
         *self.recorder.lock() = Some(ActiveRecording {
             _stream: stream,
-            samples,
+            receiver: Mutex::new(receiver),
             sample_rate,
             meter,
         });
@@ -309,7 +308,7 @@ impl SpeechManager {
     fn build_input<T>(
         device: &cpal::Device,
         config: &cpal::StreamConfig,
-        samples: Arc<Mutex<Vec<f32>>>,
+        sender: std::sync::mpsc::Sender<Vec<f32>>,
         meter: Arc<AudioMeter>,
         channels: usize,
         err_fn: impl FnMut(cpal::Error) + Send + 'static,
@@ -318,21 +317,23 @@ impl SpeechManager {
         T: cpal::SizedSample + cpal::Sample<Float = f32>,
     {
         let data_fn = move |data: &[T], _: &cpal::InputCallbackInfo| {
-            let mut buf = samples.lock();
             // Downmix to mono by averaging frames across channels, tracking the
             // live RMS for the waveform UI (lock-free atomic, audio-thread safe).
+            let frame_count = data.len() / channels.max(1);
+            let mut chunk = Vec::with_capacity(frame_count);
             let mut sum_sq: f32 = 0.0;
             let mut frames: usize = 0;
             for frame in data.chunks(channels.max(1)) {
                 let avg: f32 = frame.iter().map(|s| s.to_float_sample()).sum::<f32>()
                     / frame.len().max(1) as f32;
-                buf.push(avg);
+                chunk.push(avg);
                 sum_sq += avg * avg;
                 frames += 1;
             }
             if frames > 0 {
                 meter.set_rms((sum_sq / frames as f32).sqrt());
             }
+            let _ = sender.send(chunk);
         };
         device
             .build_input_stream(*config, data_fn, err_fn, None)
@@ -362,10 +363,10 @@ impl SpeechManager {
     /// recording (e.g. already consumed by Enter/Esc) — NOT when it was silent.
     fn take_audio(&self) -> Option<Vec<f32>> {
         let recording = self.recorder.lock().take()?;
-        drop(recording._stream); // stop capture
-        let raw = {
-            let mut buf = recording.samples.lock();
-            std::mem::take(&mut *buf)
+        drop(recording._stream); // stop capture and drop stream
+        let raw: Vec<f32> = {
+            let guard = recording.receiver.lock();
+            guard.try_iter().flatten().collect()
         };
         if raw.is_empty() {
             return None;
@@ -392,20 +393,21 @@ impl SpeechManager {
             return Err("No speech detected".into());
         }
 
-        let mut whisper = self.whisper.lock();
-        if whisper.is_none() {
-            let params = WhisperContextParameters::default();
-            *whisper = Some(
-                WhisperContext::new_with_params(model, params)
-                    .map_err(|e| format!("Failed to load Whisper model: {e}"))?,
-            );
-        }
-        // Audit: was `.unwrap()` — correct today only because the block above
-        // guarantees Some, but a future refactor could break that invariant and
-        // panic the app. Surface it as an error instead.
-        let ctx = whisper
-            .as_ref()
-            .ok_or_else(|| "Whisper model not initialized".to_string())?;
+        let ctx: Arc<WhisperContext> = {
+            let mut guard = self.whisper.lock();
+            if guard.is_none() {
+                let params = WhisperContextParameters::default();
+                let loaded = WhisperContext::new_with_params(model, params)
+                    .map_err(|e| format!("Failed to load Whisper model: {e}"))?;
+                *guard = Some(Arc::new(loaded));
+            }
+            guard
+                .as_ref()
+                .cloned()
+                .ok_or_else(|| "Whisper model not initialized".to_string())?
+        }; // Lock dropped immediately!
+
+        let language = self.language.lock().clone(); // Lock dropped immediately!
 
         let mut state: WhisperState = ctx
             .create_state()
@@ -414,7 +416,6 @@ impl SpeechManager {
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
         // Customization audit C28: language is user-configurable now ('auto'
         // disables the hint so Whisper detects the language itself).
-        let language = self.language.lock().clone();
         if language == "auto" {
             params.set_language(None);
         } else {
@@ -432,6 +433,7 @@ impl SpeechManager {
         params.set_print_progress(false);
         params.set_translate(false);
 
+        // CPU inference executes without holding any Mutex locks!
         state
             .full(params, audio)
             .map_err(|e| format!("Transcription failed: {e}"))?;

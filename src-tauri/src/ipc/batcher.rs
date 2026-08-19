@@ -76,16 +76,24 @@ impl<R: Runtime> IpcBatcher<R> {
     }
 
     /// Push bytes for a specific pane into the buffer batch
-    pub fn push_output(&self, pane_id: String, data: &[u8]) {
-        let flag = self.get_backpressure_flag(&pane_id);
+    pub fn push_output(&self, pane_id: &str, data: &[u8]) {
+        let flag = self.get_backpressure_flag(pane_id);
         let mut buffers = self.buffers.lock();
-        let buf = buffers.entry(pane_id).or_default();
+        let buf = buffers.entry(pane_id.to_string()).or_default();
 
         buf.extend_from_slice(data);
 
         if buf.len() > HIGH_WATERMARK_BYTES {
             flag.store(true, Ordering::Relaxed);
         }
+    }
+
+    /// Explicitly release all state and memory tracked for a killed/deleted pane.
+    pub fn cleanup_pane(&self, pane_id: &str) {
+        self.buffers.lock().remove(pane_id);
+        self.backpressure_flags.lock().remove(pane_id);
+        self.mcp_history.lock().remove(pane_id);
+        self.exited_panes.lock().remove(pane_id);
     }
 
     /// Return the recent output history kept for a pane (last ~256 KB) and
@@ -165,31 +173,46 @@ impl<R: Runtime> IpcBatcher<R> {
                     for (pane_id, buf) in guard.iter_mut() {
                         if !buf.is_empty() {
                             // Find the longest valid UTF-8 sequence boundary to prevent multi-byte UTF-8 character splitting
-                            let valid_up_to = match std::str::from_utf8(buf) {
-                                Ok(valid_str) => valid_str.len(),
-                                Err(utf8_err) => utf8_err.valid_up_to(),
+                            let (valid_chunk, bytes_to_drain) = match std::str::from_utf8(buf) {
+                                Ok(valid_str) => (Some(valid_str.to_string()), buf.len()),
+                                Err(utf8_err) => {
+                                    let valid_up_to = utf8_err.valid_up_to();
+                                    if valid_up_to > 0 {
+                                        let valid_str = std::str::from_utf8(&buf[..valid_up_to]).unwrap_or("");
+                                        (Some(valid_str.to_string()), valid_up_to)
+                                    } else if let Some(error_len) = utf8_err.error_len() {
+                                        // Non-UTF8 byte(s) at front of buffer: replace with replacement char and drain
+                                        // to prevent infinite buffer growth and terminal freeze (DoS).
+                                        (Some("\u{FFFD}".to_string()), error_len)
+                                    } else {
+                                        // Incomplete sequence at end of buffer. If buffer exceeds max UTF-8 codepoint length (4 bytes),
+                                        // force-drain 1 invalid byte so buffer never stalls forever.
+                                        if buf.len() > 4 {
+                                            (Some("\u{FFFD}".to_string()), 1)
+                                        } else {
+                                            (None, 0)
+                                        }
+                                    }
+                                }
                             };
 
-                            if valid_up_to > 0 {
-                                if let Ok(valid_str) = std::str::from_utf8(&buf[..valid_up_to]) {
-                                    map.insert(pane_id.clone(), valid_str.to_string());
-                                    
+                            if let Some(chunk) = valid_chunk {
+                                if !chunk.is_empty() {
+                                    map.insert(pane_id.clone(), chunk.clone());
+
                                     // Track history for MCP
                                     let mut history = mcp_history.lock();
                                     let h = history.entry(pane_id.clone()).or_default();
-                                    h.push_str(valid_str);
-                                    if h.len() > HISTORY_CAP_BYTES {
-                                        let mut keep = h.len() - HISTORY_CAP_BYTES;
-                                        while keep < h.len() && !h.is_char_boundary(keep) {
-                                            keep += 1;
-                                        }
-                                        h.drain(..keep);
+                                    h.push_str(&chunk);
+                                    let drain = crate::utils::utf8::tail_drain_count(h, HISTORY_CAP_BYTES);
+                                    if drain > 0 {
+                                        h.drain(..drain);
                                     }
                                 }
+                            }
 
-                                // Retain remaining trailing incomplete UTF-8 bytes for the next flush cycle
-                                let remainder = buf[valid_up_to..].to_vec();
-                                *buf = remainder;
+                            if bytes_to_drain > 0 {
+                                buf.drain(..bytes_to_drain);
                             }
 
                             // Clear backpressure flag if buffer drops below low watermark
@@ -237,5 +260,25 @@ mod tests {
     fn clamp_upper_bounds_to_max() {
         assert_eq!(clamp_interval_ms(5000), MAX_BATCH_INTERVAL_MS);
         assert_eq!(clamp_interval_ms(2000), MAX_BATCH_INTERVAL_MS);
+    }
+
+    #[test]
+    fn cleanup_pane_purges_all_internal_maps() {
+        let app = tauri::test::mock_app();
+        let batcher = IpcBatcher::new(app.handle().clone());
+        let pane_id = "test-pane-1";
+
+        batcher.push_output(pane_id, b"hello world");
+        assert_eq!(batcher.buffers.lock().len(), 1);
+        assert_eq!(batcher.backpressure_flags.lock().len(), 1);
+
+        batcher.exited_panes.lock().insert(pane_id.to_string(), true);
+        assert_eq!(batcher.exited_panes.lock().len(), 1);
+
+        batcher.cleanup_pane(pane_id);
+        assert_eq!(batcher.buffers.lock().len(), 0);
+        assert_eq!(batcher.backpressure_flags.lock().len(), 0);
+        assert_eq!(batcher.mcp_history.lock().len(), 0);
+        assert_eq!(batcher.exited_panes.lock().len(), 0);
     }
 }

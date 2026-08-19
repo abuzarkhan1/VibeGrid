@@ -2,7 +2,8 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Mutex;
+use std::sync::Arc;
+use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 
 /// Current on-disk schema version. Bump when the layout/field shape changes so
@@ -23,7 +24,7 @@ pub struct WorkspaceData {
     /// Optional per-workspace settings overrides (customization audit C12):
     /// theme/font/shell/cwd/opacity scoped to this workspace. Opaque JSON so
     /// the frontend owns the shape; old files without the field default to
-    /// None via `#[serde(default)]` on the struct.
+    /// None and fall through to the global settings.
     pub overrides: Option<serde_json::Value>,
     /// Optional emoji badge (customization audit C23).
     pub emoji: Option<String>,
@@ -70,16 +71,17 @@ fn is_safe_id(id: &str) -> bool {
             .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
 }
 
+#[derive(Clone)]
 pub struct WorkspaceManager {
     storage_dir: PathBuf,
     /// Serializes concurrent saves so a fire-and-forget switch save can never
     /// interleave with the debounced autosave of the same workspace (rapid
     /// workspace switching writes from multiple code paths).
-    write_lock: Mutex<()>,
+    write_lock: Arc<Mutex<()>>,
     /// Uniqueness for temp file names — two saves of the SAME workspace must
     /// never share a `.tmp` path or the second `File::create` truncates the
     /// first before its rename.
-    temp_counter: AtomicU64,
+    temp_counter: Arc<AtomicU64>,
 }
 
 impl Default for WorkspaceManager {
@@ -90,10 +92,7 @@ impl Default for WorkspaceManager {
 
 impl WorkspaceManager {
     pub fn new() -> Self {
-        let storage_dir = dirs::data_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join("vibegrid")
-            .join("workspaces");
+        let storage_dir = crate::utils::paths::get_workspaces_dir();
 
         if !storage_dir.exists() {
             let _ = fs::create_dir_all(&storage_dir);
@@ -106,8 +105,8 @@ impl WorkspaceManager {
     pub fn with_storage_dir(storage_dir: PathBuf) -> Self {
         Self {
             storage_dir,
-            write_lock: Mutex::new(()),
-            temp_counter: AtomicU64::new(0),
+            write_lock: Arc::new(Mutex::new(())),
+            temp_counter: Arc::new(AtomicU64::new(0)),
         }
     }
 
@@ -120,10 +119,7 @@ impl WorkspaceManager {
         if !is_safe_id(&workspace.id) {
             return Err(format!("Refusing to save workspace with unsafe id: {:?}", workspace.id));
         }
-        let _guard = self
-            .write_lock
-            .lock()
-            .map_err(|e| format!("Failed to lock workspace save: {}", e))?;
+        let _guard = self.write_lock.lock();
 
         let file_path = self.storage_dir.join(format!("{}.json", workspace.id));
         let unique = self.temp_counter.fetch_add(1, Ordering::Relaxed);
