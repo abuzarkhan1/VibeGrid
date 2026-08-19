@@ -20,6 +20,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { InputModal } from '@/components/ui/InputModal';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
+import { pickFolder } from '@/lib/tauri';
 
 interface WorkspaceSidebarProps {
   isOpen: boolean;
@@ -53,6 +54,8 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
 
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({ default: true });
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newWsFolderCwd, setNewWsFolderCwd] = useState<string | undefined>(undefined);
+  const [newWsFolderName, setNewWsFolderName] = useState<string>('');
   const [renameWsId, setRenameWsId] = useState<string | null>(null);
   const [deleteWsId, setDeleteWsId] = useState<string | null>(null);
 
@@ -68,14 +71,35 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
     setExpandedFolders((prev) => ({ ...prev, [id]: true }));
   };
 
-  const handleNewWorkspace = () => {
-    setShowCreateModal(true);
+  const handleNewWorkspace = async () => {
+    const chosenFolder = await pickFolder('Choose Project Directory');
+    if (chosenFolder) {
+      const parts = chosenFolder.replace(/\\/g, '/').split('/').filter(Boolean);
+      const folderName = parts[parts.length - 1] || 'New Workspace';
+      setNewWsFolderName(folderName);
+      setNewWsFolderCwd(chosenFolder);
+      setShowCreateModal(true);
+    } else {
+      setNewWsFolderName(`Workspace ${workspaces.length + 1}`);
+      setNewWsFolderCwd(undefined);
+      setShowCreateModal(true);
+    }
   };
 
   const handleCreateWorkspace = (name: string) => {
-    createWorkspace(name.trim() || 'New Workspace', { activate: true });
+    const maxLen = useSettingsStore.getState().workspaceNameMaxLength;
+    const finalName = (name.trim() || newWsFolderName || 'New Workspace').slice(0, maxLen);
+    createWorkspace(finalName, {
+      activate: true,
+      defaultCwd: newWsFolderCwd,
+    });
     setShowCreateModal(false);
-    addToast({ type: 'success', title: 'Workspace Created', description: `"${name}" is now active.` });
+    setNewWsFolderCwd(undefined);
+    addToast({
+      type: 'success',
+      title: 'Workspace Created',
+      description: `"${finalName}" is now active${newWsFolderCwd ? ` (${newWsFolderCwd})` : ''}.`,
+    });
 
     setActiveViewMode('hub');
   };
@@ -336,11 +360,21 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
       {/* New Workspace Modal */}
       {showCreateModal && (
         <InputModal
-          title="New Workspace"
+          title="Create New Project Workspace"
+          description={newWsFolderCwd ? `Project root: ${newWsFolderCwd}` : 'Enter workspace name or click Browse to select a project directory.'}
           placeholder="Workspace name (e.g. VibeGrid, MyApp)"
-          initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => handleCreateWorkspace(name.slice(0, useSettingsStore.getState().workspaceNameMaxLength))}
-          onClose={() => setShowCreateModal(false)}
+          initialValue={newWsFolderName || `Workspace ${workspaces.length + 1}`}
+          onBrowse={(path) => {
+            const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+            const folderName = parts[parts.length - 1] || 'New Workspace';
+            setNewWsFolderName(folderName);
+            setNewWsFolderCwd(path);
+          }}
+          onSave={(name) => handleCreateWorkspace(name)}
+          onClose={() => {
+            setShowCreateModal(false);
+            setNewWsFolderCwd(undefined);
+          }}
         />
       )}
 

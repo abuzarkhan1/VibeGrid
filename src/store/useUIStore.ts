@@ -63,7 +63,7 @@ interface UIState {
   confirmPendingLayoutAction: () => void;
   cancelPendingLayoutAction: () => void;
   requestSwitchWorkspace: (wsId: string) => void;
-  requestCreateWorkspace: (name: string) => void;
+  requestCreateWorkspace: (name: string, opts?: { activate?: boolean; defaultCwd?: string }) => void;
   openCreateWsModal: () => void;
   closeCreateWsModal: () => void;
 
@@ -171,8 +171,8 @@ export const useUIStore = create<UIState>((set, get) => ({
     useWorkspaceStore.getState().switchWorkspace(wsId);
   },
 
-  requestCreateWorkspace: (name: string) => {
-    useWorkspaceStore.getState().createWorkspace(name);
+  requestCreateWorkspace: (name: string, opts?: { activate?: boolean; defaultCwd?: string }) => {
+    useWorkspaceStore.getState().createWorkspace(name, opts);
   },
   openCreateWsModal: () => set({ isCreateWsModalOpen: true }),
   closeCreateWsModal: () => set({ isCreateWsModalOpen: false }),

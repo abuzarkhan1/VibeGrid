@@ -1,5 +1,5 @@
 import React from 'react';
-import { Circle } from 'lucide-react';
+import { Circle, Folder } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { PresetCount } from '@/types/layout';
@@ -72,8 +72,8 @@ export const CentralPromptCard: React.FC = () => {
           {/* Workspace Identity Header */}
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-6">
             <div className="flex items-center gap-4">
-              <div className="relative w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0 backdrop-blur-md shadow-inner">
-                <span className="text-xl">{activeWs?.emoji || '⚡'}</span>
+              <div className="relative w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shrink-0 backdrop-blur-md shadow-inner text-white/80">
+                <Folder className="w-5 h-5 text-white/80" />
               </div>
               <div>
                 <div className="text-base font-semibold text-white/90 tracking-wide">{activeWs?.name || 'VibeGrid'}</div>

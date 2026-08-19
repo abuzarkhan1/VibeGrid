@@ -42,7 +42,7 @@ interface WorkspaceState {
   activeWorkspaceId: string;
   isLoading: boolean;
 
-  createWorkspace: (name: string, opts?: { activate?: boolean }) => string;
+  createWorkspace: (name: string, opts?: { activate?: boolean; defaultCwd?: string; overrides?: WorkspaceOverrides }) => string;
   switchWorkspace: (id: string) => void;
   renameWorkspace: (id: string, newName: string) => void;
   deleteWorkspace: (id: string) => void;
@@ -238,9 +238,13 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   activeWorkspaceId: defaultWorkspaceId,
   isLoading: true,
 
-  createWorkspace: (name: string, opts?: { activate?: boolean }): string => {
+  createWorkspace: (name: string, opts?: { activate?: boolean; defaultCwd?: string; overrides?: WorkspaceOverrides }): string => {
     const activate = opts?.activate !== false;
     const id = newWorkspaceId();
+    const overrides: WorkspaceOverrides = {
+      ...(opts?.overrides || {}),
+      ...(opts?.defaultCwd ? { defaultCwd: opts.defaultCwd } : {}),
+    };
     const newWs: Workspace = {
       id,
       name,
@@ -248,10 +252,12 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         type: 'terminal',
         id: `term-${Date.now()}`,
         title: 'Terminal 1',
+        cwd: opts?.defaultCwd,
       },
       createdAt: Date.now(),
       updatedAt: Date.now(),
       version: 1,
+      overrides: Object.keys(overrides).length > 0 ? overrides : undefined,
     };
 
     // Workspace isolation: before the pane store switches to the fresh

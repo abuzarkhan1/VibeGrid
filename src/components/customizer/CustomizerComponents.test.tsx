@@ -43,11 +43,11 @@ describe('Customizer Components & ICE UI', () => {
       expect(useCustomizationStore.getState().workspaceName).toBe('Dev');
     });
 
-    it('updates emoji badge on emblem click', () => {
+    it('updates vector icon badge on emblem click', () => {
       render(<IdentitySection />);
-      const robotBtn = screen.getByText('🤖');
-      fireEvent.click(robotBtn);
-      expect(useCustomizationStore.getState().workspaceIcon.value).toBe('🤖');
+      const botBtn = screen.getByRole('button', { name: /Agent Bot/i });
+      fireEvent.click(botBtn);
+      expect(useCustomizationStore.getState().workspaceIcon.value).toBe('Bot');
     });
   });
 

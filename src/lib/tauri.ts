@@ -326,3 +326,20 @@ export async function listenModelProgress(
   if (!isTauri()) return () => {};
   return await listen<ModelProgress>('vibegrid://model-progress', handler);
 }
+
+/** Open native system folder picker */
+export async function pickFolder(title = 'Choose Project Directory'): Promise<string | null> {
+  if (!isTauri()) return null;
+  try {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const selected = await open({ directory: true, multiple: false, title });
+    if (typeof selected === 'string' && selected.trim()) {
+      return selected.trim();
+    }
+    return null;
+  } catch (e) {
+    console.warn('[VibeGrid] Native folder picker error:', e);
+    return null;
+  }
+}
+

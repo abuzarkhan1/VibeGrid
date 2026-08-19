@@ -577,10 +577,29 @@ export const CommandPalette: React.FC = () => {
 
       {showWsModal && (
         <InputModal
-          title="Create New Workspace"
+          title="Create New Project Workspace"
+          description="Enter a workspace name or click Browse to select a project directory."
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
-          onSave={(name) => requestCreateWorkspace(name.slice(0, useSettingsStore.getState().workspaceNameMaxLength))}
+          onBrowse={(path) => {
+            const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+            const folderName = parts[parts.length - 1] || `Workspace ${workspaces.length + 1}`;
+            const maxLen = useSettingsStore.getState().workspaceNameMaxLength;
+            useWorkspaceStore.getState().createWorkspace(folderName.slice(0, maxLen), {
+              activate: true,
+              defaultCwd: path,
+            });
+            setShowWsModal(false);
+            addToast({
+              type: 'success',
+              title: 'Workspace Created',
+              description: `"${folderName}" is now active (${path}).`,
+            });
+          }}
+          onSave={(name) => {
+            requestCreateWorkspace(name.slice(0, useSettingsStore.getState().workspaceNameMaxLength));
+            setShowWsModal(false);
+          }}
           onClose={() => setShowWsModal(false)}
         />
       )}

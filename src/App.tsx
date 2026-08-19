@@ -20,7 +20,7 @@ import { ContentAwareDiffViewer } from '@/components/terminal/ContentAwareDiffVi
 import { AgentConversationPanel } from '@/components/chat/AgentConversationPanel';
 import { CentralPromptCard } from '@/components/home/CentralPromptCard';
 
-import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
+import { usePaneStore, getTerminalNodes, killPanesInLayout } from '@/store/usePaneStore';
 import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
@@ -232,6 +232,7 @@ export const App: React.FC = () => {
       } catch (e) {
         console.error('[App] Final save before close failed:', e);
       } finally {
+        killPanesInLayout(usePaneStore.getState().root);
         if (unlisten) unlisten();
         const win = (await import('@tauri-apps/api/window')).getCurrentWindow();
 
@@ -239,7 +240,11 @@ export const App: React.FC = () => {
         if (minimizeToTray || closeToTray) {
           await win.hide();
         } else {
-          await win.close();
+          try {
+            await win.destroy();
+          } catch {
+            await win.close();
+          }
         }
       }
     };
@@ -536,9 +541,21 @@ export const App: React.FC = () => {
     } catch (e) {
       console.error('[App] Final save before quit failed:', e);
     }
+    killPanesInLayout(usePaneStore.getState().root);
     quitApproved = true;
-    const { getCurrentWindow } = await import('@tauri-apps/api/window');
-    await getCurrentWindow().close();
+    if (isTauri()) {
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const win = getCurrentWindow();
+        try {
+          await win.destroy();
+        } catch {
+          await win.close();
+        }
+      } catch (err) {
+        console.error('[App] Error closing Tauri window:', err);
+      }
+    }
   };
 
   const quittingRunningCount = usePaneStore((s) =>
@@ -670,9 +687,25 @@ export const App: React.FC = () => {
           background — workspace isolation). */}
       {isCreateWsModalOpen && (
         <InputModal
-          title="Create New Workspace"
+          title="Create New Project Workspace"
+          description="Enter a workspace name or click Browse to select a project directory."
           placeholder={`Workspace ${workspaces.length + 1}`}
           initialValue={`Workspace ${workspaces.length + 1}`}
+          onBrowse={(path) => {
+            const parts = path.replace(/\\/g, '/').split('/').filter(Boolean);
+            const folderName = parts[parts.length - 1] || `Workspace ${workspaces.length + 1}`;
+            const maxLen = useSettingsStore.getState().workspaceNameMaxLength;
+            requestCreateWorkspace(folderName.slice(0, maxLen), {
+              activate: true,
+              defaultCwd: path,
+            });
+            closeCreateWsModal();
+            addToast({
+              type: 'success',
+              title: 'Workspace Created',
+              description: `"${folderName}" is now active (${path}).`,
+            });
+          }}
           onSave={(name) => {
             requestCreateWorkspace(name.slice(0, useSettingsStore.getState().workspaceNameMaxLength));
           }}

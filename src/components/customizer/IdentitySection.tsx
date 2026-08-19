@@ -1,27 +1,107 @@
 import React from 'react';
 import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
-import { Wand2, Folder, Check } from 'lucide-react';
+import {
+  Wand2,
+  Folder,
+  Check,
+  Bot,
+  BrainCircuit,
+  Terminal,
+  Cpu,
+  Code,
+  Sparkles,
+  Zap,
+  Layers,
+  Globe,
+  Activity,
+  Server,
+  Shield,
+  Workflow,
+  Rocket,
+  Coffee,
+  Compass,
+  Boxes,
+  Database,
+  Flame,
+  Layout,
+  FileCode,
+} from 'lucide-react';
 import { WorkspaceIconConfig } from '@/types/customization';
 
-const EMOJI_CATEGORIES: { name: string; items: string[] }[] = [
+const VECTOR_ICON_CATEGORIES = [
   {
     name: 'AI & Intelligence',
-    items: ['🤖', '🧠', '✨', '⚡', '🔮', '🧬', '🔬', '👁️'],
+    items: [
+      { id: 'Bot', icon: Bot, label: 'Agent Bot' },
+      { id: 'BrainCircuit', icon: BrainCircuit, label: 'Neural / Reasoning' },
+      { id: 'Sparkles', icon: Sparkles, label: 'AI Magic' },
+      { id: 'Zap', icon: Zap, label: 'Fast Inference' },
+      { id: 'Cpu', icon: Cpu, label: 'Compute Unit' },
+      { id: 'Activity', icon: Activity, label: 'Monitor' },
+    ],
   },
   {
-    name: 'Development & Code',
-    items: ['💻', '🚀', '🛠️', '📦', '🎯', '🧪', '🔥', '💎'],
+    name: 'Development & Terminal',
+    items: [
+      { id: 'Terminal', icon: Terminal, label: 'Terminal' },
+      { id: 'Code', icon: Code, label: 'Codebase' },
+      { id: 'FileCode', icon: FileCode, label: 'Source File' },
+      { id: 'Rocket', icon: Rocket, label: 'Deployment' },
+      { id: 'Flame', icon: Flame, label: 'Hot Reload' },
+      { id: 'Workflow', icon: Workflow, label: 'Workflow Pipeline' },
+    ],
   },
   {
-    name: 'Ops & Cloud',
-    items: ['🌐', '🔒', '🛡️', '📡', '🚢', '☁️', '🗄️', '⚙️'],
+    name: 'Infrastructure & Cloud',
+    items: [
+      { id: 'Globe', icon: Globe, label: 'Web Server' },
+      { id: 'Server', icon: Server, label: 'Backend Host' },
+      { id: 'Database', icon: Database, label: 'Database' },
+      { id: 'Shield', icon: Shield, label: 'Security Vault' },
+      { id: 'Boxes', icon: Boxes, label: 'Microservices' },
+      { id: 'Layers', icon: Layers, label: 'Full Stack' },
+    ],
   },
   {
-    name: 'Vibe & Identity',
-    items: ['☕', '🔭', '🪐', '🕹️', '🎨', '🥑', '👾', '🌈'],
+    name: 'Workspace & Vibe',
+    items: [
+      { id: 'Folder', icon: Folder, label: 'Project Root' },
+      { id: 'Layout', icon: Layout, label: 'Grid Matrix' },
+      { id: 'Compass', icon: Compass, label: 'Navigator' },
+      { id: 'Coffee', icon: Coffee, label: 'Vibe Dev' },
+    ],
   },
 ];
+
+const renderVectorIcon = (val: string, className = 'w-6 h-6') => {
+  switch (val) {
+    case 'Bot': return <Bot className={className} />;
+    case 'BrainCircuit': return <BrainCircuit className={className} />;
+    case 'Sparkles': return <Sparkles className={className} />;
+    case 'Zap': return <Zap className={className} />;
+    case 'Cpu': return <Cpu className={className} />;
+    case 'Activity': return <Activity className={className} />;
+    case 'Terminal': return <Terminal className={className} />;
+    case 'Code': return <Code className={className} />;
+    case 'FileCode': return <FileCode className={className} />;
+    case 'Rocket': return <Rocket className={className} />;
+    case 'Flame': return <Flame className={className} />;
+    case 'Workflow': return <Workflow className={className} />;
+    case 'Globe': return <Globe className={className} />;
+    case 'Server': return <Server className={className} />;
+    case 'Database': return <Database className={className} />;
+    case 'Shield': return <Shield className={className} />;
+    case 'Boxes': return <Boxes className={className} />;
+    case 'Layers': return <Layers className={className} />;
+    case 'Layout': return <Layout className={className} />;
+    case 'Compass': return <Compass className={className} />;
+    case 'Coffee': return <Coffee className={className} />;
+    case 'Folder': return <Folder className={className} />;
+    default:
+      return <Bot className={className} />;
+  }
+};
 
 const COLOR_RINGS = [
   { hex: '#8B5CF6', label: 'VibeGrid Violet' },
@@ -95,13 +175,13 @@ export const IdentitySection: React.FC = () => {
       <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div
-            className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-black/40 border-2 transition-all duration-300 shadow-lg text-2xl"
+            className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-black/40 border-2 transition-all duration-300 shadow-lg text-white/90"
             style={{
               borderColor: colorRingHex,
               boxShadow: `0 0 20px ${colorRingHex}30`,
             }}
           >
-            <span>{effectiveWorkspaceIcon.value}</span>
+            {renderVectorIcon(effectiveWorkspaceIcon.value, 'w-6 h-6')}
             <span
               className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black"
               style={{ backgroundColor: colorRingHex }}
@@ -153,38 +233,45 @@ export const IdentitySection: React.FC = () => {
         </div>
       </div>
 
-      {/* Emoji & Emblem Badge Picker */}
+      {/* Vector Emblem Badge Picker */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block font-mono">
             Workspace Emblem / Badge
           </label>
           <span className="text-[10px] font-mono text-white/40">
-            Rendered in sidebar and status bar
+            Professional vector icons rendered in sidebar & status bar
           </span>
         </div>
 
-        <div className="space-y-3 p-4 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-md">
-          {EMOJI_CATEGORIES.map((category) => (
+        <div className="space-y-4 p-4 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-md">
+          {VECTOR_ICON_CATEGORIES.map((category) => (
             <div key={category.name}>
-              <div className="text-[10px] font-mono font-bold text-white/60 uppercase tracking-wider mb-1.5">
+              <div className="text-[10px] font-mono font-bold text-white/60 uppercase tracking-wider mb-2">
                 {category.name}
               </div>
-              <div className="grid grid-cols-8 gap-2">
-                {category.items.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => handleIconChange({ type: 'emoji', value: emoji })}
-                    className={`w-10 h-10 rounded-xl text-lg flex items-center justify-center transition-all ${
-                      effectiveWorkspaceIcon.value === emoji
-                        ? 'bg-white/10 border-2 border-white/80 scale-105'
-                        : 'bg-white/[0.02] border border-white/10 hover:bg-white/[0.04]'
-                    }`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+              <div className="grid grid-cols-6 gap-2">
+                {category.items.map((item) => {
+                  const Icon = item.icon;
+                  const isSelected = effectiveWorkspaceIcon.value === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleIconChange({ type: 'lucide', value: item.id })}
+                      title={item.label}
+                      aria-label={item.label}
+                      className={`h-11 rounded-xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-white/15 border-2 border-white/80 scale-105 text-white shadow-sm'
+                          : 'bg-white/[0.02] border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.06]'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      <span className="text-[9px] font-mono truncate max-w-[50px]">{item.id}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ))}
