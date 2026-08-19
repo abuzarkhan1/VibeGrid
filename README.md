@@ -156,7 +156,6 @@ agent can see what is running in every pane:
    npm install
    npm run dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) to view the marketing site.
 
 5. **Build Production Desktop Binary**:
    ```bash
