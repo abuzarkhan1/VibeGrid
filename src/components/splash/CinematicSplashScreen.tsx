@@ -1,5 +1,4 @@
 import React, { useEffect, useCallback, useRef, useState } from 'react';
-import { playConvergenceWhoosh, playCrystallineSnapLock } from '@/lib/brandSoundEngine';
 
 interface CinematicSplashScreenProps {
   onComplete?: () => void;
@@ -8,7 +7,6 @@ interface CinematicSplashScreenProps {
 
 export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
   onComplete,
-  enableSound = true,
 }) => {
   const [isFading, setIsFading] = useState(false);
   const isExitingRef = useRef(false);
@@ -31,7 +29,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
     setIsFading(true);
     exitTimerRef.current = setTimeout(() => {
       onComplete?.();
-    }, 500);
+    }, 400);
   }, [onComplete, clearAllTimers]);
 
   useEffect(() => {
@@ -50,34 +48,22 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
       const reducedMotionTimer = setTimeout(() => {
         if (isExitingRef.current) return;
         handleExit();
-      }, 3000);
+      }, 2000);
       stageTimersRef.current.push(reducedMotionTimer);
       return () => clearTimeout(reducedMotionTimer);
     }
 
-    const s1 = setTimeout(() => {
-      if (isExitingRef.current) return;
-      if (enableSound) playConvergenceWhoosh(0.25);
-    }, 150);
-
-    const s2 = setTimeout(() => {
-      if (isExitingRef.current) return;
-      if (enableSound) playCrystallineSnapLock(0.4);
-    }, 2200);
-
     const completeTimer = setTimeout(() => {
       if (isExitingRef.current) return;
       handleExit();
-    }, 7000);
+    }, 2000);
 
-    stageTimersRef.current = [s1, s2, completeTimer];
+    stageTimersRef.current = [completeTimer];
 
     return () => {
-      clearTimeout(s1);
-      clearTimeout(s2);
       clearTimeout(completeTimer);
     };
-  }, [enableSound, handleExit]);
+  }, [handleExit]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -134,7 +120,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0) 68%);
           opacity: 0;
           filter: blur(12px);
-          animation: glowBloom 2.6s ease-out 1.9s forwards, glowBreathe 3.4s ease-in-out 4.5s infinite;
+          animation: glowBloom 1.2s ease-out 0.5s forwards;
           pointer-events: none;
         }
 
@@ -162,10 +148,10 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           transform-origin: center;
         }
         
-        .vibegrid-splash-root .card-tl { animation: flyTL 0.85s cubic-bezier(.2,.7,.2,1) 0.15s forwards; }
-        .vibegrid-splash-root .card-tr { animation: flyTR 0.85s cubic-bezier(.2,.7,.2,1) 0.32s forwards; }
-        .vibegrid-splash-root .card-bl { animation: flyBL 0.85s cubic-bezier(.2,.7,.2,1) 0.49s forwards; }
-        .vibegrid-splash-root .card-br { animation: flyBR 0.85s cubic-bezier(.2,.7,.2,1) 0.66s forwards; }
+        .vibegrid-splash-root .card-tl { animation: flyTL 0.5s cubic-bezier(.2,.7,.2,1) 0.05s forwards; }
+        .vibegrid-splash-root .card-tr { animation: flyTR 0.5s cubic-bezier(.2,.7,.2,1) 0.12s forwards; }
+        .vibegrid-splash-root .card-bl { animation: flyBL 0.5s cubic-bezier(.2,.7,.2,1) 0.19s forwards; }
+        .vibegrid-splash-root .card-br { animation: flyBR 0.5s cubic-bezier(.2,.7,.2,1) 0.26s forwards; }
 
         @keyframes flyTL { from { transform: translate(-70vw,-70vh) rotate(-30deg); opacity: 0; } to { transform: translate(0,0) rotate(0); opacity: 1; } }
         @keyframes flyTR { from { transform: translate(70vw,-70vh) rotate(30deg); opacity: 0; } to { transform: translate(0,0) rotate(0); opacity: 1; } }
@@ -184,7 +170,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
           transform-box: fill-box;
           transform-origin: center;
-          animation: ringClose 1s cubic-bezier(.32,1.5,.55,1) 1.15s forwards;
+          animation: ringClose 0.6s cubic-bezier(.32,1.5,.55,1) 0.45s forwards;
         }
         @keyframes ringClose {
           0%   { stroke-dashoffset: 974; opacity: 0; transform: scale(.82) rotate(-90deg); }
@@ -217,8 +203,8 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           display: inline-block;
           opacity: 0;
           transform: translateY(16px);
-          animation: letterUp 0.55s ease-out forwards;
-          animation-delay: calc(2.15s + (var(--i) * 0.045s));
+          animation: letterUp 0.35s ease-out forwards;
+          animation-delay: calc(0.7s + (var(--i) * 0.035s));
         }
         
         @keyframes letterUp { to { opacity: 1; transform: translateY(0); } }
@@ -229,7 +215,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           margin-top: 10px; /* Removed auto, flex handles centering */
           background: linear-gradient(90deg, transparent, var(--white), transparent);
           box-shadow: 0 0 10px rgba(255,255,255,0.5);
-          animation: underlineDraw 0.7s ease-out 2.55s forwards;
+          animation: underlineDraw 0.45s ease-out 0.95s forwards;
         }
         @keyframes underlineDraw { to { width: 190px; } }
 

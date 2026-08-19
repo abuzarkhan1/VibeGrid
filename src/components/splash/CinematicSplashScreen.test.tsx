@@ -63,15 +63,15 @@ describe('CinematicSplashScreen', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('auto-advances smoothly across full animation timeline', () => {
+  it('auto-advances smoothly across full animation timeline (2 seconds)', () => {
     const onComplete = vi.fn();
     render(<CinematicSplashScreen onComplete={onComplete} />);
 
     expect(onComplete).not.toHaveBeenCalled();
 
-    // Advance past full timeline (7000ms + 500ms fade)
+    // Advance past full timeline (2000ms + 400ms fade)
     act(() => {
-      vi.advanceTimersByTime(7600);
+      vi.advanceTimersByTime(2500);
     });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
@@ -93,7 +93,7 @@ describe('CinematicSplashScreen', () => {
     render(<CinematicSplashScreen onComplete={onComplete} />);
 
     act(() => {
-      vi.advanceTimersByTime(3600);
+      vi.advanceTimersByTime(2500);
     });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
