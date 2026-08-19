@@ -139,7 +139,17 @@ describe('useAgentStore', () => {
       initialPrompt: 'Fix failing tests in auth.rs',
       autoStart: true,
     });
-    expect(claudeCmd).toBe('claude --model claude-3-7-sonnet --dangerously-skip-permissions "Fix failing tests in auth.rs"');
+    expect(claudeCmd).toBe("claude --model claude-3-7-sonnet --dangerously-skip-permissions 'Fix failing tests in auth.rs'");
+
+    const injectedCmd = buildAgentCommand({
+      agentId: 'claude-code',
+      binaryPath: 'claude',
+      name: 'Claude Code',
+      cliArgs: [],
+      initialPrompt: "Fix auth $(rm -rf /) `whoami` and don't break",
+      autoStart: true,
+    });
+    expect(injectedCmd).toBe("claude 'Fix auth $(rm -rf /) `whoami` and don'\\''t break'");
 
     const aiderCmd = buildAgentCommand({
       agentId: 'aider',

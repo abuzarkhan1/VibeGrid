@@ -45,8 +45,11 @@ describe('VibeGrid Keybindings Store', () => {
   });
 
   it('matches single-character keys via code', () => {
-    const ev = new KeyboardEvent('keydown', { key: 'D', code: 'KeyD', shiftKey: true, metaKey: true });
-    expect(useKeybindingsStore.getState().matchesKeybinding(ev, 'split-vertical')).toBe(true);
+    const evD = new KeyboardEvent('keydown', { key: 'D', code: 'KeyD', shiftKey: true, metaKey: true });
+    expect(useKeybindingsStore.getState().matchesKeybinding(evD, 'toggle-diff-viewer')).toBe(true);
+
+    const evE = new KeyboardEvent('keydown', { key: 'E', code: 'KeyE', shiftKey: true, metaKey: true });
+    expect(useKeybindingsStore.getState().matchesKeybinding(evE, 'split-vertical')).toBe(true);
   });
 
   it('defaults the global-summon binding to Mod+Shift+Space', () => {

@@ -202,6 +202,10 @@ export const DEFAULT_VAULT_FLAGS = [
   { flag: '--verbose', label: 'Verbose Debug Output', agentIds: ['claude-code', 'aider', 'codex', 'grok', 'kimi', 'qwen', 'deepseek', 'gemini'] },
 ];
 
+export function escapeShellArg(arg: string): string {
+  return `'${arg.replace(/'/g, "'\\''")}'`;
+}
+
 export function buildAgentCommand(config: import('@/types/agent').PaneAgentConfig): string {
   if (!config || config.agentId === 'shell') return '';
   const parts: string[] = [];
@@ -227,7 +231,7 @@ export function buildAgentCommand(config: import('@/types/agent').PaneAgentConfi
   }
 
   if (config.initialPrompt && config.initialPrompt.trim()) {
-    parts.push(`"${config.initialPrompt.trim().replace(/"/g, '\\"')}"`);
+    parts.push(escapeShellArg(config.initialPrompt.trim()));
   }
 
   return parts.join(' ').trim();

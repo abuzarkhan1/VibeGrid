@@ -769,7 +769,15 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       label: 'Appearance for This Pane…',
       icon: <Palette className="w-3.5 h-3.5" />,
       action: () => {
-        setAppearancePos(menu ? { x: menu.x, y: menu.y } : null);
+        if (menu) {
+          const winW = typeof window !== 'undefined' ? window.innerWidth : 1200;
+          const winH = typeof window !== 'undefined' ? window.innerHeight : 800;
+          const clampedX = Math.max(10, Math.min(menu.x, winW - 250));
+          const clampedY = Math.max(10, Math.min(menu.y, winH - 300));
+          setAppearancePos({ x: clampedX, y: clampedY });
+        } else {
+          setAppearancePos(null);
+        }
         setShowAppearanceMenu(true);
       },
     },
@@ -907,7 +915,10 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           <div className="fixed inset-0 z-[59]" onClick={() => setShowAppearanceMenu(false)} />
           <div
             className="fixed z-[60] w-[230px] rounded-xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl p-3 text-xs space-y-2.5 animate-fade-in font-mono"
-            style={{ left: appearancePos.x, top: appearancePos.y }}
+            style={{
+              left: Math.max(10, Math.min(appearancePos.x, (typeof window !== 'undefined' ? window.innerWidth : 1200) - 250)),
+              top: Math.max(10, Math.min(appearancePos.y, (typeof window !== 'undefined' ? window.innerHeight : 800) - 300)),
+            }}
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">Pane Appearance</span>

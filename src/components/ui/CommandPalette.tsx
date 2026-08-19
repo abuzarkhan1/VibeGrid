@@ -198,7 +198,13 @@ export const CommandPalette: React.FC = () => {
       label: 'Split Pane in a New Folder…',
       category: 'Pane Operations',
       icon: <FolderOpen className="w-4 h-4 text-white/80" />,
-      action: () => setShowFolderModal(true),
+      action: () => {
+        if (!focusedPaneId) {
+          addToast({ type: 'warning', title: 'No pane selected', description: 'Click on a pane first to split it.' });
+          return;
+        }
+        setShowFolderModal(true);
+      },
     },
     {
       id: 'split-horizontal',
@@ -212,6 +218,8 @@ export const CommandPalette: React.FC = () => {
           if (!success && paneCount >= maxPanes) {
             notifyMaxPanes();
           }
+        } else {
+          addToast({ type: 'warning', title: 'No pane selected', description: 'Click on a pane first to split it.' });
         }
       },
     },
@@ -219,7 +227,7 @@ export const CommandPalette: React.FC = () => {
       id: 'split-vertical',
       label: 'Split Pane Vertically (Stacked)',
       category: 'Pane Operations',
-      shortcut: keybindings['split-vertical']?.currentKey || 'Mod+Shift+D',
+      shortcut: keybindings['split-vertical']?.currentKey || 'Mod+Shift+E',
       icon: <Rows className="w-4 h-4 text-white/80" />,
       action: () => {
         if (focusedPaneId) {
@@ -227,6 +235,8 @@ export const CommandPalette: React.FC = () => {
           if (!success && paneCount >= maxPanes) {
             notifyMaxPanes();
           }
+        } else {
+          addToast({ type: 'warning', title: 'No pane selected', description: 'Click on a pane first to split it.' });
         }
       },
     },
@@ -709,29 +719,35 @@ export const CommandPalette: React.FC = () => {
           initialValue=""
           onBrowse={(path) => {
             const trimmed = path.trim();
-            if (trimmed && focusedPaneId) {
-              const ok = splitPane(focusedPaneId, 'horizontal');
-              if (ok) {
-                const newId = usePaneStore.getState().focusedPaneId;
-                if (newId) setPaneCwd(newId, trimmed);
-                addToast({ type: 'success', title: 'Pane opened', description: `New pane cwd: ${trimmed}` });
-                setShowFolderModal(false);
-              } else {
-                notifyMaxPanes();
-              }
+            if (!trimmed) return;
+            if (!focusedPaneId) {
+              addToast({ type: 'warning', title: 'No pane selected', description: 'Click on a pane first to split it.' });
+              return;
+            }
+            const ok = splitPane(focusedPaneId, 'horizontal');
+            if (ok) {
+              const newId = usePaneStore.getState().focusedPaneId;
+              if (newId) setPaneCwd(newId, trimmed);
+              addToast({ type: 'success', title: 'Pane opened', description: `New pane cwd: ${trimmed}` });
+              setShowFolderModal(false);
+            } else {
+              notifyMaxPanes();
             }
           }}
           onSave={(path) => {
             const trimmed = path.trim();
-            if (trimmed && focusedPaneId) {
-              const ok = splitPane(focusedPaneId, 'horizontal');
-              if (ok) {
-                const newId = usePaneStore.getState().focusedPaneId;
-                if (newId) setPaneCwd(newId, trimmed);
-                addToast({ type: 'success', title: 'Pane opened', description: `New pane cwd: ${trimmed}` });
-              } else {
-                notifyMaxPanes();
-              }
+            if (!trimmed) return;
+            if (!focusedPaneId) {
+              addToast({ type: 'warning', title: 'No pane selected', description: 'Click on a pane first to split it.' });
+              return;
+            }
+            const ok = splitPane(focusedPaneId, 'horizontal');
+            if (ok) {
+              const newId = usePaneStore.getState().focusedPaneId;
+              if (newId) setPaneCwd(newId, trimmed);
+              addToast({ type: 'success', title: 'Pane opened', description: `New pane cwd: ${trimmed}` });
+            } else {
+              notifyMaxPanes();
             }
           }}
           onClose={() => setShowFolderModal(false)}

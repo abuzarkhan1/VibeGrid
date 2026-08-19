@@ -304,15 +304,23 @@ export const AgentLauncherModal: React.FC<AgentLauncherModalProps> = ({
               </div>
 
               {/* Agent Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {agents.map((agent) => (
-                  <AgentCatalogCard
-                    key={agent.id}
-                    agent={agent}
-                    isSelected={selectedAgentId === agent.id}
-                    onSelect={() => setSelectedAgent(agent.id)}
-                  />
-                ))}
+              <div className="relative">
+                <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 transition-opacity duration-200 ${isScanning ? 'opacity-40 pointer-events-none' : ''}`}>
+                  {agents.map((agent) => (
+                    <AgentCatalogCard
+                      key={agent.id}
+                      agent={agent}
+                      isSelected={selectedAgentId === agent.id}
+                      onSelect={() => setSelectedAgent(agent.id)}
+                    />
+                  ))}
+                </div>
+                {isScanning && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-2xl border border-white/10 gap-2.5 z-10 animate-fade-in">
+                    <RefreshCw className="w-5 h-5 text-white/80 animate-spin" />
+                    <span className="text-xs font-mono text-white/70">Scanning environment for CLI agents…</span>
+                  </div>
+                )}
               </div>
 
               {/* Batch Configuration Strip */}

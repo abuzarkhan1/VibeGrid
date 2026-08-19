@@ -29,8 +29,8 @@ const defaultBindings: Record<string, Keybinding> = {
     id: 'split-vertical',
     label: 'Split Pane Vertically',
     category: 'Pane Operations',
-    defaultKey: 'Mod+Shift+D',
-    currentKey: 'Mod+Shift+D',
+    defaultKey: 'Mod+Shift+E',
+    currentKey: 'Mod+Shift+E',
   },
   'close-pane': {
     id: 'close-pane',
@@ -180,6 +180,34 @@ const defaultBindings: Record<string, Keybinding> = {
     category: 'Voice',
     defaultKey: 'Mod+Shift+V',
     currentKey: 'Mod+Shift+V',
+  },
+  'open-layout-studio': {
+    id: 'open-layout-studio',
+    label: 'Open Layout Studio',
+    category: 'Navigation',
+    defaultKey: 'Mod+Shift+L',
+    currentKey: 'Mod+Shift+L',
+  },
+  'open-agent-launcher': {
+    id: 'open-agent-launcher',
+    label: 'Open AI Agent Launcher',
+    category: 'AI Agents',
+    defaultKey: 'Mod+Shift+A',
+    currentKey: 'Mod+Shift+A',
+  },
+  'toggle-diff-viewer': {
+    id: 'toggle-diff-viewer',
+    label: 'Toggle Diff Viewer',
+    category: 'Workspace',
+    defaultKey: 'Mod+Shift+D',
+    currentKey: 'Mod+Shift+D',
+  },
+  'toggle-chat': {
+    id: 'toggle-chat',
+    label: 'Toggle AI Chat Panel',
+    category: 'AI Agents',
+    defaultKey: 'Mod+Shift+C',
+    currentKey: 'Mod+Shift+C',
   },
 };
 

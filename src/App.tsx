@@ -27,6 +27,7 @@ import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useAgentStore } from '@/store/useAgentStore';
 import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
+import { useLayoutStudioStore } from '@/store/useLayoutStudioStore';
 import { useKeybindingsStore, matchesAccel } from '@/store/useKeybindingsStore';
 
 import { useVoiceToTerminal } from '@/hooks/useVoiceToTerminal';
@@ -394,6 +395,30 @@ export const App: React.FC = () => {
         return;
       }
 
+      if (matchesKeybinding(e, 'open-layout-studio')) {
+        e.preventDefault();
+        useLayoutStudioStore.getState().openStudio();
+        return;
+      }
+
+      if (matchesKeybinding(e, 'open-agent-launcher')) {
+        e.preventDefault();
+        useAgentStore.getState().openLauncher();
+        return;
+      }
+
+      if (matchesKeybinding(e, 'toggle-diff-viewer')) {
+        e.preventDefault();
+        useUIStore.getState().toggleDiffViewer();
+        return;
+      }
+
+      if (matchesKeybinding(e, 'toggle-chat')) {
+        e.preventDefault();
+        useUIStore.getState().toggleChat();
+        return;
+      }
+
       if (matchesKeybinding(e, 'new-workspace')) {
         e.preventDefault();
         openCreateWsModal();
@@ -522,6 +547,7 @@ export const App: React.FC = () => {
 
   const activeViewMode = useUIStore((s) => s.activeViewMode);
   const isSettingsOpen = useUIStore((s) => s.isSettingsOpen);
+  const isWorkspaceLoading = useWorkspaceStore((s) => s.isLoading);
 
   return (
     <div
@@ -530,6 +556,13 @@ export const App: React.FC = () => {
     >
 
       <main className="flex-1 w-full overflow-hidden relative flex">
+        {isWorkspaceLoading && (
+          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-30 animate-fade-in pointer-events-none">
+            <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
+            <span className="text-xs font-mono text-white/50">Restoring workspace layout…</span>
+          </div>
+        )}
+
         <WorkspaceSidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen((prev) => !prev)} />
 
         {isSettingsOpen ? (

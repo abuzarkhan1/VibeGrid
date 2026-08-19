@@ -30,6 +30,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
   const {
     workspaces,
     activeWorkspaceId,
+    isLoading,
     renameWorkspace,
     deleteWorkspace,
     switchWorkspace,
@@ -115,6 +116,16 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
         >
           <Plus className="w-4 h-4" />
         </button>
+        <div className="mt-auto">
+          <button
+            onClick={toggleSettings}
+            title="Settings (Cmd+,)"
+            aria-label="Open settings"
+            className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.04] transition-colors cursor-pointer"
+          >
+            <Settings className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     );
   }
@@ -214,12 +225,22 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
 
         {/* Projects & Workspace Trees */}
         <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1.5 custom-scrollbar">
-          {workspaces.map((ws) => {
-            const isFolderOpen = expandedFolders[ws.id] !== false;
-            const isWsActive = ws.id === activeWorkspaceId;
+          {isLoading ? (
+            <div className="space-y-2 p-1 animate-pulse">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-10 rounded-2xl bg-white/[0.04] border border-white/5 flex items-center px-3.5 gap-2.5">
+                  <div className="w-4 h-4 rounded-md bg-white/10 shrink-0" />
+                  <div className="h-3 rounded bg-white/10 flex-1 max-w-[120px]" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            workspaces.map((ws) => {
+              const isFolderOpen = expandedFolders[ws.id] !== false;
+              const isWsActive = ws.id === activeWorkspaceId;
 
-            return (
-              <div key={ws.id} className="space-y-1">
+              return (
+                <div key={ws.id} className="space-y-1">
                 {/* Project Folder Row (Exact same pill UI/UX as New Workspace) */}
                 <div
                   onClick={() => handleWorkspaceClick(ws.id)}
@@ -296,7 +317,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                 )}
               </div>
             );
-          })}
+          }))}
         </div>
 
         {/* Bottom Pinned Footer: Settings */}
