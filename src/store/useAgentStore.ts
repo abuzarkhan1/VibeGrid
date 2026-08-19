@@ -8,14 +8,12 @@ interface AgentStoreState {
   isOpen: boolean;
   agents: DiscoveredAgent[];
   isScanning: boolean;
-  lastScannedAt: number | null;
   selectedAgentId: string;
   selectedModel: string;
   selectedCliArgs: string[];
   selectedInitialPrompt: string;
   selectedAutoStart: boolean;
   paneAssignments: Record<string, PaneAgentConfig>;
-  activePodId: string | null;
 
   // Actions
   openLauncher: () => void;
@@ -25,7 +23,6 @@ interface AgentStoreState {
   setSelectedCliArgs: (args: string[]) => void;
   setSelectedInitialPrompt: (prompt: string) => void;
   setSelectedAutoStart: (autoStart: boolean) => void;
-  setDiscoveredAgents: (agents: DiscoveredAgent[]) => void;
   assignAgentToPane: (paneNodeId: string, config: PaneAgentConfig) => void;
   batchAssignAgentToAll: (
     paneNodeIds: string[],
@@ -38,21 +35,18 @@ interface AgentStoreState {
   applyRolePod: (pod: HeterogeneousRolePod, paneNodeIds: string[]) => void;
   scanInstalledAgents: () => Promise<void>;
   provisionActivePanes: () => Promise<number>;
-  resetAssignments: () => void;
 }
 
 export const useAgentStore = create<AgentStoreState>((set, get) => ({
   isOpen: false,
   agents: BUILTIN_AGENTS,
   isScanning: false,
-  lastScannedAt: null,
   selectedAgentId: 'claude-code',
   selectedModel: 'claude-3-7-sonnet',
   selectedCliArgs: ['--dangerously-skip-permissions'],
   selectedInitialPrompt: '',
   selectedAutoStart: true,
   paneAssignments: {},
-  activePodId: null,
 
   openLauncher: () => set({ isOpen: true }),
   closeLauncher: () => set({ isOpen: false }),
@@ -68,7 +62,6 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
   setSelectedCliArgs: (selectedCliArgs) => set({ selectedCliArgs }),
   setSelectedInitialPrompt: (selectedInitialPrompt) => set({ selectedInitialPrompt }),
   setSelectedAutoStart: (selectedAutoStart) => set({ selectedAutoStart }),
-  setDiscoveredAgents: (agents) => set({ agents }),
 
   assignAgentToPane: (paneNodeId, config) =>
     set((state) => ({
@@ -112,7 +105,7 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
         };
       }
     });
-    set({ paneAssignments: newAssignments, activePodId: pod.id });
+    set({ paneAssignments: newAssignments });
   },
 
   scanInstalledAgents: async () => {
@@ -137,10 +130,10 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
         return agent;
       });
 
-      set({ agents: updated, isScanning: false, lastScannedAt: Date.now() });
+      set({ agents: updated, isScanning: false });
     } catch (e) {
       console.warn('[VibeGrid] Agent discovery failed, keeping defaults:', e);
-      set({ isScanning: false, lastScannedAt: Date.now() });
+      set({ isScanning: false });
     }
   },
 
@@ -171,6 +164,4 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
 
     return launchedCount;
   },
-
-  resetAssignments: () => set({ paneAssignments: {}, activePodId: null }),
 }));

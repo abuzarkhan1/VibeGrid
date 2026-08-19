@@ -29,7 +29,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
     isExitingRef.current = true;
     clearAllTimers();
     setIsFading(true);
-    setTimeout(() => {
+    exitTimerRef.current = setTimeout(() => {
       onComplete?.();
     }, 500);
   }, [onComplete, clearAllTimers]);
@@ -249,7 +249,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           color: rgba(255,255,255,0.4);
           opacity: 0.7;
           transition: opacity 0.2s;
-          pointer-events: none;
+          cursor: pointer;
         }
         .vibegrid-splash-root .skip-badge:hover {
           opacity: 1;
@@ -307,7 +307,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
         <div className="brand-underline"></div>
       </div>
 
-      <div className="skip-badge">
+      <div className="skip-badge" onClick={handleExit} role="button" tabIndex={0}>
         <span>Press</span>
         <kbd>Space</kbd>
         <span>or</span>

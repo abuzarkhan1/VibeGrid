@@ -26,13 +26,6 @@ export interface PaneAgentConfig {
   autoStart: boolean;
 }
 
-export interface AgentDiscoveryResult {
-  agentId: string;
-  isInstalled: boolean;
-  binaryPath?: string;
-  detectedVersion?: string;
-  binarySource?: string;
-}
 
 export interface HeterogeneousRolePod {
   id: string;

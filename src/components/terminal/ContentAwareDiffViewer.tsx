@@ -1,17 +1,12 @@
 import React, { useState } from 'react';
 import {
-  FileCode,
-  FileText,
-  Layout,
-  Database,
   Check,
   Copy,
   GitCommit,
-  Sparkles,
   X,
 } from 'lucide-react';
 
-export type DiffContentType = 'code' | 'markdown' | 'ui' | 'schema';
+export type DiffContentType = 'code';
 
 interface DiffLineItem {
   type: 'context' | 'add' | 'remove';
@@ -46,11 +41,9 @@ const DEFAULT_CODE_DIFF: DiffLineItem[] = [
 export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
   onClose,
   filePath = 'src/session/supervisor.ts',
-  initialMode = 'code',
   diffLines = DEFAULT_CODE_DIFF,
   stats = { additions: 6, deletions: 4 },
 }) => {
-  const [mode, setMode] = useState<DiffContentType>(initialMode);
   const [copied, setCopied] = useState(false);
 
   const handleCopyDiff = () => {
@@ -78,42 +71,6 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
           </span>
         </div>
 
-        {/* Content-Aware Mode Switcher */}
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg bg-black/40 border border-white/10">
-          <button
-            onClick={() => setMode('code')}
-            title="Monospace High-Contrast Code Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'code' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
-          >
-            <FileCode className="w-3 h-3" />
-            <span className="hidden sm:inline">Code</span>
-          </button>
-          <button
-            onClick={() => setMode('markdown')}
-            title="Rendered Markdown Document Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'markdown' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
-          >
-            <FileText className="w-3 h-3" />
-            <span className="hidden sm:inline">Markdown</span>
-          </button>
-          <button
-            onClick={() => setMode('ui')}
-            title="Visual UI Mockup Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'ui' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
-          >
-            <Layout className="w-3 h-3" />
-            <span className="hidden sm:inline">UI Diff</span>
-          </button>
-          <button
-            onClick={() => setMode('schema')}
-            title="Structured Schema & Data Model Diff"
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${mode === 'schema' ? 'bg-white/15 text-white font-medium' : 'text-white/40 hover:text-white/70'}`}
-          >
-            <Database className="w-3 h-3" />
-            <span className="hidden sm:inline">Schema</span>
-          </button>
-        </div>
-
         {/* Actions */}
         <div className="flex items-center gap-1.5">
           <button
@@ -137,172 +94,68 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
 
       {/* Main Diff Content */}
       <div className="flex-1 overflow-auto p-3 font-mono text-[12px] leading-relaxed">
-        {mode === 'code' && (
-          <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl bg-black/40 backdrop-blur-md">
-            <table className="w-full border-collapse text-left font-mono">
-              <thead>
-                <tr className="border-b border-white/10 bg-black/60 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
-                  <th className="w-10 py-1.5 px-2 text-right select-none border-r border-white/5">Old</th>
-                  <th className="w-10 py-1.5 px-2 text-right select-none border-r border-white/5">New</th>
-                  <th className="w-6 py-1.5 text-center select-none">+/-</th>
-                  <th className="py-1.5 px-3">Diff Content</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.03]">
-                {diffLines.map((line, idx) => {
-                  const isAdd = line.type === 'add';
-                  const isRemove = line.type === 'remove';
+        <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl bg-black/40 backdrop-blur-md">
+          <table className="w-full border-collapse text-left font-mono">
+            <thead>
+              <tr className="border-b border-white/10 bg-black/60 text-[10px] text-white/40 uppercase tracking-wider font-semibold">
+                <th className="w-10 py-1.5 px-2 text-right select-none border-r border-white/5">Old</th>
+                <th className="w-10 py-1.5 px-2 text-right select-none border-r border-white/5">New</th>
+                <th className="w-6 py-1.5 text-center select-none">+/-</th>
+                <th className="py-1.5 px-3">Diff Content</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.03]">
+              {diffLines.map((line, idx) => {
+                const isAdd = line.type === 'add';
+                const isRemove = line.type === 'remove';
 
-                  let rowStyle: React.CSSProperties = {};
-                  let textStyle: React.CSSProperties = { color: 'rgba(255,255,255,0.8)' };
-                  let marker = ' ';
+                let rowStyle: React.CSSProperties = {};
+                let textStyle: React.CSSProperties = { color: 'rgba(255,255,255,0.8)' };
+                let marker = ' ';
 
-                  if (isAdd) {
-                    rowStyle = {
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.8)',
-                    };
-                    textStyle = { color: '#ffffff', fontWeight: 500 };
-                    marker = '+';
-                  } else if (isRemove) {
-                    rowStyle = {
-                      backgroundColor: 'rgba(255,255,255,0.02)',
-                      boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.3)',
-                    };
-                    textStyle = { color: 'rgba(255,255,255,0.4)', fontWeight: 500 };
-                    marker = '-';
-                  }
-
-                  return (
-                    <tr
-                      key={idx}
-                      style={rowStyle}
-                      className="hover:bg-white/[0.04] transition-colors group"
-                    >
-                      <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
-                        {line.lineOld ?? ''}
-                      </td>
-                      <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
-                        {line.lineNew ?? ''}
-                      </td>
-                      <td
-                        className="w-6 py-0.5 text-center select-none text-[12px] font-bold"
-                        style={textStyle}
-                      >
-                        {marker}
-                      </td>
-                      <td className="py-0.5 px-3 whitespace-pre font-mono text-[12px]" style={textStyle}>
-                        {line.text.replace(/^[+-]\s*/, '')}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {mode === 'markdown' && (
-          <div className="p-5 rounded-xl border border-white/10 bg-black/40 backdrop-blur-md space-y-4 font-sans">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white/80">
-              <Sparkles className="w-4 h-4" />
-              <span>Rendered Document Diff (Markdown Mode)</span>
-            </div>
-            <h2 className="text-base font-bold text-white/90 border-b border-white/10 pb-2">
-              Autonomous Agent Supervisor Architecture
-            </h2>
-            <p className="text-xs text-white/40 leading-relaxed">
-              Codex agents coordinate parallel execution threads across git worktrees and unified PTY runners.
-            </p>
-            <div
-              className="p-3 rounded-lg border text-xs"
-              style={{
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                borderColor: 'rgba(255,255,255,0.2)',
-                color: '#ffffff',
-              }}
-            >
-              <strong>+ Added:</strong> Full support for 16-worker heterogeneous agent pods with autonomous PATH resolution and atomic worktree isolation.
-            </div>
-          </div>
-        )}
-
-        {mode === 'ui' && (
-          <div className="p-5 rounded-xl border border-white/10 bg-black/40 backdrop-blur-md font-sans space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-white/80">
-                <Layout className="w-4 h-4" />
-                <span>Visual UI Mockup Diff</span>
-              </div>
-              <span className="text-[11px] font-mono text-white/40">Side-by-Side Surface Render</span>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div
-                className="p-4 rounded-xl border space-y-2 bg-black/60"
-                style={{ borderColor: 'rgba(255,255,255,0.3)' }}
-              >
-                <span
-                  className="text-[10px] font-mono font-bold tracking-wider uppercase"
-                  style={{ color: 'rgba(255,255,255,0.5)' }}
-                >
-                  Previous Surface Mockup
-                </span>
-                <div className="h-24 rounded-lg bg-black/80 border border-white/5 flex items-center justify-center text-xs text-white/40">
-                  Single Terminal
-                </div>
-              </div>
-              <div
-                className="p-4 rounded-xl border space-y-2 bg-black/60"
-                style={{ borderColor: 'rgba(255,255,255,0.8)' }}
-              >
-                <span
-                  className="text-[10px] font-mono font-bold tracking-wider uppercase"
-                  style={{ color: '#ffffff' }}
-                >
-                  Updated Glassmorphic Grid
-                </span>
-                <div
-                  className="h-24 rounded-lg flex items-center justify-center text-xs font-semibold"
-                  style={{
+                if (isAdd) {
+                  rowStyle = {
                     backgroundColor: 'rgba(255,255,255,0.05)',
-                    color: '#ffffff',
-                  }}
-                >
-                  Multi-Pane Agent Matrix
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+                    boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.8)',
+                  };
+                  textStyle = { color: '#ffffff', fontWeight: 500 };
+                  marker = '+';
+                } else if (isRemove) {
+                  rowStyle = {
+                    backgroundColor: 'rgba(255,255,255,0.02)',
+                    boxShadow: 'inset 3px 0 0 rgba(255,255,255,0.3)',
+                  };
+                  textStyle = { color: 'rgba(255,255,255,0.4)', fontWeight: 500 };
+                  marker = '-';
+                }
 
-        {mode === 'schema' && (
-          <div className="p-5 rounded-xl border border-white/10 bg-black/40 backdrop-blur-md font-mono text-xs space-y-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-white/80 font-sans">
-              <Database className="w-4 h-4" />
-              <span>Structured Schema & Data Model Changes</span>
-            </div>
-            <div className="p-3 rounded-lg bg-black/60 border border-white/10 space-y-1.5">
-              <div
-                className="p-1.5 rounded"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.02)',
-                  color: 'rgba(255,255,255,0.4)',
-                }}
-              >
-                - type: SessionConfig &#123; maxThreads: 1 &#125;
-              </div>
-              <div
-                className="p-1.5 rounded"
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.05)',
-                  color: '#ffffff',
-                }}
-              >
-                + type: SessionConfig &#123; maxThreads: 16, worktreeIsolation: true, ptyMultiplexing: true &#125;
-              </div>
-            </div>
-          </div>
-        )}
+                return (
+                  <tr
+                    key={idx}
+                    style={rowStyle}
+                    className="hover:bg-white/[0.04] transition-colors group"
+                  >
+                    <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
+                      {line.lineOld ?? ''}
+                    </td>
+                    <td className="w-10 py-0.5 px-2 text-right select-none text-[11px] text-white/30 bg-black/40 border-r border-white/5">
+                      {line.lineNew ?? ''}
+                    </td>
+                    <td
+                      className="w-6 py-0.5 text-center select-none text-[12px] font-bold"
+                      style={textStyle}
+                    >
+                      {marker}
+                    </td>
+                    <td className="py-0.5 px-3 whitespace-pre font-mono text-[12px]" style={textStyle}>
+                      {line.text.replace(/^[+-]\s*/, '')}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Diff Footer Status */}

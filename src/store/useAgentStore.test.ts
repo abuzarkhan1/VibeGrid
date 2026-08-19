@@ -8,14 +8,12 @@ describe('useAgentStore', () => {
       isOpen: false,
       agents: BUILTIN_AGENTS,
       isScanning: false,
-      lastScannedAt: null,
       selectedAgentId: 'claude-code',
       selectedModel: 'claude-3-7-sonnet',
       selectedCliArgs: ['--dangerously-skip-permissions'],
       selectedInitialPrompt: '',
       selectedAutoStart: true,
       paneAssignments: {},
-      activePodId: null,
     });
   });
 
@@ -97,7 +95,6 @@ describe('useAgentStore', () => {
     store.applyRolePod(quadPod, paneIds);
 
     const state = useAgentStore.getState();
-    expect(state.activePodId).toBe('feature-team-4');
 
     const a0 = state.paneAssignments['pane-1'];
     expect(a0.agentId).toBe('claude-code');
@@ -122,7 +119,6 @@ describe('useAgentStore', () => {
 
     const state = useAgentStore.getState();
     expect(state.isScanning).toBe(false);
-    expect(state.lastScannedAt).not.toBeNull();
 
     const claude = state.agents.find((a) => a.id === 'claude-code')!;
     expect(claude.isInstalled).toBe(true);

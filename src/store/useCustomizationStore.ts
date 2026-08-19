@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import {
   WorkspaceIconConfig,
-  WorkspaceWallpaperConfig,
-  StatusBarWidgetConfig,
   RetroShaderConfig,
   RetroShaderPresetName,
 } from '@/types/customization';
@@ -10,25 +8,13 @@ import { DEFAULT_RETRO_CONFIG, RETRO_SHADER_PRESETS } from '@/lib/retroShaderPip
 import { useSettingsStore, THEMES, ThemeMode } from './useSettingsStore';
 import { useWorkspaceStore } from './useWorkspaceStore';
 
-export const DEFAULT_STATUS_BAR_WIDGETS: StatusBarWidgetConfig[] = [
-  { id: 'workspace_identity', enabled: true, zone: 'left', order: 0 },
-  { id: 'git_branch', enabled: true, zone: 'left', order: 1 },
-  { id: 'active_agents', enabled: true, zone: 'center', order: 0 },
-  { id: 'token_cost_meter', enabled: true, zone: 'center', order: 1 },
-  { id: 'webgl_slots', enabled: true, zone: 'right', order: 0 },
-  { id: 'system_resources', enabled: true, zone: 'right', order: 1 },
-  { id: 'active_ports', enabled: true, zone: 'right', order: 2 },
-  { id: 'audio_vu_meter', enabled: true, zone: 'right', order: 3 },
-];
-
 export interface CustomizationStoreState {
   isOpen: boolean;
-  activeSection: 'identity' | 'appearance' | 'terminal' | 'statusbar';
+  activeSection: 'identity' | 'appearance' | 'terminal';
 
   // Workspace Identity & PTY Env
   workspaceName: string;
   workspaceIcon: WorkspaceIconConfig;
-  workspaceWallpaper: WorkspaceWallpaperConfig;
   colorRingHex: string;
   defaultCwd: string;
   gitBranch: string;
@@ -37,9 +23,6 @@ export interface CustomizationStoreState {
 
   // Retro WebGL CRT Shader
   retroShader: RetroShaderConfig;
-
-  // Status Bar Modular Widgets
-  statusBarWidgets: StatusBarWidgetConfig[];
 
   // Draft Terminal & Codex 3-Role Theme Studio
   themeName: string;
@@ -64,9 +47,9 @@ export interface CustomizationStoreState {
   diffRemoveColor: string;
 
   // Actions
-  openCustomizer: (section?: 'identity' | 'appearance' | 'terminal' | 'statusbar') => void;
+  openCustomizer: (section?: 'identity' | 'appearance' | 'terminal') => void;
   closeCustomizer: () => void;
-  setActiveSection: (section: 'identity' | 'appearance' | 'terminal' | 'statusbar') => void;
+  setActiveSection: (section: 'identity' | 'appearance' | 'terminal') => void;
 
   setWorkspaceName: (name: string) => void;
   setWorkspaceIcon: (icon: WorkspaceIconConfig) => void;
@@ -78,10 +61,6 @@ export interface CustomizationStoreState {
   setRetroShader: (config: Partial<RetroShaderConfig>) => void;
   applyShaderPreset: (preset: RetroShaderPresetName) => void;
 
-  reorderWidgets: (widgets: StatusBarWidgetConfig[]) => void;
-  toggleWidget: (id: string) => void;
-  setWidgetZone: (id: string, zone: 'left' | 'center' | 'right') => void;
-
   setDraftTheme: (themeName: string) => void;
   setDraftThemeMode: (themeMode: ThemeMode) => void;
   setDraftFontFamily: (fontFamily: string) => void;
@@ -92,7 +71,6 @@ export interface CustomizationStoreState {
   setDraftOpacity: (terminalOpacity: number) => void;
   setDraftCursorStyle: (cursorStyle: 'block' | 'underline' | 'bar') => void;
   setDraftCursorBlink: (cursorBlink: boolean) => void;
-  setDraftUiAccentColor: (color: string | null) => void;
 
   setDraftThemeBackground: (color: string) => void;
   setDraftThemeSurface: (color: string) => void;
@@ -115,7 +93,6 @@ export const useCustomizationStore = create<CustomizationStoreState>((set, get) 
 
   workspaceName: 'Default Workspace',
   workspaceIcon: { type: 'emoji', value: '⚡' },
-  workspaceWallpaper: { type: 'none' },
   colorRingHex: '#3c95f0',
   defaultCwd: '',
   gitBranch: 'main',
@@ -123,7 +100,6 @@ export const useCustomizationStore = create<CustomizationStoreState>((set, get) 
   envVars: {},
 
   retroShader: DEFAULT_RETRO_CONFIG,
-  statusBarWidgets: DEFAULT_STATUS_BAR_WIDGETS,
 
   themeName: 'tokyoNight',
   themeMode: 'dark',
@@ -169,20 +145,6 @@ export const useCustomizationStore = create<CustomizationStoreState>((set, get) 
     set({ retroShader: { ...p } });
   },
 
-  reorderWidgets: (statusBarWidgets) => set({ statusBarWidgets }),
-  toggleWidget: (id) =>
-    set((state) => ({
-      statusBarWidgets: state.statusBarWidgets.map((w) =>
-        w.id === id ? { ...w, enabled: !w.enabled } : w
-      ),
-    })),
-  setWidgetZone: (id, zone) =>
-    set((state) => ({
-      statusBarWidgets: state.statusBarWidgets.map((w) =>
-        w.id === id ? { ...w, zone } : w
-      ),
-    })),
-
   setDraftTheme: (themeName: string) => {
     if (THEMES[themeName]) {
       const t = THEMES[themeName];
@@ -207,7 +169,6 @@ export const useCustomizationStore = create<CustomizationStoreState>((set, get) 
     set({ terminalOpacity: Math.max(0.1, Math.min(1.0, Math.round(terminalOpacity * 100) / 100)) }),
   setDraftCursorStyle: (cursorStyle: 'block' | 'underline' | 'bar') => set({ cursorStyle }),
   setDraftCursorBlink: (cursorBlink: boolean) => set({ cursorBlink }),
-  setDraftUiAccentColor: (uiAccentColor: string | null) => set({ uiAccentColor }),
 
   setDraftThemeBackground: (themeBackground: string) => set({ themeBackground }),
   setDraftThemeSurface: (themeSurface: string) => set({ themeSurface }),

@@ -1,14 +1,16 @@
 import React, { useEffect } from 'react';
-import { useAgentCatalogStore } from '@/store/useAgentCatalogStore';
+import { useAgentStore } from '@/store/useAgentStore';
 import { AgentCatalogCard } from './AgentCatalogCard';
 import { PaneAgentMatrix } from './PaneAgentMatrix';
 import { QuickInstallDrawer } from './QuickInstallDrawer';
 import { Bot, RefreshCw } from 'lucide-react';
 
 export const AgentLauncher: React.FC = () => {
-  const agents = useAgentCatalogStore((s) => s.agents);
-  const isScanning = useAgentCatalogStore((s) => s.isScanning);
-  const scanInstalledAgents = useAgentCatalogStore((s) => s.scanInstalledAgents);
+  const agents = useAgentStore((s) => s.agents);
+  const isScanning = useAgentStore((s) => s.isScanning);
+  const scanInstalledAgents = useAgentStore((s) => s.scanInstalledAgents);
+  const selectedAgentId = useAgentStore((s) => s.selectedAgentId);
+  const setSelectedAgent = useAgentStore((s) => s.setSelectedAgent);
 
   useEffect(() => {
     scanInstalledAgents();
@@ -43,10 +45,15 @@ export const AgentLauncher: React.FC = () => {
 
       {/* Discovered Agent Catalog Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-        {Object.values(agents)
+        {agents
           .filter((a) => a.id !== 'shell')
           .map((agent) => (
-            <AgentCatalogCard key={agent.id} agent={agent} />
+            <AgentCatalogCard
+              key={agent.id}
+              agent={agent}
+              isSelected={selectedAgentId === agent.id}
+              onSelect={() => setSelectedAgent(agent.id)}
+            />
           ))}
       </div>
 

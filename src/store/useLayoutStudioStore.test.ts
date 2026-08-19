@@ -20,7 +20,6 @@ describe('useLayoutStudioStore', () => {
       gutterWidth: 4,
       cornerRadius: 8,
       terminalPadding: 4,
-      autoLaunchAgents: true,
     });
   });
 

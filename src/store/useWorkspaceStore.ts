@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { usePaneStore, getTerminalNodes, killPanesInLayout, PresetCount } from './usePaneStore';
-import { PaneNode, TerminalNode } from '@/types/layout';
+import { usePaneStore, getTerminalNodes, killPanesInLayout } from './usePaneStore';
+import { PaneNode, TerminalNode, PresetCount } from '@/types/layout';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri } from '@/lib/tauri';
 
@@ -62,11 +62,6 @@ interface WorkspaceState {
    * copy is sanitized so it never shares the original's live paneIds). UX
    * audit P3: no way to stage a copy of a workspace before. */
   duplicateWorkspace: (id: string) => string;
-  /** Reorder a workspace in the list (UX audit P3: workspaces were unordered). */
-  moveWorkspace: (id: string, direction: -1 | 1) => void;
-  /** Move a workspace to an absolute index (customization audit C23: drag to
-   *  reorder in the sidebar). Order is persisted across restarts. */
-  moveWorkspaceTo: (id: string, targetIndex: number) => void;
   /** Set/clear per-workspace settings overrides (customization audit C12).
    *  Pass {} or null to clear. Persists with the workspace file. */
   setWorkspaceOverrides: (id: string, overrides: WorkspaceOverrides | null) => void;
@@ -389,25 +384,6 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     persistWorkspaceOrder(get().workspaces.map((w) => w.id));
     persistWorkspaceToDisk(copy, copy.layout);
     return newId;
-  },
-
-  moveWorkspace: (id: string, direction: -1 | 1) => {
-    const { workspaces } = get();
-    const idx = workspaces.findIndex((w) => w.id === id);
-    const target = idx + direction;
-    if (idx === -1 || target < 0 || target >= workspaces.length) return;
-    get().moveWorkspaceTo(id, target);
-  },
-
-  moveWorkspaceTo: (id: string, targetIndex: number) => {
-    const { workspaces } = get();
-    const idx = workspaces.findIndex((w) => w.id === id);
-    if (idx === -1 || targetIndex < 0 || targetIndex >= workspaces.length || idx === targetIndex) return;
-    const next = [...workspaces];
-    const [moved] = next.splice(idx, 1);
-    next.splice(targetIndex, 0, moved);
-    set({ workspaces: next });
-    persistWorkspaceOrder(next.map((w) => w.id));
   },
 
   setWorkspaceOverrides: (id: string, overrides: WorkspaceOverrides | null) => {

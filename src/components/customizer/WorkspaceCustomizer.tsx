@@ -1,7 +1,7 @@
 import React from 'react';
 import { IdentitySection } from './IdentitySection';
-import { DirectorySelector } from './DirectorySelector';
-import { AppearanceStaging } from './AppearanceStaging';
+import { DirectoryEnvSection } from './DirectoryEnvSection';
+import { ThemeStudioSection } from './ThemeStudioSection';
 import { Palette } from 'lucide-react';
 
 export const WorkspaceCustomizer: React.FC = () => {
@@ -22,8 +22,8 @@ export const WorkspaceCustomizer: React.FC = () => {
       </div>
 
       <IdentitySection />
-      <DirectorySelector />
-      <AppearanceStaging />
+      <DirectoryEnvSection />
+      <ThemeStudioSection />
     </div>
   );
 };

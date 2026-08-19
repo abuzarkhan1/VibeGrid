@@ -271,17 +271,6 @@ export async function autostartSetEnabled(enabled: boolean): Promise<void> {
   }
 }
 
-/** Query the current launch-at-login state (customization audit C9). */
-export async function autostartIsEnabled(): Promise<boolean> {
-  if (!isTauri()) return false;
-  try {
-    return await invoke<boolean>('autostart_is_enabled');
-  } catch (e) {
-    console.error('[VibeGrid] autostart_is_enabled failed:', e);
-    return false;
-  }
-}
-
 /** Reassign the system-wide summon shortcut (audit: was hardcoded in Rust). */
 export async function setGlobalSummon(accel: string): Promise<string> {
   if (!isTauri()) return accel;

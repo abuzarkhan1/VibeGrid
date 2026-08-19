@@ -4,7 +4,6 @@ import { WorkspaceCustomizerModal } from './WorkspaceCustomizerModal';
 import { IdentitySection } from './IdentitySection';
 import { DirectoryEnvSection } from './DirectoryEnvSection';
 import { ThemeStudioSection } from './ThemeStudioSection';
-import { ModularStatusBarEditor } from './ModularStatusBarEditor';
 import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 
@@ -78,25 +77,6 @@ describe('Customizer Components & ICE UI', () => {
       const oneDarkBtns = screen.getAllByRole('button', { name: /One Dark Pro/i });
       fireEvent.click(oneDarkBtns[oneDarkBtns.length - 1]);
       expect(useCustomizationStore.getState().themeName).toBe('oneDarkPro');
-    });
-  });
-
-  describe('ModularStatusBarEditor', () => {
-    it('renders all 8 telemetry widget cards and toggles widgets', () => {
-      render(<ModularStatusBarEditor />);
-      expect(screen.getAllByText('Workspace Identity')[0]).toBeTruthy();
-      expect(screen.getAllByText('Git Branch & Status')[0]).toBeTruthy();
-      expect(screen.getAllByText('Active Agents HUD')[0]).toBeTruthy();
-      expect(screen.getAllByText('Token & Cost Meter')[0]).toBeTruthy();
-      expect(screen.getAllByText('GPU WebGL Telemetry')[0]).toBeTruthy();
-      expect(screen.getAllByText('CPU & RAM Monitor')[0]).toBeTruthy();
-      expect(screen.getAllByText('Listening Ports')[0]).toBeTruthy();
-      expect(screen.getAllByText('Audio VU Meter')[0]).toBeTruthy();
-
-      // Toggle widget
-      const toggleButtons = screen.getAllByTitle(/widget/i);
-      expect(toggleButtons.length).toBeGreaterThan(0);
-      fireEvent.click(toggleButtons[0]);
     });
   });
 

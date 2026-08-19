@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { useAgentCatalogStore } from '@/store/useAgentCatalogStore';
+import { useAgentStore } from '@/store/useAgentStore';
 import { Copy, Check, DownloadCloud } from 'lucide-react';
 
 export const QuickInstallDrawer: React.FC = () => {
-  const agents = useAgentCatalogStore((s) => s.agents);
+  const agents = useAgentStore((s) => s.agents);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const missingAgents = Object.values(agents).filter(
+  const missingAgents = agents.filter(
     (a) => !a.isInstalled && a.installCommand
   );
 
@@ -44,7 +44,7 @@ export const QuickInstallDrawer: React.FC = () => {
               title="Copy install command"
             >
               {copiedId === agent.id ? (
-                <Check className="w-3.5 h-3.5 text-white/90" /> // Changed from emerald to pure white
+                <Check className="w-3.5 h-3.5 text-white/90" />
               ) : (
                 <Copy className="w-3.5 h-3.5" />
               )}

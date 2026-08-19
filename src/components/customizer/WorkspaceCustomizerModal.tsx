@@ -6,8 +6,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { IdentitySection } from './IdentitySection';
 import { DirectoryEnvSection } from './DirectoryEnvSection';
 import { ThemeStudioSection } from './ThemeStudioSection';
-import { ModularStatusBarEditor } from './ModularStatusBarEditor';
-import { Palette, Sparkles, Sliders, X, ArrowRight, Shield } from 'lucide-react';
+import { Palette, Sparkles, X, ArrowRight, Shield } from 'lucide-react';
 
 export const WorkspaceCustomizerModal: React.FC = () => {
   const {
@@ -162,7 +161,6 @@ export const WorkspaceCustomizerModal: React.FC = () => {
               { id: 'identity', label: 'Identity', icon: Sparkles },
               { id: 'appearance', label: 'Theme Studio', icon: Palette },
               { id: 'terminal', label: 'CWD & Vault', icon: Shield },
-              { id: 'statusbar', label: 'Status Bar', icon: Sliders },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeSection === tab.id;
@@ -172,7 +170,7 @@ export const WorkspaceCustomizerModal: React.FC = () => {
                   type="button"
                   onClick={() =>
                     setActiveSection(
-                      tab.id as 'identity' | 'appearance' | 'terminal' | 'statusbar'
+                      tab.id as 'identity' | 'appearance' | 'terminal'
                     )
                   }
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold transition-all ${
@@ -204,7 +202,6 @@ export const WorkspaceCustomizerModal: React.FC = () => {
           {activeSection === 'identity' && <IdentitySection />}
           {activeSection === 'appearance' && <ThemeStudioSection />}
           {activeSection === 'terminal' && <DirectoryEnvSection />}
-          {activeSection === 'statusbar' && <ModularStatusBarEditor />}
         </div>
 
         {/* Action Footer */}

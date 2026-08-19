@@ -11,7 +11,6 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     useOnboardingStore.setState({
       isOpen: true,
       currentStep: 'splash',
-      hasSeenOnboarding: false,
       workspaceName: 'AI Command Center',
       workspaceEmoji: '🚀',
       workspaceCwd: '',
@@ -69,17 +68,15 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     expect(screen.getByText(/Agent & Provider Engine|AI Agent & Shell Provider/i)).toBeTruthy();
     expect(screen.getByText('Pane Assignment Matrix')).toBeTruthy();
 
-    // Find and click configure on first pane
-    const configButtons = screen.getAllByRole('button', { name: /Configure/i });
-    expect(configButtons.length).toBeGreaterThan(0);
-    fireEvent.click(configButtons[0]);
+    // Find agent selector comboboxes
+    const selects = screen.getAllByRole('combobox');
+    expect(selects.length).toBeGreaterThan(0);
+    fireEvent.change(selects[0], { target: { value: 'aider' } });
 
-    // Agent config modal opens
-    expect(screen.getByText(/Configure Pane 1/i)).toBeTruthy();
-
-    // Save configuration
-    const saveBtn = screen.getByRole('button', { name: /Save Pane Config/i });
-    fireEvent.click(saveBtn);
+    // Expand first pane config
+    const expandButtons = screen.getAllByTitle(/Expand detailed config/i);
+    expect(expandButtons.length).toBeGreaterThan(0);
+    fireEvent.click(expandButtons[0]);
 
     // Click Continue
     const continueBtn = screen.getByRole('button', { name: /Continue/i });
@@ -106,7 +103,6 @@ describe('OnboardingWizard End-to-End User Journey', () => {
 
     await waitFor(() => {
       expect(useOnboardingStore.getState().isOpen).toBe(false);
-      expect(useOnboardingStore.getState().hasSeenOnboarding).toBe(true);
       expect(localStorage.getItem(ONBOARDING_COMPLETED_KEY)).toBe('1');
     });
 
@@ -125,7 +121,6 @@ describe('OnboardingWizard End-to-End User Journey', () => {
 
     await waitFor(() => {
       expect(useOnboardingStore.getState().isOpen).toBe(false);
-      expect(useOnboardingStore.getState().hasSeenOnboarding).toBe(true);
       expect(localStorage.getItem(ONBOARDING_COMPLETED_KEY)).toBe('1');
     });
   });

@@ -74,7 +74,6 @@ describe('useOnboardingStore', () => {
     await store.skipToDefault();
 
     expect(useOnboardingStore.getState().isOpen).toBe(false);
-    expect(useOnboardingStore.getState().hasSeenOnboarding).toBe(true);
     expect(localStorage.getItem(ONBOARDING_COMPLETED_KEY)).toBe('1');
   });
 
@@ -86,6 +85,5 @@ describe('useOnboardingStore', () => {
     await store.completeAndLaunch();
 
     expect(useOnboardingStore.getState().isOpen).toBe(false);
-    expect(useOnboardingStore.getState().hasSeenOnboarding).toBe(true);
   });
 });

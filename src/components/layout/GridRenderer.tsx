@@ -26,24 +26,17 @@ export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node, dep
   // If a pane is maximized, render only that pane
   if (maximizedPaneId) {
     return (
-      // Pure Black background for maximized state gutter
       <div className="h-full w-full p-1 bg-black">
-        <div className="h-full w-full rounded-lg overflow-hidden border border-white/5 bg-black">
-          <TerminalContainer id={maximizedPaneId} title="Maximized Pane" />
-        </div>
+        <TerminalContainer id={maximizedPaneId} title="Maximized Pane" />
       </div>
     );
   }
 
-  // If node is a terminal leaf. The wrapper adds a visible gutter around
-  // every pane (the pure black bg shows through), so adjacent panes read as distinct
-  // tiles even before you notice the subtle white border.
+  // If node is a terminal leaf.
   if (node.type === 'terminal') {
     return (
       <div className="h-full w-full p-1 min-h-0 min-w-0 overflow-hidden bg-black">
-        <div className="h-full w-full rounded-lg overflow-hidden border border-white/5 bg-black transition-colors duration-300 hover:border-white/10">
-          <TerminalContainer id={node.id} title={node.title} />
-        </div>
+        <TerminalContainer id={node.id} title={node.title} />
       </div>
     );
   }

@@ -587,6 +587,7 @@ export const App: React.FC = () => {
   );
 
   const activeViewMode = useUIStore((s) => s.activeViewMode);
+  const isSettingsOpen = useUIStore((s) => s.isSettingsOpen);
 
   return (
     <div
@@ -597,46 +598,51 @@ export const App: React.FC = () => {
       <main className="flex-1 w-full overflow-hidden relative flex">
         <WorkspaceSidebar isOpen={isSidebarOpen} onToggle={() => setIsSidebarOpen((prev) => !prev)} />
 
-        {/* Hub View — Full-Screen Pure Black Canvas with Ambient Glow */}
-        {activeViewMode === 'hub' && (
-          <div
-            className="flex-1 h-full flex items-center justify-center animate-fade-in overflow-hidden"
-            style={{
-              background: '#000000',
-              backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 20% 80%, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 40%)',
-            }}
-          >
-            <CentralPromptCard />
-          </div>
-        )}
-
-        {/* Grid View: Active Multi-Pane Terminal Workspace */}
-        {activeViewMode === 'grid' && (
-          <div className="flex-1 h-full flex gap-0 animate-fade-in overflow-hidden">
-            {/* Main Terminal Grid Island */}
-            <div className="flex-1 h-full overflow-hidden relative flex">
-              <LayoutView />
-            </div>
-
-            {/* Floating Diff Viewer Island */}
-            {isDiffViewerOpen && (
-              <div className="w-[440px] max-w-[50vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
-                <ContentAwareDiffViewer onClose={() => setDiffViewerOpen(false)} />
+        {isSettingsOpen ? (
+          <SettingsModal />
+        ) : (
+          <>
+            {/* Hub View — Full-Screen Pure Black Canvas with Ambient Glow */}
+            {activeViewMode === 'hub' && (
+              <div
+                className="flex-1 h-full flex items-center justify-center animate-fade-in overflow-hidden"
+                style={{
+                  background: '#000000',
+                  backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 20% 80%, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 40%)',
+                }}
+              >
+                <CentralPromptCard />
               </div>
             )}
 
-            {/* Floating Agent Conversation Island */}
-            {isChatOpen && (
-              <div className="w-[400px] max-w-[45vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
-                <AgentConversationPanel onClose={() => setChatOpen(false)} />
+            {/* Grid View: Active Multi-Pane Terminal Workspace */}
+            {activeViewMode === 'grid' && (
+              <div className="flex-1 h-full flex gap-0 animate-fade-in overflow-hidden">
+                {/* Main Terminal Grid Island */}
+                <div className="flex-1 h-full overflow-hidden relative flex">
+                  <LayoutView />
+                </div>
+
+                {/* Floating Diff Viewer Island */}
+                {isDiffViewerOpen && (
+                  <div className="w-[440px] max-w-[50vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
+                    <ContentAwareDiffViewer onClose={() => setDiffViewerOpen(false)} />
+                  </div>
+                )}
+
+                {/* Floating Agent Conversation Island */}
+                {isChatOpen && (
+                  <div className="w-[400px] max-w-[45vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
+                    <AgentConversationPanel onClose={() => setChatOpen(false)} />
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
       </main>
       <VoiceIndicator />
-      <CommandPalette onOpenAbout={() => setIsAboutOpen(true)} />
-      <SettingsModal />
+      <CommandPalette />
       <ShortcutsModal />
       {isAboutOpen && <AboutModal onClose={() => setIsAboutOpen(false)} />}
       <NotificationToastContainer />

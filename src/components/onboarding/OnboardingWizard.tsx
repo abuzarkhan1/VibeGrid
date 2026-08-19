@@ -3,8 +3,8 @@ import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { OnboardingProgressBar } from './OnboardingProgressBar';
 import { OnboardingFooter } from './OnboardingFooter';
 import { CinematicSplashScreen } from '@/components/splash/CinematicSplashScreen';
-import { LayoutStudio } from '@/components/layout-studio/LayoutStudio';
-import { AgentLauncher } from '@/components/agent-launcher/AgentLauncher';
+import { LayoutStudio } from '@/components/studio/LayoutStudio';
+import { AgentLauncher } from '@/components/agent/AgentLauncher';
 import { WorkspaceCustomizer } from '@/components/customizer/WorkspaceCustomizer';
 
 export const OnboardingWizard: React.FC = () => {

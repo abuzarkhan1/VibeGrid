@@ -450,56 +450,6 @@ describe('VibeGrid Workspace Persistence', () => {
     );
   });
 
-  it('moveWorkspace reorders the list (with bounds guards)', () => {
-    useWorkspaceStore.setState({
-      workspaces: [
-        { id: 'a', name: 'A', layout: { type: 'terminal', id: 't1', title: 'T1' }, createdAt: 1, updatedAt: 1, version: 1 },
-        { id: 'b', name: 'B', layout: { type: 'terminal', id: 't2', title: 'T2' }, createdAt: 2, updatedAt: 2, version: 1 },
-        { id: 'c', name: 'C', layout: { type: 'terminal', id: 't3', title: 'T3' }, createdAt: 3, updatedAt: 3, version: 1 },
-      ],
-      activeWorkspaceId: 'a',
-      isLoading: false,
-    });
-
-    useWorkspaceStore.getState().moveWorkspace('b', 1);
-    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['a', 'c', 'b']);
-
-    useWorkspaceStore.getState().moveWorkspace('a', -1); // at top — no-op
-    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['a', 'c', 'b']);
-
-    useWorkspaceStore.getState().moveWorkspace('a', 1);
-    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'a', 'b']);
-  });
-
-  // Customization audit C23: drag-reorder moves a workspace to an absolute
-  // index and persists the order to localStorage.
-  it('moveWorkspaceTo reorders by absolute index and persists the order', () => {
-    useWorkspaceStore.setState({
-      workspaces: [
-        { id: 'a', name: 'A', layout: { type: 'terminal', id: 't1', title: 'T1' }, createdAt: 1, updatedAt: 1, version: 1 },
-        { id: 'b', name: 'B', layout: { type: 'terminal', id: 't2', title: 'T2' }, createdAt: 2, updatedAt: 2, version: 1 },
-        { id: 'c', name: 'C', layout: { type: 'terminal', id: 't3', title: 'T3' }, createdAt: 3, updatedAt: 3, version: 1 },
-      ],
-      activeWorkspaceId: 'a',
-      isLoading: false,
-    });
-
-    useWorkspaceStore.getState().moveWorkspaceTo('c', 0);
-    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'a', 'b']);
-
-    useWorkspaceStore.getState().moveWorkspaceTo('a', 2);
-    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'b', 'a']);
-
-    // Out-of-range and same-index are no-ops.
-    useWorkspaceStore.getState().moveWorkspaceTo('c', -1);
-    useWorkspaceStore.getState().moveWorkspaceTo('c', 99);
-    useWorkspaceStore.getState().moveWorkspaceTo('c', 0);
-    expect(useWorkspaceStore.getState().workspaces.map((w) => w.id)).toEqual(['c', 'b', 'a']);
-
-    // Order is persisted for the next launch.
-    expect(JSON.parse(localStorage.getItem('vibegrid.workspace-order') || '[]')).toEqual(['c', 'b', 'a']);
-  });
-
   // Customization audit C12: per-workspace overrides are stored on the record,
   // cleared when emptied, and persisted through save/load payloads.
   it('setWorkspaceOverrides stores, clears and persists overrides', () => {

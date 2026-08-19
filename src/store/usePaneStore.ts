@@ -1,7 +1,9 @@
 import { create } from 'zustand';
-import { PaneNode, SplitDirection, TerminalNode, SplitNode, PaneAppearance } from '@/types/layout';
+import { PaneNode, SplitDirection, TerminalNode, SplitNode, PaneAppearance, PresetCount } from '@/types/layout';
 import { killPty } from '@/lib/tauri';
 import { useSettingsStore } from './useSettingsStore';
+
+export type { PresetCount } from '@/types/layout';
 
 // Workspace isolation: PTYs are killed ONLY by explicit destructive actions
 // (closePane / shrinking a layout preset / resetLayout / deleteWorkspace).
@@ -25,9 +27,6 @@ interface TerminalWithRect {
   node: TerminalNode;
   rect: Rect;
 }
-
-/** Preset equal-grid counts (customization audit L12: 3/5/9/12 were MISSING). */
-export type PresetCount = 1 | 2 | 3 | 4 | 5 | 6 | 8 | 9 | 12 | 16;
 
 interface PaneState {
   root: PaneNode;

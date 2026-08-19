@@ -28,8 +28,8 @@ describe('useCustomizationStore', () => {
     expect(useCustomizationStore.getState().isOpen).toBe(true);
     expect(useCustomizationStore.getState().activeSection).toBe('appearance');
 
-    store.setActiveSection('statusbar');
-    expect(useCustomizationStore.getState().activeSection).toBe('statusbar');
+    store.setActiveSection('terminal');
+    expect(useCustomizationStore.getState().activeSection).toBe('terminal');
 
     store.closeCustomizer();
     expect(useCustomizationStore.getState().isOpen).toBe(false);
@@ -58,24 +58,6 @@ describe('useCustomizationStore', () => {
 
     store.setRetroShader({ scanlineIntensity: 0.8 });
     expect(useCustomizationStore.getState().retroShader.scanlineIntensity).toBe(0.8);
-  });
-
-  it('toggles and reorders status bar widgets', () => {
-    const store = useCustomizationStore.getState();
-    const initial = store.statusBarWidgets;
-    expect(initial.length).toBeGreaterThan(0);
-
-    const firstWidget = initial[0];
-    const initialEnabled = firstWidget.enabled;
-    store.toggleWidget(firstWidget.id);
-    expect(
-      useCustomizationStore.getState().statusBarWidgets.find((w) => w.id === firstWidget.id)?.enabled
-    ).toBe(!initialEnabled);
-
-    store.setWidgetZone(firstWidget.id, 'right');
-    expect(
-      useCustomizationStore.getState().statusBarWidgets.find((w) => w.id === firstWidget.id)?.zone
-    ).toBe('right');
   });
 
   it('validates and bounds draft typography and appearance', () => {

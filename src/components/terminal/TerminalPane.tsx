@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
-import { Terminal, ITerminalOptions } from '@xterm/xterm';
+import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
@@ -29,11 +29,6 @@ interface TerminalPaneProps {
   isFocused: boolean;
   onActivity?: () => void;
 }
-
-/** This xterm build's typings omit `padding` even though the runtime supports
- *  it (verified against node_modules/@xterm/xterm/lib/xterm.js). Expose it via
- *  a typed intersection so the rest of the options stay type-checked. */
-type ExtendedTerminalOptions = ITerminalOptions & { padding?: number | string };
 
 /**
  * Short terminal bell beep (customization audit C17). This xterm build ships
@@ -199,13 +194,11 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [menu, setMenu] = useState<MenuState | null>(null);
-  // Customization audit C13: per-pane appearance popover (opened from the
-  // context menu).
   const [showAppearanceMenu, setShowAppearanceMenu] = useState(false);
   const [appearancePos, setAppearancePos] = useState<MenuState | null>(null);
-  const [isDragOver, setIsDragOver] = useState(false); // visual feedback while dragging paths over the pane (gap 8)
-  const [hasExited, setHasExited] = useState(false); // PTY process exited (audit fix)
-  const [session, setSession] = useState(0); // bumped to relaunch a dead shell (UX audit P2 #9)
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [hasExited, setHasExited] = useState(false);
+  const [session, setSession] = useState(0);
   const exitToastShownRef = useRef(false);
   const [pendingPasteText, setPendingPasteText] = useState<string | null>(null);
 
@@ -224,18 +217,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     terminalRef.current?.focus();
   }, []);
 
-  // ── Perf: fine-grained store selectors ──────────────────────────────────
-  // Each pane subscribes ONLY to (a) its own node in the layout tree and (b)
-  // the actions it calls. The node selector returns the stable tree reference
-  // for this pane: an unrelated store update (a divider drag elsewhere, another
-  // pane's spawn/exit) keeps that reference intact, so this pane — and its
-  // xterm instance — does not re-render. Before, every pane subscribed to the
-  // whole store and re-rendered on EVERY layout change (O(n²) work per drag
-  // frame with 16 panes).
   const currentNode = usePaneStore(useCallback((s) => findTerminalNode(s.root, id), [id]));
-  // Customization audit C12: per-workspace overrides for the ACTIVE workspace.
-  // The selector returns the stored reference, so unrelated workspace saves
-  // (which spread the record) do not re-render every pane.
   const workspaceOverrides = useWorkspaceStore(
     (s) => s.workspaces.find((w) => w.id === s.activeWorkspaceId)?.overrides
   );
@@ -259,10 +241,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     terminalOpacity,
     copyOnSelect,
     defaultShell,
-    // Customization audit C5/C6/C19: options this xterm build supports natively.
     cursorWidth,
     wordSeparators,
-    terminalPadding,
   } = useSettingsStore(
     useShallow((s) => ({
       fontSize: s.fontSize,
@@ -276,10 +256,8 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       terminalOpacity: s.terminalOpacity,
       copyOnSelect: s.copyOnSelect,
       defaultShell: s.defaultShell,
-      // Customization audit C5/C6/C19: terminal behavior settings consumed here.
       cursorWidth: s.cursorWidth,
       wordSeparators: s.wordSeparators,
-      terminalPadding: s.terminalPadding,
     }))
   );
   const acquireWebglSlot = useUIStore((s) => s.acquireWebglSlot);
@@ -290,17 +268,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
   const parentCwd = currentNode?.cwd;
   const parentShell = currentNode?.shell;
 
-  // Customization audit C12/C13: effective settings = pane override ??
-  // workspace override ?? global.
   const paneAppearance = currentNode?.appearance;
   const effThemeName = paneAppearance?.themeName ?? workspaceOverrides?.themeName ?? themeName;
   const effFontSize = paneAppearance?.fontSize ?? workspaceOverrides?.fontSize ?? fontSize;
   const effFontFamily = paneAppearance?.fontFamily ?? workspaceOverrides?.fontFamily ?? fontFamily;
   const effOpacity = paneAppearance?.terminalOpacity ?? workspaceOverrides?.terminalOpacity ?? terminalOpacity;
 
-  // Paste the clipboard into the pane, honoring the multi-line confirmation
-  // guard (customization audit C20). Reads the setting live so a change in
-  // Settings applies to the next paste without remounting the pane.
   const pasteFromClipboard = () => {
     navigator.clipboard.readText().then((text) => {
       if (!text || !ptyPaneIdRef.current) return;
@@ -311,14 +284,11 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       writeToPty(ptyPaneIdRef.current, bracketedPaste(text));
     });
   };
-  // The custom key handler is registered once per session; route its paste
-  // through a ref so it always calls the CURRENT helper.
   const pasteFromClipboardRef = useRef(pasteFromClipboard);
   useEffect(() => {
     pasteFromClipboardRef.current = pasteFromClipboard;
   });
 
-  // Close the context menu on outside interaction
   useEffect(() => {
     if (!menu) return;
     const close = () => setMenu(null);
@@ -332,8 +302,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     };
   }, [menu]);
 
-  // Drag-and-drop of files/folders: insert shell-escaped paths into the focused pane,
-  // with a dashed-border highlight while a drag is over the pane (gap 8).
   useEffect(() => {
     if (!isTauri()) return;
     let unlisten: (() => void) | null = null;
@@ -352,8 +320,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                 return;
               case 'drop': {
                 setIsDragOver(false);
-                // UX audit P1 #12: dropping on a non-focused pane now FOCUSES
-                // that pane first and inserts there — no more silent no-op.
                 if (!isFocused) {
                   setFocusedPane(id);
                   terminalRef.current?.focus();
@@ -370,9 +336,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             unlisten = fn;
           });
       })
-      .catch(() => {
-        // drag-drop API unavailable; ignore
-      });
+      .catch(() => {});
 
     return () => {
       setIsDragOver(false);
@@ -380,18 +344,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     };
   }, [isFocused, id, setFocusedPane]);
 
-  // Keep the live PTY handle in sync with the store (audit fix for swapPanes):
-  // a swap moves a pane's PTY to a different layout slot, so this pane's
-  // ptyPaneIdRef must track the store's paneId — otherwise batch output would
-  // keep flowing to the old slot and teardown could kill the neighbor's shell.
   useEffect(() => {
     if (currentNode?.paneId) {
       ptyPaneIdRef.current = currentNode.paneId;
     }
   }, [currentNode?.paneId]);
 
-  // Focus requests from the voice hook (gap 4): after inserting dictation the
-  // focused terminal re-focuses so the user can keep typing immediately.
   useEffect(() => {
     const onFocusPane = (e: Event) => {
       const targetId = (e as CustomEvent<string>).detail;
@@ -404,8 +362,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     return () => window.removeEventListener('vibegrid:focus-pane', onFocusPane as EventListener);
   }, [id, setFocusedPane]);
 
-  // Relaunch a dead shell in this pane (UX audit P2 #9): clears the stale
-  // paneId so the next session spawns fresh, then re-runs the init effect.
   const relaunch = () => {
     setHasExited(false);
     exitToastShownRef.current = false;
@@ -423,11 +379,18 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
     const theme = THEMES[effThemeName] || THEMES.vibeDark;
 
-    // Initialize xterm.js instance
+    // FORCE PURE BLACK STEALTH THEME FOR XTERM CANVAS
+    const stealthTheme = {
+      ...theme,
+      background: '#000000', // Pure Black
+      cursor: '#ffffff',    // White Cursor
+      cursorAccent: '#000000',
+    };
+
     const term = new Terminal({
       fontSize: effFontSize,
       fontFamily: effFontFamily,
-      theme,
+      theme: stealthTheme, // Apply Stealth Theme
       scrollback,
       cursorBlink,
       cursorStyle,
@@ -435,15 +398,9 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       lineHeight,
       convertEol: true,
       allowProposedApi: true,
-      // Customization audit C5/C6/C19: this xterm build supports these natively
-      // (scrollOnOutput and bellStyle were dropped from this build — they are
-      // implemented manually below via onBell / write-follow).
       wordSeparator: wordSeparators,
-      padding: terminalPadding,
-    } as ExtendedTerminalOptions);
+    });
 
-    // Customization audit C17: terminal bell. This build has no bellStyle
-    // option, so play a short beep through Web Audio when the setting is on.
     term.onBell(() => {
       if (useSettingsStore.getState().terminalBell) playBell();
     });
@@ -451,9 +408,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
 
-    // Clickable URLs via the shell plugin (with web fallback). Customization
-    // audit C16: gated by the clickableLinks toggle and can require a modifier
-    // key — read live so a Settings change applies without remounting.
     const webLinksAddon = new WebLinksAddon((event, uri) => {
       const { clickableLinks: linksEnabled, linkModifier: mod } = useSettingsStore.getState();
       if (!linksEnabled) return;
@@ -478,16 +432,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
     try {
       fitAddon.fit();
-    } catch (e) {
-      // Ignore fit error on initial hidden mount
-    }
+    } catch (e) {}
 
-    // Auto-focus terminal cursor on initial mount (FR-001)
     if (isFocused) {
       term.focus();
     }
 
-    // WebGL Context Pool Management (NFR-004)
     const canUseWebgl = acquireWebglSlot(id);
     if (canUseWebgl) {
       try {
@@ -497,9 +447,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           releaseWebglSlot(id);
           webglAddon.dispose();
           term.loadAddon(new CanvasAddon());
-          // Gap 9: surface the silent fallback so users know why rendering changed.
-          // Only on context loss (a runtime event), not on initial init failure —
-          // the catch below stays quiet to avoid startup toast spam across panes.
           useUIStore.getState().addToast({
             type: 'warning',
             title: 'GPU rendering unavailable',
@@ -520,20 +467,18 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     fitAddonRef.current = fitAddon;
     searchAddonRef.current = searchAddon;
 
-    // Focus terminal when clicked
-    containerRef.current.addEventListener('click', () => {
+    const containerEl = containerRef.current;
+    const handleContainerClick = () => {
       setFocusedPane(id);
       term.focus();
-    });
+    };
+    containerEl?.addEventListener('click', handleContainerClick);
 
-    // Custom Key Handler for Copy (Cmd/Ctrl+C), Bracketed Paste (Cmd/Ctrl+V), Search (Cmd/Ctrl+F), Clear (Cmd/Ctrl+K)
     term.attachCustomKeyEventHandler((ev) => {
       const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const isMod = ev.metaKey || ev.ctrlKey;
 
       if (ev.type === 'keydown') {
-        // Audit find 4: search/clear now honor the keybindings store (live read,
-        // so a remap in Settings takes effect without remounting the pane).
         if (useKeybindingsStore.getState().matchesKeybinding(ev, 'search-terminal')) {
           setIsSearchOpen(true);
           return false;
@@ -544,7 +489,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           return false;
         }
 
-        // OS-Specific Copy vs SIGINT (FR-016)
         if (isMac) {
           if (ev.metaKey && !ev.ctrlKey && ev.code === 'KeyC' && term.hasSelection()) {
             navigator.clipboard.writeText(term.getSelection());
@@ -557,11 +501,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
         }
 
-        // Copy-on-select (audit: MISSING feature) — handled via onSelectionChange below.
-
-        // Bracketed Paste Mode (FR-017). Plain Cmd/Ctrl+V only — Cmd/Ctrl+Shift+V
-        // is reserved for Voice-to-Terminal and must NOT paste into the shell.
-        // Customization audit C20: multi-line pastes can confirm first.
         if (isMod && !ev.shiftKey && ev.code === 'KeyV') {
           pasteFromClipboardRef.current();
           return false;
@@ -573,33 +512,19 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     let unlistenBatch: (() => void) | null = null;
     let unlistenExit: (() => void) | null = null;
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
-    // Audit find 2: guards against the async-spawn race — if the pane unmounts
-    // while `spawnPty`/`listenTerminalBatch` are in flight, the shell used to
-    // leak forever and the batch listener was never unregistered (duplicate
-    // terminal output after rapid workspace switching).
     let disposed = false;
 
-    // Spawn or Reuse PTY session
     const initPty = async () => {
       const cols = Math.max(20, term.cols || 80);
       const rows = Math.max(5, term.rows || 24);
 
       try {
         let ptyId = existingPtyId;
-        const isReattach = Boolean(ptyId); // switching back to a live workspace
+        const isReattach = Boolean(ptyId);
         if (!ptyId) {
-          // UX audit P3 #28: per-pane shell override wins, else the global
-          // default shell setting, else the system default.
-          // Customization audit C12: a workspace override wins over the global
-          // default shell/cwd; a per-pane override wins over both.
           const effectiveShell = parentShell || workspaceOverrides?.defaultShell || defaultShell || undefined;
-          // Customization audit C7: a pane's own cwd wins, then a workspace
-          // override, then the global "new pane" default, then the session dir.
           const effectiveCwd =
             parentCwd || workspaceOverrides?.defaultCwd || useSettingsStore.getState().defaultCwd || undefined;
-          // Customization audit C11: global shell args/env apply ONLY when the
-          // pane is spawning with the global default shell (no per-pane or
-          // workspace override) — the args were written for that shell.
           const isGlobalDefaultShell = !parentShell && !workspaceOverrides?.defaultShell;
           let spawnOpts: SpawnPtyOptions | undefined;
           if (isGlobalDefaultShell) {
@@ -612,8 +537,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
           ptyId = await spawnPty(cols, rows, effectiveCwd, effectiveShell, spawnOpts);
           if (disposed) {
-            // Unmounted mid-spawn — kill the orphan shell immediately instead of
-            // leaking a process with no handle.
             killPty(ptyId).catch(() => {});
             return;
           }
@@ -638,20 +561,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           return;
         }
 
-        // On Data from xterm -> write to PTY. If the process already exited,
-        // writes fail—surface a one-time toast so the user knows why input
-        // is no longer reaching the shell (audit: error surfacing).
-        // Copy-on-select (audit: was MISSING). onSelectionChange fires on every
-        // drag increment, so debounce: after the selection settles (~300 ms) we
-        // copy once — no clipboard churn and no toast spam mid-drag.
         term.onSelectionChange(() => {
           if (!copyOnSelect) return;
           const sel = term.getSelection();
           if (!sel) return;
           if (copyTimer) clearTimeout(copyTimer);
           copyTimer = setTimeout(() => {
-            // UX audit P1 #8: copy silently — no toast per selection (toasts
-            // now also dedupe/cap, but select-copy is high-frequency noise).
             navigator.clipboard.writeText(sel).catch(() => {});
           }, 300);
         });
@@ -673,7 +588,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
         });
 
-        // On Resize -> notify PTY
         term.onResize(({ cols, rows }) => {
           if (ptyPaneIdRef.current) {
             const safeCols = Math.max(20, cols);
@@ -682,14 +596,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
         });
 
-        // Workspace isolation: switching back re-attaches to a still-running
-        // PTY whose terminal was unmounted while hidden. Subscribe to the live
-        // batch stream FIRST (buffering while the snapshot loads) so no output
-        // is dropped in the gap between reading history and attaching the
-        // listener; then write the snapshot and replay only the buffered part
-        // it does NOT already cover (no duplicates at the seam). If the process
-        // exited while hidden, the exit event was missed — surface the banner
-        // right away.
         let restoring = true;
         let restoreBuffer: string[] = [];
         unlistenBatch = await listenTerminalBatch((event) => {
@@ -700,12 +606,9 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             return;
           }
           term.write(event.payload[currentPtyId]);
-          // Customization audit C18: this xterm build dropped scrollOnOutput, so
-          // implement its semantics (auto-scroll on output when enabled) here.
           if (useSettingsStore.getState().scrollOnOutput) {
             term.scrollToBottom();
           }
-          // Surface activity in unfocused panes so users can monitor agents at a glance
           if (!isFocusedRef.current) {
             onActivityRef.current?.();
           }
@@ -726,10 +629,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
         }
 
-        // Replay output that arrived while the snapshot was being fetched,
-        // skipping the part the snapshot already covers (the batcher's history
-        // and the live batches carry the same bytes, so any suffix overlap is
-        // a duplicate — never drop, never double-write).
         if (restoreBuffer.length > 0) {
           const pending = restoreBuffer.join('');
           restoreBuffer = [];
@@ -744,8 +643,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           restoring = false;
         }
 
-        // PTY exit detection (audit fix): when the Rust reader hits EOF it
-        // emits terminal-exit — show a banner instead of a frozen terminal.
         listenTerminalExit(({ payload }) => {
           if (payload.paneId === ptyPaneIdRef.current && !disposed) {
             setHasExited(true);
@@ -758,10 +655,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
           }
         });
         if (disposed) {
-          // Unmounted while the listener was registering. Drop the listeners
-          // but NEVER kill the PTY: by now setPanePtyId already registered it
-          // into the pane store, so the workspace store owns its lifecycle
-          // (workspace isolation — this is usually a mid-switch unmount).
           if (unlistenBatch) {
             unlistenBatch();
             unlistenBatch = null;
@@ -776,15 +669,12 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
     initPty();
 
-    // ResizeObserver for fitting terminal dynamically
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(() => {
         if (fitAddonRef.current && terminalRef.current) {
           try {
             fitAddonRef.current.fit();
-          } catch (e) {
-            // Ignore temporary fit errors during unmount/resize
-          }
+          } catch (e) {}
         }
       });
     });
@@ -792,20 +682,15 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     resizeObserver.observe(containerRef.current);
 
     return () => {
-      disposed = true; // audit find 2: stop any in-flight initPty continuation
+      disposed = true;
+      if (containerEl) {
+        containerEl.removeEventListener('click', handleContainerClick);
+      }
       resizeObserver.disconnect();
       if (copyTimer) clearTimeout(copyTimer);
       if (unlistenBatch) unlistenBatch();
       if (unlistenExit) unlistenExit();
-
       releaseWebglSlot(id);
-
-      // Workspace isolation: NEVER kill the PTY on unmount. Unmounting here
-      // means either (a) a workspace switch — the process must keep running in
-      // the background for when the user switches back, or (b) an explicit
-      // close/reset/delete, in which case the STORE already killed the PTY
-      // (closePane / killPanesInLayout). Killing again would destroy a hidden
-      // workspace's terminals.
       term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -816,30 +701,33 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     const term = terminalRef.current;
     if (!term) return;
 
-    // Customization audit C12: apply effective (workspace-override-aware) values.
     const theme = THEMES[effThemeName] || THEMES.vibeDark;
+    
+    // FORCE PURE BLACK STEALTH THEME DYNAMICALLY AS WELL
+    const stealthTheme = {
+      ...theme,
+      background: '#000000',
+      cursor: '#ffffff',
+      cursorAccent: '#000000',
+    };
+
     term.options.fontSize = effFontSize;
     term.options.fontFamily = effFontFamily;
-    term.options.theme = theme;
+    term.options.theme = stealthTheme; // Apply Stealth Theme
     term.options.scrollback = scrollback;
     term.options.cursorBlink = cursorBlink;
     term.options.cursorStyle = cursorStyle;
     term.options.cursorWidth = cursorWidth;
     term.options.lineHeight = lineHeight;
-    // Customization audit C5/C6/C19: behavior options update live too.
     term.options.wordSeparator = wordSeparators;
-    (term.options as ExtendedTerminalOptions).padding = terminalPadding;
 
     if (fitAddonRef.current) {
       try {
         fitAddonRef.current.fit();
-      } catch (e) {
-        // ignore fit error
-      }
+      } catch (e) {}
     }
-  }, [effThemeName, effFontSize, effFontFamily, scrollback, cursorBlink, cursorStyle, lineHeight, cursorWidth, wordSeparators, terminalPadding]);
+  }, [effThemeName, effFontSize, effFontFamily, scrollback, cursorBlink, cursorStyle, lineHeight, cursorWidth, wordSeparators]);
 
-  // Focus terminal when isFocused changes
   useEffect(() => {
     if (isFocused && terminalRef.current) {
       terminalRef.current.focus();
@@ -848,8 +736,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Customization audit C15: right-click can paste directly (tmux-style)
-    // instead of opening the context menu.
     if (useSettingsStore.getState().rightClickPaste) {
       pasteFromClipboard();
       return;
@@ -869,7 +755,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       },
     },
     {
-      // Customization audit C20: colored HTML copy for rich editors.
       id: 'copy-as-html',
       label: 'Copy as HTML (with colors)',
       icon: <FileCode2 className="w-3.5 h-3.5" />,
@@ -895,7 +780,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       action: () => setShowShellModal(true),
     },
     {
-      // Customization audit C13: per-pane appearance overrides.
       id: 'appearance',
       label: 'Appearance for This Pane…',
       icon: <Palette className="w-3.5 h-3.5" />,
@@ -959,7 +843,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     },
   ];
 
-  // Per-pane shell override (audit: the field was dead — wire it to a prompt).
   const [showShellModal, setShowShellModal] = useState(false);
 
   return (
@@ -977,7 +860,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       )}
       <div ref={containerRef} className="h-full w-full overflow-hidden" />
 
-      {/* Drag-over highlight: dashed accent border while files hover the pane */}
       {isDragOver && (
         <div className="pointer-events-none absolute inset-1 z-30 rounded-xl border-2 border-dashed border-white/50 bg-white/5 flex items-center justify-center animate-fade-in">
           <span className="px-3 py-1.5 rounded-lg text-xs text-white bg-black/80 border border-white/10 shadow-xl">
@@ -986,7 +868,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         </div>
       )}
 
-      {/* Shell override notice */}
       {showShellModal && Boolean(ptyPaneIdRef.current) && (
         <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-xl bg-black/80 backdrop-blur-xl border border-white/10 p-2.5 text-[10px] text-white/60 shadow-lg">
           This pane is already running a shell — the new shell applies to the
@@ -994,7 +875,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         </div>
       )}
 
-      {/* Process exited banner — relaunch or close */}
       {hasExited && (
         <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl px-3 py-1.5 text-[11px] text-white/80 shadow-lg animate-fade-in-up">
           <span className="relative flex h-2 w-2 shrink-0">
@@ -1019,7 +899,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         </div>
       )}
 
-      {/* Customization audit C20: multi-line paste confirmation */}
       {pendingPasteText && (
         <ConfirmModal
           title="Paste multi-line content?"
@@ -1038,8 +917,6 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
       {menu && <TerminalContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
 
-      {/* Customization audit C13: per-pane appearance popover. A transparent
-          backdrop eats clicks so the popover closes on outside interaction. */}
       {showAppearanceMenu && appearancePos && (
         <>
           <div className="fixed inset-0 z-[59]" onClick={() => setShowAppearanceMenu(false)} />

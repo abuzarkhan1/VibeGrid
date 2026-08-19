@@ -16,14 +16,3 @@ export interface LayoutPresetDefinition {
   generator: (ratio?: number) => PaneNode;
 }
 
-export interface StudioConfigState {
-  selectedPresetId: string;
-  customRows: number;
-  customCols: number;
-  ratioMode: RatioPreset;
-  customRatioValue: number; // 0.1 to 0.9
-  gutterWidth: GutterPreset;
-  cornerRadius: RadiusPreset;
-  terminalPadding: number;
-  autoLaunchAgents: boolean;
-}

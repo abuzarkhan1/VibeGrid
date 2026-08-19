@@ -210,7 +210,6 @@ interface LayoutStudioStore {
   gutterWidth: GutterPreset;
   cornerRadius: RadiusPreset;
   terminalPadding: number;
-  autoLaunchAgents: boolean;
 
   // Actions
   openStudio: (presetId?: string) => void;
@@ -222,7 +221,6 @@ interface LayoutStudioStore {
   setGutterWidth: (w: GutterPreset) => void;
   setCornerRadius: (r: RadiusPreset) => void;
   setTerminalPadding: (p: number) => void;
-  toggleAutoLaunchAgents: () => void;
   buildActiveLayout: () => PaneNode;
 }
 
@@ -237,7 +235,6 @@ export const useLayoutStudioStore = create<LayoutStudioStore>((set, get) => ({
   gutterWidth: 4,
   cornerRadius: 8,
   terminalPadding: 4,
-  autoLaunchAgents: true,
 
   openStudio: (presetId) =>
     set({ isOpen: true, ...(presetId ? { selectedPresetId: presetId } : {}) }),
@@ -272,8 +269,6 @@ export const useLayoutStudioStore = create<LayoutStudioStore>((set, get) => ({
   setGutterWidth: (gutterWidth) => set({ gutterWidth }),
   setCornerRadius: (cornerRadius) => set({ cornerRadius }),
   setTerminalPadding: (terminalPadding) => set({ terminalPadding }),
-  toggleAutoLaunchAgents: () =>
-    set((s) => ({ autoLaunchAgents: !s.autoLaunchAgents })),
 
   buildActiveLayout: () => {
     const {

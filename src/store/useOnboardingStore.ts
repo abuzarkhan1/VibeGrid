@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { PaneNode, PresetCount } from '@/types/layout';
-import { OnboardingStep, PaneAgentConfig, PaneSpawnSpec } from '@/types/onboarding';
+import { OnboardingStep, PaneSpawnSpec } from '@/types/onboarding';
+import { PaneAgentConfig } from '@/types/agent';
 import { buildPresetTree, buildAiPairTree, getTerminalNodesFromTree } from '@/lib/layoutUtils';
 import { buildAgentCommand } from '@/lib/agentRegistry';
 import { batchSpawnPanes, isTauri } from '@/lib/tauri';
@@ -14,7 +15,6 @@ export const ONBOARDING_COMPLETED_KEY = 'vibegrid_onboarding_completed_v1';
 interface OnboardingState {
   isOpen: boolean;
   currentStep: OnboardingStep;
-  hasSeenOnboarding: boolean;
   draftLayout: PaneNode;
   presetSelected: PresetCount | 'ai-pair';
   paneAgentAssignments: Record<string, PaneAgentConfig>;
@@ -26,12 +26,10 @@ interface OnboardingState {
 
   // Actions
   openOnboarding: (step?: OnboardingStep) => void;
-  closeOnboarding: () => void;
   setStep: (step: OnboardingStep) => void;
   nextStep: () => void;
   prevStep: () => void;
   skipToDefault: () => Promise<void>;
-  setDraftLayout: (layout: PaneNode) => void;
   setPresetSelected: (preset: PresetCount | 'ai-pair') => void;
   assignAgentToPane: (paneNodeId: string, config: PaneAgentConfig) => void;
   setWorkspaceIdentity: (name: string, emoji: string, cwd: string) => void;
@@ -86,7 +84,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
   return {
     isOpen: !hasCompleted,
     currentStep: 'splash',
-    hasSeenOnboarding: hasCompleted,
     draftLayout: initialLayout,
     presetSelected: 'ai-pair',
     paneAgentAssignments: defaultAssignments,
@@ -98,10 +95,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
 
     openOnboarding: (step = 'splash') => {
       set({ isOpen: true, currentStep: step });
-    },
-
-    closeOnboarding: () => {
-      set({ isOpen: false });
     },
 
     setStep: (step: OnboardingStep) => {
@@ -201,7 +194,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       } catch (_e) {
         // Ignore localStorage errors
       }
-      set({ hasSeenOnboarding: true, isOpen: false });
+      set({ isOpen: false });
     },
 
     completeAndLaunch: async () => {
@@ -265,8 +258,11 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
           };
         }
         return {
-          ...node,
           children: [attachPtyIds(node.children[0]), attachPtyIds(node.children[1])],
+          type: 'split',
+          id: node.id,
+          direction: node.direction,
+          ratio: node.ratio,
         };
       }
 
@@ -303,7 +299,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       set({
         isLaunching: false,
         isOpen: false,
-        hasSeenOnboarding: true,
       });
     },
   };

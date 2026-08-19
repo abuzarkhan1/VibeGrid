@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { CinematicSplashScreen } from './CinematicSplashScreen';
-import { BrandEmblem } from './BrandEmblem';
-import { ParticleField } from './ParticleField';
-import { playConvergenceWhoosh, playCrystallineSnapLock, playTerminalBell } from '@/lib/brandSoundEngine';
+import { playConvergenceWhoosh, playCrystallineSnapLock } from '@/lib/brandSoundEngine';
 
 // Mock Web Audio API
 beforeEach(() => {
@@ -26,45 +24,10 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('BrandEmblem', () => {
-  it('renders SVG with side brackets, circle ring, and 4 cards matching master icon', () => {
-    render(<BrandEmblem size={100} isAssembled={true} />);
-    const emblem = screen.getByLabelText('VibeGrid Brand Emblem');
-    expect(emblem).toBeInTheDocument();
-    expect(emblem.querySelector('svg')).toBeInTheDocument();
-    // 4 cards
-    const rects = emblem.querySelectorAll('rect');
-    expect(rects.length).toBe(4);
-    // Circular aperture ring
-    const circle = emblem.querySelector('circle');
-    expect(circle).toBeInTheDocument();
-    // 4 side paths
-    const paths = emblem.querySelectorAll('path');
-    expect(paths.length).toBe(4);
-  });
-
-  it('renders unassembled state with proper offset styling', () => {
-    const { container } = render(<BrandEmblem size={80} isAssembled={false} />);
-    const rects = container.querySelectorAll('rect');
-    expect(rects.length).toBe(4);
-  });
-});
-
-describe('ParticleField', () => {
-  it('renders canvas element without throwing', () => {
-    const { container } = render(<ParticleField isAssembled={false} />);
-    const canvas = container.querySelector('canvas');
-    expect(canvas).toBeInTheDocument();
-  });
-});
-
 describe('BrandSoundEngine', () => {
   it('executes audio cues safely in mock/headless environment', () => {
     expect(() => playConvergenceWhoosh()).not.toThrow();
     expect(() => playCrystallineSnapLock()).not.toThrow();
-    expect(() => playTerminalBell('sine')).not.toThrow();
-    expect(() => playTerminalBell('retro')).not.toThrow();
-    expect(() => playTerminalBell('click')).not.toThrow();
   });
 });
 

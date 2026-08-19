@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { usePaneStore, getTerminalNodes, planPresetKeep, isEqualPresetTree, PresetCount } from './usePaneStore';
+import { usePaneStore, getTerminalNodes, planPresetKeep, isEqualPresetTree } from './usePaneStore';
+import { PresetCount } from '@/types/layout';
 import { useWorkspaceStore } from './useWorkspaceStore';
 import { useSettingsStore } from './useSettingsStore';
 
@@ -16,6 +17,7 @@ export interface ToastMessage {
 interface UIState {
   isCommandPaletteOpen: boolean;
   isSettingsOpen: boolean;
+  activeSettingsTab: 'font' | 'theme' | 'terminal' | 'workspaces' | 'limits' | 'appearance' | 'keyboard' | 'profiles';
   isCheatsheetOpen: boolean;
   isDiffViewerOpen: boolean;
   isChatOpen: boolean;
@@ -54,6 +56,7 @@ interface UIState {
   toggleCommandPalette: () => void;
   setCommandPaletteOpen: (open: boolean) => void;
   toggleSettings: () => void;
+  setActiveSettingsTab: (tab: 'font' | 'theme' | 'terminal' | 'workspaces' | 'limits' | 'appearance' | 'keyboard' | 'profiles') => void;
   setCheatsheetOpen: (open: boolean) => void;
   toggleDiffViewer: () => void;
   setDiffViewerOpen: (open: boolean) => void;
@@ -65,12 +68,6 @@ interface UIState {
   acquireWebglSlot: (paneId: string) => boolean;
   releaseWebglSlot: (paneId: string) => void;
   requestClosePane: (paneId: string) => void;
-  /** Customization audit L19: bypass the confirm dialog for pane close. */
-  requestClosePaneImmediate: (paneId: string) => void;
-  requestSetLayoutPresetImmediate: (count: PresetCount) => void;
-  requestResetLayoutImmediate: () => void;
-  /** Customization audit L19: is confirmation enabled for this action? */
-  shouldConfirm: (action: 'paneClose' | 'quit' | 'layoutShrink' | 'workspaceDelete') => boolean;
   cancelPendingClose: () => void;
   requestQuit: () => void;
   cancelQuit: () => void;
@@ -89,14 +86,10 @@ interface UIState {
 
   // View state & navigation matching desktop design layout
   activeViewMode: 'hub' | 'grid';
-  selectedModel: string;
-  selectedRunner: string;
   activeThreadTitle: string;
   historyStack: ('hub' | 'grid')[];
   historyPointer: number;
   setActiveViewMode: (mode: 'hub' | 'grid') => void;
-  setSelectedModel: (model: string) => void;
-  setSelectedRunner: (runner: string) => void;
   setActiveThreadTitle: (title: string) => void;
   navigateBack: () => void;
   navigateForward: () => void;
@@ -105,6 +98,7 @@ interface UIState {
 export const useUIStore = create<UIState>((set, get) => ({
   isCommandPaletteOpen: false,
   isSettingsOpen: false,
+  activeSettingsTab: 'font',
   isCheatsheetOpen: false,
   isDiffViewerOpen: false,
   isChatOpen: false,
@@ -117,8 +111,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   isCreateWsModalOpen: false,
 
   activeViewMode: 'hub',
-  selectedModel: 'Gemini 3.7 Flash High',
-  selectedRunner: 'Local',
   activeThreadTitle: 'Codex UI Design Alignment',
   historyStack: ['hub'],
   historyPointer: 0,
@@ -135,8 +127,6 @@ export const useUIStore = create<UIState>((set, get) => ({
     });
   },
 
-  setSelectedModel: (model: string) => set({ selectedModel: model }),
-  setSelectedRunner: (runner: string) => set({ selectedRunner: runner }),
   setActiveThreadTitle: (title: string) => set({ activeThreadTitle: title }),
 
   navigateBack: () => {
@@ -168,6 +158,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
   toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
+  setActiveSettingsTab: (tab) => set({ activeSettingsTab: tab }),
   setCheatsheetOpen: (open: boolean) => set({ isCheatsheetOpen: open }),
   toggleDiffViewer: () => set((state) => ({ isDiffViewerOpen: !state.isDiffViewerOpen })),
   setDiffViewerOpen: (open: boolean) => set({ isDiffViewerOpen: open }),
@@ -252,24 +243,6 @@ export const useUIStore = create<UIState>((set, get) => ({
     useWorkspaceStore.getState().switchWorkspace(wsId);
   },
 
-  // Customization audit L19: confirmation strictness. 'never' performs the
-  // destructive action immediately (killing processes without a dialog);
-  // 'always' keeps the guarded confirm flow. Each call site still decides
-  // whether it wants the guarded or the immediate path via these actions.
-  requestClosePaneImmediate: (paneId: string) => {
-    usePaneStore.getState().closePane(paneId);
-  },
-  requestSetLayoutPresetImmediate: (count) => {
-    usePaneStore.getState().setLayoutPreset(count);
-  },
-  requestResetLayoutImmediate: () => {
-    usePaneStore.getState().resetLayout();
-  },
-
-  /** Convenience: does the user want confirmation for this action? */
-  shouldConfirm: (action: 'paneClose' | 'quit' | 'layoutShrink' | 'workspaceDelete') => {
-    return useSettingsStore.getState().confirmations[action] === 'always';
-  },
 
   // Workspace isolation: creating a workspace also switches to it without
   // terminating anything. The current workspace's terminals keep running in
