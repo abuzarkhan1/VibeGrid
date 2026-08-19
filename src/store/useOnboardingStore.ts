@@ -167,10 +167,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       });
     },
 
-    setDraftLayout: (draftLayout: PaneNode) => {
-      set({ draftLayout });
-    },
-
     assignAgentToPane: (paneNodeId: string, config: PaneAgentConfig) => {
       set((state) => ({
         paneAgentAssignments: {
