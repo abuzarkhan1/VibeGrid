@@ -2,7 +2,7 @@ import React from 'react';
 import { Circle } from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
-import { PresetCount } from '@/store/usePaneStore';
+import { PresetCount } from '@/types/layout';
 
 const LAYOUT_PRESETS: {
   id: PresetCount;

@@ -188,13 +188,6 @@ export const CODEX_PRESETS: Record<string, CodexThemeV1> = {
 };
 
 /**
- * Serializes a CodexThemeV1 object to a clean formatted JSON string.
- */
-export function exportCodexThemeV1(theme: CodexThemeV1): string {
-  return JSON.stringify(theme, null, 2);
-}
-
-/**
  * Validates and parses a JSON string into a structured CodexThemeV1 object.
  */
 export function parseCodexThemeV1(

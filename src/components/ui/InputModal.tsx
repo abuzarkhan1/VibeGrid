@@ -66,27 +66,27 @@ export const InputModal: React.FC<InputModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-4 animate-fade-in font-sans"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans"
     >
       <form
         ref={panelRef}
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-[#1A1B26] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-md bg-[#181924] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.03]">
-          <h3 className="text-xs font-bold text-white/90 uppercase tracking-wider">{title}</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
+          <h3 className="text-xs font-bold text-white/90 uppercase tracking-wider font-mono">{title}</h3>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-6 space-y-4">
           <div className="flex gap-2">
             <input
               ref={inputRef}
@@ -95,7 +95,7 @@ export const InputModal: React.FC<InputModalProps> = ({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={placeholder}
-              className="w-full px-3.5 py-2 rounded-xl bg-black/40 border border-white/10 text-xs text-white/90 placeholder:text-white/30 focus:outline-none focus:border-violet-400/60 focus:ring-1 focus:ring-accent-primary/30 transition-all font-sans"
+              className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors font-sans"
             />
             {onBrowse && (
               <button
@@ -103,7 +103,7 @@ export const InputModal: React.FC<InputModalProps> = ({
                 onClick={handleBrowse}
                 title="Browse folder"
                 aria-label="Browse folder"
-                className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs px-3 py-2 text-white/70 hover:text-white transition-colors shrink-0"
+                className="h-10 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-white/70 hover:text-white transition-colors shrink-0 cursor-pointer"
               >
                 <FolderOpen className="w-4 h-4" />
               </button>
@@ -117,18 +117,18 @@ export const InputModal: React.FC<InputModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-white/10 bg-white/[0.02]">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-white/[0.06] bg-white/[0.02]">
           <button
             type="button"
             onClick={onClose}
-            className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs px-3.5 py-1.5 text-xs font-medium text-white/70 hover:text-white"
+            className="h-10 flex items-center px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/90 text-[13px] font-normal transition-all cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={!value.trim()}
-            className="px-4 py-1.5 rounded-full bg-violet-500 hover:bg-violet-500/90 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-40"
+            className="h-10 flex items-center px-4 rounded-2xl bg-white text-black hover:bg-white/90 text-[13px] font-semibold shadow-sm transition-all disabled:opacity-40 cursor-pointer"
           >
             Save
           </button>

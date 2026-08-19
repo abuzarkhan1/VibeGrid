@@ -34,13 +34,13 @@ export const FirstRunHint: React.FC = () => {
         <Command className="w-4 h-4 text-violet-400" />
       </div>
       <div className="text-xs">
-        <p className="font-bold text-white/90">Welcome to Codex Grid</p>
+        <p className="font-bold text-white/90">Welcome to VibeGrid</p>
         <p className="text-white/70 mt-0.5 font-sans">
-          Press <kbd className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs !px-1.5 !py-0.5 font-mono text-[10px] text-white/90">Cmd/Ctrl+D</kbd> to split,{' '}
+          Press <kbd className="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] font-mono text-[10px] text-white/90">Cmd/Ctrl+D</kbd> to split,{' '}
           <span className="inline-flex items-center gap-0.5 align-middle">
             <Columns className="w-3 h-3 text-violet-400 inline" />
           </span>{' '}
-          <kbd className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs !px-1.5 !py-0.5 font-mono text-[10px] text-white/90 ml-1">Cmd/Ctrl+Shift+P</kbd> for commands
+          <kbd className="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] font-mono text-[10px] text-white/90 ml-1">Cmd/Ctrl+Shift+P</kbd> for commands
         </p>
       </div>
       <button

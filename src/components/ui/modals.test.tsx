@@ -11,7 +11,7 @@ describe('AboutModal', () => {
   it('renders modal with engine info and close action', () => {
     const onClose = vi.fn();
     render(<AboutModal onClose={onClose} />);
-    expect(screen.getByRole('dialog')).toHaveAttribute('aria-label', 'About Codex Grid');
+    expect(screen.getByRole('dialog')).toHaveAttribute('aria-label', 'About VibeGrid');
     expect(screen.getByText('Tauri 2 + Rust')).toBeTruthy();
     expect(screen.getByText('MIT Open Source')).toBeTruthy();
 

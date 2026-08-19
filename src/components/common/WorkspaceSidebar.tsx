@@ -4,9 +4,16 @@ import {
   Folder,
   ChevronRight,
   Settings,
-  Filter,
   Trash2,
   Edit2,
+  Type,
+  Palette,
+  Terminal as TerminalIcon,
+  Layout,
+  Sliders,
+  Keyboard as KeyboardIcon,
+  UserRound,
+  X,
 } from 'lucide-react';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useUIStore } from '@/store/useUIStore';
@@ -36,6 +43,9 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
     setActiveThreadTitle,
     toggleSettings,
     addToast,
+    isSettingsOpen,
+    activeSettingsTab,
+    setActiveSettingsTab,
   } = useUIStore();
 
   const sidebarWidth = useSettingsStore((s) => s.sidebarWidth);
@@ -70,6 +80,17 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
     setActiveViewMode('grid');
   };
 
+  const settingsTabs = [
+    { id: 'font', label: 'Font & Appearance', icon: Type },
+    { id: 'theme', label: 'Themes', icon: Palette },
+    { id: 'terminal', label: 'Terminal', icon: TerminalIcon },
+    { id: 'workspaces', label: 'Workspaces', icon: Layout },
+    { id: 'limits', label: 'Limits', icon: Sliders },
+    { id: 'appearance', label: 'UI Chrome', icon: Palette },
+    { id: 'keyboard', label: 'Keybindings', icon: KeyboardIcon },
+    { id: 'profiles', label: 'Profiles', icon: UserRound },
+  ] as const;
+
   if (!isOpen) {
     return (
       <div className="w-12 bg-black/40 backdrop-blur-xl border-r border-white/5 flex flex-col items-center py-4 gap-4 select-none z-20 font-sans shrink-0">
@@ -90,6 +111,65 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
           <Plus className="w-4 h-4" />
         </button>
       </div>
+    );
+  }
+
+  // --- SETTINGS SIDEBAR VIEW ---
+  if (isSettingsOpen) {
+    return (
+      <aside
+        style={{ width: sidebarWidth || 260 }}
+        className="bg-black/40 backdrop-blur-xl border-r border-white/5 flex flex-col h-full select-none z-20 animate-fade-in shrink-0 font-sans overflow-hidden text-white/90"
+      >
+        <div className="p-3 pb-1">
+          <button
+            type="button"
+            onClick={toggleSettings}
+            className="w-full h-10 flex items-center justify-center gap-2 px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 hover:border-white/20 text-white/90 hover:text-white text-[13px] font-normal transition-all cursor-pointer"
+          >
+            <X className="w-4 h-4 text-white/70" />
+            <span>Close Settings</span>
+          </button>
+        </div>
+
+        <div className="mt-3 px-4 py-1.5 text-[11px] font-medium text-white/40">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">Settings Menu</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-3 py-1 space-y-1.5 custom-scrollbar">
+          {settingsTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeSettingsTab === tab.id;
+            return (
+              <div
+                key={tab.id}
+                onClick={() => setActiveSettingsTab(tab.id)}
+                className={`group relative flex items-center justify-between h-10 px-3.5 rounded-2xl text-[13px] transition-all cursor-pointer ${
+                  isActive
+                    ? 'text-white bg-white/[0.06] border border-white/10 font-normal'
+                    : 'text-white/50 hover:text-white bg-transparent hover:bg-white/[0.03] border border-transparent hover:border-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 truncate">
+                  <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-white/50 group-hover:text-white'}`} />
+                  <span className="truncate">{tab.label}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="p-2 border-t border-white/5 bg-transparent">
+          <button
+            type="button"
+            onClick={toggleSettings}
+            className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs text-white/40 hover:text-white hover:bg-white/[0.04] transition-colors text-left cursor-pointer"
+          >
+            <Settings className="w-4 h-4 text-white/40" />
+            <span>Back to App</span>
+          </button>
+        </div>
+      </aside>
     );
   }
 
@@ -116,13 +196,6 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
         <div className="mt-3 px-4 py-1.5 flex items-center justify-between text-[11px] font-medium text-white/40">
           <span className="text-[10px] font-mono uppercase tracking-wider text-white/40">Projects</span>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              title="Filter Projects"
-              className="p-1 rounded-lg hover:bg-white/[0.04] text-white/40 hover:text-white transition-colors cursor-pointer"
-            >
-              <Filter className="w-3 h-3" />
-            </button>
             <button
               type="button"
               onClick={() => setShowCreateModal(true)}

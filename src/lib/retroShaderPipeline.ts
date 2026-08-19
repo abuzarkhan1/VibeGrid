@@ -83,7 +83,6 @@ precision highp float;
 #endif
 
 varying vec2 v_uv;
-uniform vec2 u_resolution;
 uniform float u_time;
 uniform float u_curvature;          // 0.0 to 0.3
 uniform float u_scanlineIntensity;  // 0.0 to 1.0
@@ -214,7 +213,7 @@ export class RetroShaderRenderer {
     gl.enableVertexAttribArray(aPos);
     gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-    this.startLoop();
+    this.animFrameId = requestAnimationFrame(this.render);
   }
 
   private compileShader(type: number, source: string): WebGLShader | null {
@@ -259,7 +258,6 @@ export class RetroShaderRenderer {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    const uRes = gl.getUniformLocation(program, 'u_resolution');
     const uTime = gl.getUniformLocation(program, 'u_time');
     const uCurv = gl.getUniformLocation(program, 'u_curvature');
     const uScanInt = gl.getUniformLocation(program, 'u_scanlineIntensity');
@@ -268,7 +266,6 @@ export class RetroShaderRenderer {
     const uBloom = gl.getUniformLocation(program, 'u_bloomIntensity');
     const uVign = gl.getUniformLocation(program, 'u_vignetteDarkness');
 
-    if (uRes) gl.uniform2f(uRes, this.canvas.width, this.canvas.height);
     if (uTime) gl.uniform1f(uTime, elapsed);
     if (uCurv) gl.uniform1f(uCurv, this.config.curvature);
     if (uScanInt) gl.uniform1f(uScanInt, this.config.scanlineIntensity);
@@ -281,11 +278,6 @@ export class RetroShaderRenderer {
 
     this.animFrameId = requestAnimationFrame(this.render);
   };
-
-  public startLoop() {
-    if (this.animFrameId) cancelAnimationFrame(this.animFrameId);
-    this.animFrameId = requestAnimationFrame(this.render);
-  }
 
   public dispose() {
     if (this.animFrameId) {

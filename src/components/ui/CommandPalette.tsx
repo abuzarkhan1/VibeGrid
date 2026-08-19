@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Columns, Rows, Maximize2, X, ZoomIn, ZoomOut, RotateCcw, Palette, Plus, Settings, Info, Edit3, Grid, FolderOpen, BookOpen, Mic, Download, Upload, Save, Terminal as TerminalIcon, Trash2, Play, Zap, Bot, Layers, GitCommit } from 'lucide-react';
 import { runMacro } from '@/lib/macros';
 import { useUIStore } from '@/store/useUIStore';
-import { usePaneStore, getTerminalNodes, PresetCount } from '@/store/usePaneStore';
+import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
+import { PresetCount } from '@/types/layout';
 import { useSettingsStore, THEMES, UserCommand } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
@@ -23,10 +24,6 @@ interface CommandItem {
   shortcut?: string;
   icon: React.ReactNode;
   action: () => void;
-}
-
-interface CommandPaletteProps {
-  onOpenAbout?: () => void;
 }
 
 const RECENTS_KEY = 'vibegrid_palette_recents_v1';
@@ -81,7 +78,7 @@ function getFocusedPtyId(): string | undefined {
   return find(usePaneStore.getState().root);
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) => {
+export const CommandPalette: React.FC = () => {
   const { isCommandPaletteOpen, setCommandPaletteOpen, toggleSettings, addToast, setCheatsheetOpen, requestClosePane, requestSwitchWorkspace, requestCreateWorkspace, requestSetLayoutPreset, requestResetLayout, notifyMaxPanes } = useUIStore();
   const { splitPane, toggleMaximize, setPaneTitle, setPaneCwd, focusedPaneId, paneCount, maxPanes } = usePaneStore();
   const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings, userCommands, updateSettings } = useSettingsStore();
@@ -162,49 +159,49 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'open-layout-studio',
       label: 'Open Layout Selection Studio…',
       category: 'Layout',
-      icon: <Layers className="w-4 h-4 text-violet-400" />,
+      icon: <Layers className="w-4 h-4 text-white/80" />,
       action: () => useLayoutStudioStore.getState().openStudio(),
     },
     {
       id: 'open-agent-launcher',
       label: 'Open AI Agent Fleet Launcher…',
       category: 'AI Agents',
-      icon: <Bot className="w-4 h-4 text-violet-400" />,
+      icon: <Bot className="w-4 h-4 text-white/80" />,
       action: () => useAgentStore.getState().openLauncher(),
     },
     {
       id: 'open-customizer-studio',
       label: 'Open Theme & Customization Studio…',
       category: 'Customization',
-      icon: <Palette className="w-4 h-4 text-violet-400" />,
+      icon: <Palette className="w-4 h-4 text-white/80" />,
       action: () => useCustomizationStore.getState().openCustomizer(),
     },
     {
       id: 'toggle-diff-viewer',
       label: 'Toggle Content-Aware Diff Viewer',
       category: 'Workspace',
-      icon: <GitCommit className="w-4 h-4 text-violet-400" />,
+      icon: <GitCommit className="w-4 h-4 text-white/80" />,
       action: () => useUIStore.getState().toggleDiffViewer(),
     },
     {
       id: 'app-setup-layout-studio',
-      label: 'Open Codex Setup & Onboarding Wizard…',
+      label: 'Open VibeGrid Setup & Onboarding Wizard…',
       category: 'Workspace',
-      icon: <Zap className="w-4 h-4 text-violet-400" />,
+      icon: <Zap className="w-4 h-4 text-white/80" />,
       action: () => useOnboardingStore.getState().openOnboarding('splash'),
     },
     {
       id: 'edit-pane-title',
       label: 'Edit Focused Pane Title',
       category: 'Pane Operations',
-      icon: <Edit3 className="w-4 h-4 text-violet-400" />,
+      icon: <Edit3 className="w-4 h-4 text-white/80" />,
       action: () => setShowTitleModal(true),
     },
     ...presets.map((p) => ({
       id: `preset-grid-${p}`,
       label: `Set Equal Grid Layout to ${p} Pane${p > 1 ? 's' : ''}`,
       category: 'Layout Presets',
-      icon: <Grid className="w-4 h-4 text-[#818cf8]" />,
+      icon: <Grid className="w-4 h-4 text-white/80" />,
       // Guarded: a grid rebuild kills all running panes — confirm when running.
       action: () => requestSetLayoutPreset(p),
     })),
@@ -212,7 +209,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'split-folder',
       label: 'Split Pane in a New Folder…',
       category: 'Pane Operations',
-      icon: <FolderOpen className="w-4 h-4 text-[#818cf8]" />,
+      icon: <FolderOpen className="w-4 h-4 text-white/80" />,
       action: () => setShowFolderModal(true),
     },
     {
@@ -220,7 +217,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Split Pane Horizontally (Side by Side)',
       category: 'Pane Operations',
       shortcut: keybindings['split-horizontal']?.currentKey || 'Mod+D',
-      icon: <Columns className="w-4 h-4 text-[#818cf8]" />,
+      icon: <Columns className="w-4 h-4 text-white/80" />,
       action: () => {
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'horizontal');
@@ -235,7 +232,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Split Pane Vertically (Stacked)',
       category: 'Pane Operations',
       shortcut: keybindings['split-vertical']?.currentKey || 'Mod+Shift+D',
-      icon: <Rows className="w-4 h-4 text-[#818cf8]" />,
+      icon: <Rows className="w-4 h-4 text-white/80" />,
       action: () => {
         if (focusedPaneId) {
           const success = splitPane(focusedPaneId, 'vertical');
@@ -250,7 +247,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Toggle Maximize / Restore Focused Pane',
       category: 'Pane Operations',
       shortcut: keybindings['toggle-maximize']?.currentKey || 'Mod+Shift+Enter',
-      icon: <Maximize2 className="w-4 h-4 text-[#818cf8]" />,
+      icon: <Maximize2 className="w-4 h-4 text-white/80" />,
       action: () => toggleMaximize(),
     },
     {
@@ -268,7 +265,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       label: 'Create New Workspace',
       category: 'Workspace',
       shortcut: keybindings['new-workspace']?.currentKey || 'Mod+Shift+N',
-      icon: <Plus className="w-4 h-4 text-[#818cf8]" />,
+      icon: <Plus className="w-4 h-4 text-white/80" />,
       action: () => setShowWsModal(true),
     },
     ...workspaces.map((ws) => {
@@ -279,7 +276,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
         id: `ws-switch-${ws.id}`,
         label: `Switch to Workspace: ${ws.name}${running > 0 ? `  ●${running} running` : ''}`,
         category: 'Workspace',
-        icon: <Info className="w-4 h-4 text-[#818cf8]" />,
+        icon: <Info className="w-4 h-4 text-white/80" />,
         action: () => requestSwitchWorkspace(ws.id),
       };
     }),
@@ -346,10 +343,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'open-about',
       label: 'About VibeGrid',
       category: 'Application',
-      icon: <Info className="w-4 h-4 text-[#818cf8]" />,
-      action: () => {
-        if (onOpenAbout) onOpenAbout();
-      },
+      icon: <Info className="w-4 h-4 text-white/80" />,
+      action: () => toggleSettings(),
     },
     {
       id: 'export-settings',
@@ -378,7 +373,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
       id: 'toggle-voice',
       label: voiceToTerminal ? 'Disable Voice-to-Terminal' : 'Enable Voice-to-Terminal',
       category: 'Preferences',
-      icon: <Mic className={`w-4 h-4 ${voiceToTerminal ? 'text-[#818cf8]' : 'text-[#a3a3ab]'}`} />,
+      icon: <Mic className={`w-4 h-4 ${voiceToTerminal ? 'text-white/80' : 'text-[#a3a3ab]'}`} />,
       action: () => {
         setVoiceToTerminal(!voiceToTerminal);
         addToast({ type: 'success', title: voiceToTerminal ? 'Voice disabled' : 'Voice enabled', description: 'Press Cmd/Ctrl+Shift+V to dictate into the focused pane.' });
@@ -500,11 +495,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
           <div
             ref={panelRef}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-xl bg-[#1A1B26] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] font-sans border border-white/15"
+            className="w-full max-w-xl bg-[#181924] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[70vh] font-sans border border-white/[0.08]"
           >
             {/* Search Header */}
             <div className="flex items-center px-4 py-3.5 border-b border-white/10 bg-white/[0.03]">
-              <Search className="w-4 h-4 text-violet-400 mr-3 shrink-0" />
+              <Search className="w-4 h-4 text-white/80 mr-3 shrink-0" />
               <input
                 ref={inputRef}
                 type="text"
@@ -532,12 +527,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer text-xs transition-all rounded-xl ${
                       idx === selectedIndex
-                        ? 'bg-white/[0.12] text-white border border-white/10 shadow-sm'
+                        ? 'bg-white/[0.08] text-white border border-white/[0.08] shadow-sm'
                         : 'text-white/90 hover:bg-white/[0.06] border border-transparent'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="p-1 rounded-lg bg-white/5 text-violet-400">
+                      <div className="p-1 rounded-lg bg-white/5 text-white/80">
                         {cmd.icon}
                       </div>
                       <div>
@@ -603,42 +598,42 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
 
       {/* Customization audit C21: custom-command manager overlay (z-60 above
           the palette). Add/run/delete commands that type into the focused pane. */}
-      {showCmdModal && (
+            {showCmdModal && (
         <div
-          className="fixed inset-0 z-[60] bg-black/75  flex items-center justify-center p-4 animate-fade-in font-sans select-none"
+          className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans select-none"
           onClick={() => setShowCmdModal(false)}
         >
           <div
-            className="w-full max-w-md bg-[#1A1B26] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            className="w-full max-w-md bg-[#181924] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Manage custom commands"
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-black/20">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
               <div className="flex items-center gap-2">
-                <TerminalIcon className="w-4 h-4 text-violet-400" />
+                <TerminalIcon className="w-4 h-4 text-white/80" />
                 <span className="text-xs font-bold text-white/90 font-mono uppercase tracking-wider">Custom Commands</span>
               </div>
               <button
                 onClick={() => setShowCmdModal(false)}
-                className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+                className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-4 space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
-              {/* Add form */}
-              <div className="space-y-3 rounded-2xl border border-white/10 bg-[#1A1B26] border border-white/[0.06] p-3.5">
-                <span className="text-[10px] font-mono font-semibold text-white/40 uppercase tracking-widest">New command</span>
+            <div className="p-6 space-y-4 max-h-[55vh] overflow-y-auto custom-scrollbar">
+              {/* Add form card */}
+              <div className="space-y-3 rounded-2xl bg-white/[0.02] border border-white/5 p-5">
+                <span className="text-[10px] font-mono font-semibold text-white/40 uppercase tracking-wider block">New Command</span>
                 <input
                   type="text"
                   value={cmdLabel}
                   onChange={(e) => setCmdLabel(e.target.value)}
                   placeholder="Label (e.g. Run tests)"
-                  className="w-full px-3 py-2 rounded-xl bg-[#1A1B26] border border-white/10 text-xs text-white/90 placeholder:text-white/40 focus:outline-none focus:border-violet-400 font-sans"
+                  className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-sans transition-colors"
                 />
                 <input
                   type="text"
@@ -651,12 +646,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                     }
                   }}
                   placeholder="Shell command (e.g. npm test)"
-                  className="w-full px-3 py-2 rounded-xl bg-[#1A1B26] border border-white/10 text-xs text-white/90 placeholder:text-white/40 focus:outline-none focus:border-violet-400 font-mono"
+                  className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-mono transition-colors"
                 />
                 <button
                   onClick={addUserCommand}
                   disabled={!cmdLabel.trim() || !cmdCommand.trim()}
-                  className="w-full px-4 py-2 rounded-full bg-violet-500 hover:bg-violet-500/90 text-white text-xs font-semibold shadow-none transition-colors disabled:opacity-40 cursor-pointer"
+                  className="w-full h-10 px-4 rounded-2xl bg-white text-black hover:bg-white/90 text-[13px] font-semibold transition-all disabled:opacity-40 cursor-pointer shadow-sm"
                 >
                   Add Command
                 </button>
@@ -671,18 +666,18 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                 userCommands.map((uc) => (
                   <div
                     key={uc.id}
-                    className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#1A1B26] border border-white/[0.06] px-3.5 py-2.5"
+                    className="flex items-center justify-between gap-3 rounded-2xl bg-white/[0.02] border border-white/5 p-4"
                   >
-                    <div className="min-w-0">
-                      <div className="text-xs font-semibold text-white/90 truncate">{uc.label}</div>
-                      <div className="text-[10px] text-white/70 font-mono truncate">$ {uc.command}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13px] font-bold text-white/90 truncate">{uc.label}</div>
+                      <div className="text-[11px] text-white/60 font-mono truncate mt-0.5">$ {uc.command}</div>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => runUserCommand(uc)}
                         title="Run in focused pane"
                         aria-label={`Run ${uc.label}`}
-                        className="p-1.5 rounded-lg hover:bg-white/10 text-violet-400 transition-colors"
+                        className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/5 text-white/80 hover:text-white transition-colors cursor-pointer"
                       >
                         <Play className="w-3.5 h-3.5" />
                       </button>
@@ -690,7 +685,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ onOpenAbout }) =
                         onClick={() => deleteUserCommand(uc.id)}
                         title="Delete command"
                         aria-label={`Delete ${uc.label}`}
-                        className="p-1.5 rounded-lg hover:bg-rose-950/60 text-white/40 hover:text-red-400 transition-colors"
+                        className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

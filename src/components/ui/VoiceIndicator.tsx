@@ -41,11 +41,11 @@ export const VoiceIndicator: React.FC = () => {
   return (
     <div
       data-voice-indicator
-      className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2.5 rounded-full bg-[#1A1B26] border border-white/20 shadow-2xl animate-fade-in-up select-none font-sans "
+      className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#181924] border border-white/10 shadow-2xl animate-fade-in-up select-none font-sans backdrop-blur-md"
     >
       {phase === 'transcribing' && (
         <>
-          <Loader2 className="w-4 h-4 text-violet-400 animate-spin" />
+          <Loader2 className="w-4 h-4 text-white/80 animate-spin" />
           <span className="text-[11px] text-white/90 whitespace-nowrap">Transcribing…</span>
         </>
       )}
@@ -65,15 +65,15 @@ export const VoiceIndicator: React.FC = () => {
       {phase === 'listening' && (
         <>
           <div className="relative flex items-center justify-center">
-            <span className="absolute inline-flex h-6 w-6 rounded-full bg-violet-500/30 animate-ping" />
-            <Mic className={`w-4 h-4 text-violet-400 relative ${idle ? 'animate-pulse' : ''}`} />
+            <span className="absolute inline-flex h-6 w-6 rounded-full bg-white/20 animate-ping" />
+            <Mic className={`w-4 h-4 text-white relative ${idle ? 'animate-pulse' : ''}`} />
           </div>
 
           <div className={`flex items-end gap-[3px] h-6 ${idle ? 'opacity-70' : ''}`} aria-hidden>
             {heights.map((h, i) => (
               <div
                 key={i}
-                className="w-[3px] rounded-full bg-violet-500 transition-none"
+                className="w-[3px] rounded-full bg-white transition-none"
                 style={{
                   height: `${h.toFixed(1)}px`,
                   opacity: 0.4 + 0.6 * Math.min(1, h / 26),
@@ -87,7 +87,7 @@ export const VoiceIndicator: React.FC = () => {
           </span>
 
           <span className="flex items-center gap-1 text-[10px] text-white/40 whitespace-nowrap font-mono">
-            <CornerDownLeft className="w-3 h-3 text-violet-400" />
+            <CornerDownLeft className="w-3 h-3 text-white/60" />
             <span>Insert</span>
             <span className="mx-1 text-white/10">·</span>
             <X className="w-3 h-3 text-white/70" />

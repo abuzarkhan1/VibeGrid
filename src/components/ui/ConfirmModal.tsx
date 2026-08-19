@@ -46,35 +46,35 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-4 animate-fade-in font-sans"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans"
     >
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-[#1A1B26] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-sm bg-[#181924] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       >
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.03]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
           <div className="flex items-center gap-2 text-amber-400">
             <AlertTriangle className="w-4 h-4" />
-            <h3 className="text-xs font-bold text-white/90 uppercase tracking-wider">{title}</h3>
+            <h3 className="text-xs font-bold text-white/90 uppercase tracking-wider font-mono">{title}</h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close confirmation dialog"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+            className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-5">
-          <p className="text-xs text-white/70 leading-relaxed">{message}</p>
+        <div className="p-6">
+          <p className="text-[13px] text-white/70 leading-relaxed">{message}</p>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-white/10 bg-white/[0.02]">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-white/[0.06] bg-white/[0.02]">
           <button
             onClick={onClose}
-            className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs px-3.5 py-1.5 text-xs font-medium text-white/70 hover:text-white"
+            className="h-10 flex items-center px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/90 text-[13px] font-normal transition-all cursor-pointer"
           >
             Cancel
           </button>
@@ -84,10 +84,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               onConfirm();
               onClose();
             }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-all ${
+            className={`h-10 flex items-center px-4 rounded-2xl text-[13px] font-semibold shadow-sm transition-all cursor-pointer ${
               isDanger
-                ? 'bg-red-400 bg-[#f85149] hover:bg-[#da3633] text-white'
-                : 'bg-violet-500 hover:bg-violet-500/90 text-white'
+                ? 'bg-rose-500 hover:bg-rose-600 text-white'
+                : 'bg-white text-black hover:bg-white/90'
             }`}
           >
             {confirmLabel}

@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Type, Palette, Terminal as TerminalIcon, Layout, Keyboard as KeyboardIcon, Plus, Trash2, Edit2, RotateCcw, Download, Upload, Mic, Copy, Sliders, UserRound, Play, Globe, Archive } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Trash2,
+  Edit2,
+  RotateCcw,
+  Download,
+  Upload,
+  Mic,
+  Copy,
+  Play,
+  Globe,
+  Archive,
+} from 'lucide-react';
 import { useUIStore } from '@/store/useUIStore';
 import { useSettingsStore, THEMES, CursorStyle, Macro, MacroStep, ThemeMode } from '@/store/useSettingsStore';
 import { TerminalTheme } from '@/types/terminal';
@@ -7,46 +20,36 @@ import { useWorkspaceStore, WorkspaceOverrides } from '@/store/useWorkspaceStore
 import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { eventToAccelerator } from '@/lib/commandUtils';
-import { MACRO_ACTIONS, getMacroAction, runMacro } from '@/lib/macros';
+import { MACRO_ACTIONS, runMacro } from '@/lib/macros';
 import { getHttpPort } from '@/lib/tauri';
 import { InputModal } from './InputModal';
 import { ConfirmModal } from './ConfirmModal';
-import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { voiceModelStatus, listenModelProgress } from '@/lib/tauri';
 import { invoke } from '@tauri-apps/api/core';
 
-/** Styled toggle switch (gap 13) — replaces raw checkboxes for prominent toggles. */
+/** Styled toggle switch matching sidebar aesthetic */
 const ToggleSwitch: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (
   <button
     type="button"
     role="switch"
     aria-checked={checked}
     onClick={() => onChange(!checked)}
-    className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6366f1]/60 ${
-      checked ? 'bg-[#6366f1]' : 'bg-[#333338] hover:bg-[#3e3e46]'
+    className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none cursor-pointer ${
+      checked ? 'bg-white' : 'bg-white/10 hover:bg-white/20'
     }`}
   >
     <span
-      className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
-        checked ? 'translate-x-4' : 'translate-x-0'
+      className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-transform ${
+        checked ? 'translate-x-4 bg-black' : 'translate-x-0 bg-white/70'
       }`}
     />
   </button>
 );
 
-/** Color inputs require #rrggbb, but built-in palettes use rgba() for the
- *  selection swatch (e.g. 'rgba(60, 149, 240, 0.3)') — a custom theme copied
- *  from one would hand the <input type="color"> an invalid value. Sanitize:
- *  hex passes through, anything else falls back to a neutral swatch. */
 function toHexColor(value: string): string {
   return /^#[0-9a-f]{6}$/i.test(value) ? value : '#000000';
 }
 
-/** Palette slots editable in the custom-theme color editor (customization
- *  audit C1). Every value is a CSS color string. */
-/** Drop empty/undefined entries so a cleared override field truly means
- *  "inherit global" (customization audit C12) — an object of only empty
- *  strings would otherwise be persisted as a phantom override. */
 function cleanOverrides(o: WorkspaceOverrides): WorkspaceOverrides {
   const clean: WorkspaceOverrides = {};
   (Object.entries(o) as Array<[keyof WorkspaceOverrides, string | number | undefined]>).forEach(([k, v]) => {
@@ -80,8 +83,19 @@ const THEME_COLOR_SLOTS: Array<[keyof TerminalTheme, string]> = [
   ['brightWhite', 'Bright white'],
 ];
 
+const SETTINGS_TAB_LABELS: Record<string, string> = {
+  font: 'Font & Appearance',
+  theme: 'Themes & Palettes',
+  terminal: 'Terminal Engine',
+  workspaces: 'Workspaces & Overrides',
+  limits: 'Limits & Confirmations',
+  appearance: 'UI Chrome & Styling',
+  keyboard: 'Keybindings & Macros',
+  profiles: 'Profiles & Endpoints',
+};
+
 export const SettingsModal: React.FC = () => {
-  const { isSettingsOpen, toggleSettings } = useUIStore();
+  const { isSettingsOpen, toggleSettings, activeSettingsTab } = useUIStore();
   const {
     fontSize,
     fontFamily,
@@ -119,37 +133,25 @@ export const SettingsModal: React.FC = () => {
     resetSettings,
     exportSettings,
     importSettings,
-    // Customization audit: P0 limits + appearance settings.
     maxPanes,
     minPaneSize,
     dividerSnap,
-    snapEpsilon,
     doubleClickEqualize,
     fontSizeMin,
     fontSizeMax,
     scrollbackMax,
     terminalOpacityMin,
-    toastMaxCount,
-    toastDefaultDurationMs,
-    autosaveIntervalMs,
     showSplash,
-    hintDurationMs,
     confirmations,
-    uiAccentColor,
     animationsEnabled,
     uiZoom,
-    compactMode,
-    hideStatusBar,
-    hideHeader,
     sidebarWidth,
     statusBarBadges,
-    // Customization audit: P0 bounds + P1 terminal behavior + C1 theme manager.
     lineHeightMin,
     lineHeightMax,
     scrollbackMin,
     voiceSilenceTimeoutMin,
     voiceSilenceTimeoutMax,
-    paletteRecentsMax,
     rightClickPaste,
     clickableLinks,
     linkModifier,
@@ -158,7 +160,6 @@ export const SettingsModal: React.FC = () => {
     wordSeparators,
     pasteConfirmNewlines,
     terminalPadding,
-    cursorWidth,
     defaultCwd,
     shellArgs,
     shellEnv,
@@ -177,7 +178,6 @@ export const SettingsModal: React.FC = () => {
     updateThemeColors,
     importTheme,
     exportTheme,
-    // Customization audit C3/C22/S1: chrome mode, macros, profiles.
     themeMode,
     macros,
     saveSettingsProfile,
@@ -190,28 +190,20 @@ export const SettingsModal: React.FC = () => {
   const { keybindings, updateKeybinding, resetKeybindings } = useKeybindingsStore();
   const { addToast, requestSwitchWorkspace, requestCreateWorkspace } = useUIStore();
 
-  const [activeTab, setActiveTab] = useState<'font' | 'theme' | 'terminal' | 'workspaces' | 'limits' | 'appearance' | 'keyboard' | 'profiles'>('font');
-
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [renameWsId, setRenameWsId] = useState<string | null>(null);
   const [deleteWsId, setDeleteWsId] = useState<string | null>(null);
   const [recordingId, setRecordingId] = useState<string | null>(null);
-  // UX audit P0 #2: destructive resets confirm first.
   const [confirmResetAll, setConfirmResetAll] = useState(false);
   const [confirmResetKeybindings, setConfirmResetKeybindings] = useState(false);
-  // UX audit P0 #3: importing settings confirms (it overwrites everything).
   const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
-  // UX audit P3 #29: quick microphone check (level meter) in Settings.
   const [micTesting, setMicTesting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const panelRef = useFocusTrap<HTMLDivElement>(isSettingsOpen);
-  // Customization audit S1: settings-profile draft name + MCP endpoint port.
   const [profileName, setProfileName] = useState('');
   const [httpPort, setHttpPort] = useState<number | null>(null);
   const [modelReady, setModelReady] = useState<boolean | null>(null);
   const [micDevices, setMicDevices] = useState<string[]>([]);
   const [micLoading, setMicLoading] = useState(false);
-  // Customization audit C1: theme manager state.
   const [selectedThemeId, setSelectedThemeId] = useState<string | null>(null);
   const [showCreateThemeModal, setShowCreateThemeModal] = useState(false);
   const [renameThemeId, setRenameThemeId] = useState<string | null>(null);
@@ -219,7 +211,6 @@ export const SettingsModal: React.FC = () => {
   const [themeImportOpen, setThemeImportOpen] = useState(false);
   const [themeImportText, setThemeImportText] = useState('');
 
-  // Customization audit S8: fetch the MCP/HTTP endpoint port once.
   useEffect(() => {
     let cancelled = false;
     getHttpPort()
@@ -232,7 +223,6 @@ export const SettingsModal: React.FC = () => {
     };
   }, []);
 
-  // Customization audit C22: macro CRUD helpers.
   const updateMacro = (id: string, patch: Partial<Macro>) =>
     updateSettings({ macros: macros.map((m) => (m.id === id ? { ...m, ...patch } : m)) });
   const addMacro = () => {
@@ -258,7 +248,6 @@ export const SettingsModal: React.FC = () => {
     if (m) updateMacro(id, { steps: m.steps.map((s, i) => (i === idx ? { ...s, ...patch } : s)) });
   };
 
-  // Customization audit S1: save the current settings as a named profile.
   const saveProfile = () => {
     if (saveSettingsProfile(profileName)) {
       addToast({ type: 'success', title: 'Profile saved', description: `"${profileName.trim()}" is ready to apply anytime.` });
@@ -268,7 +257,6 @@ export const SettingsModal: React.FC = () => {
     }
   };
 
-  // Capture the new shortcut while a binding is in "recording" mode
   useEffect(() => {
     if (!recordingId) return;
     const handler = (e: KeyboardEvent) => {
@@ -303,21 +291,15 @@ export const SettingsModal: React.FC = () => {
     addToast({ type: 'success', title: 'Settings exported', description: 'Saved to vibegrid-settings.json' });
   };
 
-  // UX audit P0 #3: import is now a CONFIRMED two-step flow. Selecting a file
-  // only stages it; the confirm dialog explains the overwrite and backs up the
-  // current settings first (so the user can restore if the import was wrong).
   const confirmImport = async () => {
     if (!pendingImportFile) return;
     try {
       localStorage.setItem('vibegrid_settings_backup_v1', exportSettings());
-    } catch (e) {
-      // backup is best-effort
-    }
+    } catch (e) {}
     await applyImport(pendingImportFile);
     setPendingImportFile(null);
   };
 
-  // Esc closes the modal (unless a keybinding is being recorded)
   useEffect(() => {
     if (!isSettingsOpen) return;
     const handler = (e: KeyboardEvent) => {
@@ -327,9 +309,6 @@ export const SettingsModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handler);
   }, [isSettingsOpen, toggleSettings, recordingId]);
 
-  // Gap 17: show whether the Whisper model is downloaded (badge on the Terminal
-  // tab). Subscribes to download progress too, so the badge flips to "ready" the
-  // moment a background download completes while Settings is open.
   useEffect(() => {
     if (!isSettingsOpen) return;
     let cancelled = false;
@@ -358,7 +337,6 @@ export const SettingsModal: React.FC = () => {
     };
   }, [isSettingsOpen]);
 
-  // Gap 14: enumerate microphones once when the modal opens so the user can pick one.
   useEffect(() => {
     if (!isSettingsOpen) return;
     let cancelled = false;
@@ -368,7 +346,6 @@ export const SettingsModal: React.FC = () => {
         if (!cancelled) setMicDevices(devices);
       })
       .catch((e) => {
-        // Not supported in web preview or this build — keep the dropdown hidden.
         console.warn('[VibeGrid] Could not list input devices:', e);
       })
       .finally(() => {
@@ -379,9 +356,6 @@ export const SettingsModal: React.FC = () => {
     };
   }, [isSettingsOpen]);
 
-  // UX audit P0 #3: import is a two-step flow — pick a file, then CONFIRM
-  // (it overwrites all current settings). Before applying, snapshot the current
-  // settings to a backup key so the user can restore if the import was wrong.
   const applyImport = async (file: File) => {
     const text = await file.text();
     const ok = importSettings(text);
@@ -392,9 +366,6 @@ export const SettingsModal: React.FC = () => {
     );
   };
 
-  // UX audit P3 #29: quick mic check — record for ~1.6 s, watch the live level
-  // (the Rust auto-stop watcher streams it even without committing a
-  // transcript), then CANCEL so the test never inserts anything anywhere.
   const handleMicTest = async () => {
     if (micTesting) return;
     setMicTesting(true);
@@ -423,8 +394,6 @@ export const SettingsModal: React.FC = () => {
     }
   };
 
-
-  // Customization audit C1: download a single theme as JSON.
   const handleExportTheme = (id: string) => {
     const json = exportTheme(id);
     if (!json) return;
@@ -438,7 +407,6 @@ export const SettingsModal: React.FC = () => {
     addToast({ type: 'success', title: 'Theme exported', description: 'Saved to vibegrid-theme.json' });
   };
 
-  // Customization audit C1: import a single theme pasted as JSON.
   const handleImportTheme = () => {
     const ok = importTheme(themeImportText);
     addToast(
@@ -454,15 +422,11 @@ export const SettingsModal: React.FC = () => {
 
   if (!isSettingsOpen) return null;
 
-  // Customization audit C1: full selectable theme universe + the theme whose
-  // editor/actions are shown (follows the active theme until the user picks one).
   const allThemes = { ...THEMES, ...customThemes };
   const selThemeId = selectedThemeId ?? themeName;
 
   const renameTarget = workspaces.find((w) => w.id === renameWsId);
   const deleteTarget = workspaces.find((w) => w.id === deleteWsId);
-  // Workspace isolation: deleting a workspace terminates its still-running
-  // terminals — surface that in the confirmation instead of hiding it.
   const deleteRunningCount = deleteTarget
     ? (deleteTarget.id === activeWorkspaceId
         ? getTerminalNodes(usePaneStore.getState().root)
@@ -471,547 +435,448 @@ export const SettingsModal: React.FC = () => {
     : 0;
 
   return (
-    <div
-      onClick={toggleSettings}
-      role="dialog"
-      aria-modal="true"
-      aria-label="VibeGrid settings"
-      className="fixed inset-0 z-50 bg-black/70  flex items-center justify-center p-4 animate-fade-in font-sans"
-    >
-      <div
-        ref={panelRef}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-[#1A1B26] border border-white/15 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/10 bg-white/[0.03]">
-          <h2 className="text-xs font-bold text-white/90 uppercase tracking-wider">Codex Grid Settings</h2>
-          <button
-            onClick={toggleSettings}
-            aria-label="Close settings"
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    <div className="flex-1 flex flex-col h-full bg-[#181924] overflow-hidden font-sans animate-fade-in text-white/90">
+      {/* Top Header Bar */}
+      <div className="px-8 py-5 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02] shrink-0">
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-white/90 font-mono">
+            {SETTINGS_TAB_LABELS[activeSettingsTab] || activeSettingsTab}
+          </h2>
+          <span className="text-xs text-white/40 font-sans hidden sm:inline">
+            Preferences & Configurations
+          </span>
         </div>
-
-        {/* Tab Navigation */}
-        <div className="flex border-b border-white/10 bg-white/[0.02] px-4 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('font')}
-            className={`px-4 py-3 text-xs flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'font'
-                ? 'border-[#6366f1] text-white bg-[#232327]'
-                : 'border-transparent text-[#a3a3ab] hover:text-white'
-            }`}
-          >
-            <Type className="w-3.5 h-3.5 text-[#818cf8]" />
-            <span className="font-sans font-semibold normal-case tracking-tight">Font &amp; Appearance</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('theme')}
-            className={`px-4 py-3 text-xs flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'theme'
-                ? 'border-[#6366f1] text-white bg-[#232327]'
-                : 'border-transparent text-[#a3a3ab] hover:text-white'
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5 text-[#818cf8]" />
-            <span className="font-sans font-bold normal-case tracking-tight">Themes</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('terminal')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'terminal'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
-            }`}
-          >
-            <TerminalIcon className="w-3.5 h-3.5" />
-            <span className="font-sans font-bold normal-case tracking-tight">Terminal</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('workspaces')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'workspaces'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
-            }`}
-          >
-            <Layout className="w-3.5 h-3.5" />
-            <span className="font-sans font-bold normal-case tracking-tight">Workspaces</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('limits')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'limits'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5" />
-            <span className="font-sans font-bold normal-case tracking-tight">Limits</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('appearance')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'appearance'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span className="font-sans font-bold normal-case tracking-tight">Appearance</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('keyboard')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'keyboard'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
-            }`}
-          >
-            <KeyboardIcon className="w-3.5 h-3.5" />
-            <span className="font-sans font-bold normal-case tracking-tight">Keybindings</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('profiles')}
-            className={`px-4 py-3 text-xs font-mono uppercase tracking-widest flex items-center gap-2 border-b-2 transition-colors whitespace-nowrap ${
-              activeTab === 'profiles'
-                ? 'border-foreground text-foreground bg-border/5'
-                : 'border-transparent text-muted hover:text-foreground'
-            }`}
-          >
-            <UserRound className="w-3.5 h-3.5" />
-            <span className="font-sans font-bold normal-case tracking-tight">Profiles</span>
-          </button>
+        <div className="flex items-center gap-2">
+          <span className="px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.08] text-[11px] font-mono text-white/60">
+            SETTINGS
+          </span>
         </div>
+      </div>
 
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {activeTab === 'font' && (
-            <div className="space-y-5">
-              <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">Font Family</label>
-                {/* Customization audit C4: free-text font stack with quick picks. */}
-                <input
-                  list="vg-font-quickpicks"
-                  type="text"
-                  value={fontFamily}
-                  onChange={(e) => setFontFamily(e.target.value)}
-                  placeholder="e.g. 'Fira Code', monospace"
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono"
-                />
-                <datalist id="vg-font-quickpicks">
-                  <option value="JetBrains Mono, monospace" />
-                  <option value="Fira Code, monospace" />
-                  <option value="Menlo, Monaco, monospace" />
-                  <option value="Consolas, monospace" />
-                  <option value="SF Mono, monospace" />
-                  <option value="Cascadia Code, monospace" />
-                  <option value="IBM Plex Mono, monospace" />
-                  <option value="monospace" />
-                </datalist>
-                <span className="block text-[10px] text-white/40 mt-0.5">Any installed font family or CSS stack works — type it, or pick a quick pick.</span>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Font Size ({fontSize}px)</label>
-                </div>
-                <input
-                  type="range"
-                  min={fontSizeMin}
-                  max={fontSizeMax}
-                  value={fontSize}
-                  onChange={(e) => setFontSize(Number(e.target.value))}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
+      {/* Main Content Scroll Area */}
+      <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar max-w-4xl">
+        {/* --- TAB 1: FONT --- */}
+        {activeSettingsTab === 'font' && (
+          <div className="space-y-4 max-w-3xl">
+            {/* Font Family Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <span className="block text-xs font-semibold text-white/70">Font Ligatures</span>
-                  <span className="block text-[10px] text-white/40 mt-0.5">Fira Code / JetBrains Mono ligatures (&gt;=, =&gt;, -&gt;)</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={fontLigatures}
-                  onChange={(e) => setFontLigatures(e.target.checked)}
-                  className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
-                />
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Font Family</label>
               </div>
+              <input
+                list="vg-font-quickpicks"
+                type="text"
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                placeholder="e.g. 'Fira Code', monospace"
+                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-mono transition-colors"
+              />
+              <datalist id="vg-font-quickpicks">
+                <option value="JetBrains Mono, monospace" />
+                <option value="Fira Code, monospace" />
+                <option value="Menlo, Monaco, monospace" />
+                <option value="Consolas, monospace" />
+                <option value="SF Mono, monospace" />
+                <option value="Cascadia Code, monospace" />
+                <option value="IBM Plex Mono, monospace" />
+                <option value="monospace" />
+              </datalist>
+              <span className="block text-[10px] text-white/40 mt-1">Any installed font family or CSS stack works — type it, or pick a quick pick.</span>
+            </div>
 
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Line Height ({lineHeight.toFixed(2)})</label>
-                </div>
-                <input
-                  type="range"
-                  min={lineHeightMin}
-                  max={lineHeightMax}
-                  step={0.05}
-                  value={lineHeight}
-                  onChange={(e) => setLineHeight(Number(e.target.value))}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
+            {/* Font Size Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Font Size</label>
+                <span className="text-[13px] text-white/90 font-mono">{fontSize}px</span>
               </div>
+              <input
+                type="range"
+                min={fontSizeMin}
+                max={fontSizeMax}
+                value={fontSize}
+                onChange={(e) => setFontSize(Number(e.target.value))}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
 
+            {/* Font Ligatures Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Terminal Opacity ({Math.round(terminalOpacity * 100)}%)</label>
-                </div>
-                <input
-                  type="range"
-                  min={terminalOpacityMin}
-                  max={1}
-                  step={0.05}
-                  value={terminalOpacity}
-                  onChange={(e) => setTerminalOpacity(Number(e.target.value))}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
+                <span className="block text-[13px] text-white/90">Font Ligatures</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Fira Code / JetBrains Mono ligatures (&gt;=, =&gt;, -&gt;)</span>
+              </div>
+              <ToggleSwitch checked={fontLigatures} onChange={(v) => setFontLigatures(v)} />
+            </div>
+
+            {/* Line Height Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Line Height</label>
+                <span className="text-[13px] text-white/90 font-mono">{lineHeight.toFixed(2)}</span>
+              </div>
+              <input
+                type="range"
+                min={lineHeightMin}
+                max={lineHeightMax}
+                step={0.05}
+                value={lineHeight}
+                onChange={(e) => setLineHeight(Number(e.target.value))}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
+
+            {/* Terminal Opacity Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Terminal Opacity</label>
+                <span className="text-[13px] text-white/90 font-mono">{Math.round(terminalOpacity * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                min={terminalOpacityMin}
+                max={1}
+                step={0.05}
+                value={terminalOpacity}
+                onChange={(e) => setTerminalOpacity(Number(e.target.value))}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB 2: THEME --- */}
+        {activeSettingsTab === 'theme' && (
+          <div className="space-y-5 max-w-4xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[13px] font-bold font-sans text-white/90">Theme Library</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">{Object.keys(allThemes).length} installed themes available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowCreateThemeModal(true)}
+                  className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white text-black hover:bg-white/90 text-[13px] font-semibold transition-all cursor-pointer"
+                  title="Create a new theme based on the current one"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create Theme</span>
+                </button>
+                <button
+                  onClick={() => setThemeImportOpen(!themeImportOpen)}
+                  className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/90 text-[13px] transition-all cursor-pointer"
+                  title="Import a theme from JSON"
+                >
+                  <Upload className="w-4 h-4 text-white/70" />
+                  <span>Import JSON</span>
+                </button>
               </div>
             </div>
-          )}
 
-          {activeTab === 'theme' && (
-            <div className="space-y-5">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Themes ({Object.keys(allThemes).length})</span>
-                <div className="flex items-center gap-2">
+            {themeImportOpen && (
+              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-3 animate-fade-in">
+                <label className="block text-[10px] font-mono uppercase tracking-wider text-white/40">Paste theme palette JSON ({'{ name, ...palette }'}):</label>
+                <textarea
+                  value={themeImportText}
+                  onChange={(e) => setThemeImportText(e.target.value)}
+                  rows={4}
+                  placeholder='{"name":"My Theme","background":"#0b0d12","foreground":"#e2e8f0","cursor":"#3c95f0",...}'
+                  className="w-full p-3.5 rounded-xl bg-black/40 border border-white/10 text-xs font-mono text-white/90 placeholder-white/25 focus:outline-none focus:border-white/30 resize-y"
+                />
+                <div className="flex justify-end">
                   <button
-                    onClick={() => setShowCreateThemeModal(true)}
-                    className="px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
-                    title="Create a new theme based on the current one"
+                    onClick={handleImportTheme}
+                    disabled={!themeImportText.trim()}
+                    className="h-9 px-4 rounded-xl bg-white text-black hover:bg-white/90 disabled:opacity-40 text-xs font-semibold transition-all cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Create from current</span>
-                  </button>
-                  <button
-                    onClick={() => setThemeImportOpen(!themeImportOpen)}
-                    className="px-3.5 py-1.5 rounded-2xl border border-border/10 text-xs font-mono uppercase tracking-wider text-foreground/80 hover:bg-border/5 flex items-center gap-1.5 transition-colors"
-                    title="Import a theme from JSON"
-                  >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Import JSON</span>
+                    Import Theme
                   </button>
                 </div>
               </div>
+            )}
 
-              {themeImportOpen && (
-                <div className="rounded-xl border border-border/[0.08] bg-background/40 p-4 space-y-3 animate-fade-in">
-                  <label className="block text-[10px] font-mono text-muted">Paste a theme palette as JSON (a raw palette object, or {'{ name, ...palette }'}):</label>
-                  <textarea
-                    value={themeImportText}
-                    onChange={(e) => setThemeImportText(e.target.value)}
-                    rows={4}
-                    placeholder='{"name":"My Theme","background":"#0b0d12","foreground":"#e2e8f0","cursor":"#3c95f0",...}'
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-background/60 border border-border/[0.08] text-xs font-mono text-foreground/90 placeholder-muted/25 focus:outline-none focus:border-border/30 resize-y"
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      onClick={handleImportTheme}
-                      disabled={!themeImportText.trim()}
-                      className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 disabled:opacity-40 text-xs font-extrabold font-sans transition-colors"
-                    >
-                      Import Theme
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-3">
-                {Object.entries(allThemes).map(([key, theme]) => {
-                  const isCustom = key in customThemes;
-                  const isActive = themeName === key;
-                  const isSelected = selThemeId === key;
-                  return (
-                    <div
-                      key={key}
-                      onClick={() => {
-                        setThemeName(key);
-                        setSelectedThemeId(key);
-                      }}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                        isActive
-                          ? 'border-forest-bright bg-forest/10'
-                          : isSelected
-                            ? 'border-forest/60 bg-white/[0.03]'
-                            : 'border-border/10 bg-background/40 hover:border-forest/40'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-white/85 flex items-center gap-1.5">
-                          {theme.name}
-                          {isCustom && (
-                            <span className="px-1 py-0.5 rounded bg-forest/15 border border-forest/30 text-[8px] font-medium text-forest-light">custom</span>
-                          )}
-                        </span>
-                        {isActive && <div className="w-2 h-2 rounded-full bg-forest-bright" />}
-                      </div>
-                      <div className="flex gap-1.5 p-2 rounded bg-black/40">
-                        <div className="w-4 h-4 rounded" style={{ backgroundColor: theme.background }} />
-                        <div className="w-4 h-4 rounded" style={{ backgroundColor: theme.foreground }} />
-                        <div className="w-4 h-4 rounded" style={{ backgroundColor: theme.cursor }} />
-                        <div className="w-4 h-4 rounded" style={{ backgroundColor: theme.blue }} />
-                        <div className="w-4 h-4 rounded" style={{ backgroundColor: theme.green }} />
-                      </div>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        {isCustom ? (
-                          <>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedThemeId(duplicateTheme(key)); }}
-                              className="flex-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[10px] text-white/65 transition-colors"
-                            >
-                              Duplicate
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setRenameThemeId(key); }}
-                              className="flex-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[10px] text-white/65 transition-colors"
-                            >
-                              Rename
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleExportTheme(key); }}
-                              className="flex-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[10px] text-white/65 transition-colors"
-                            >
-                              Export
-                            </button>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteThemeId(key); }}
-                              className="flex-1 px-2 py-1 rounded bg-rose-950/50 hover:bg-rose-950/80 text-[10px] text-rose-300 transition-colors"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {Object.entries(allThemes).map(([key, theme]) => {
+                const isCustom = key in customThemes;
+                const isActive = themeName === key;
+                const isSelected = selThemeId === key;
+                return (
+                  <div
+                    key={key}
+                    onClick={() => {
+                      setThemeName(key);
+                      setSelectedThemeId(key);
+                    }}
+                    className={`p-4 rounded-2xl border cursor-pointer transition-all ${
+                      isActive
+                        ? 'border-white/80 bg-white/[0.06] shadow-[0_0_16px_rgba(255,255,255,0.06)]'
+                        : isSelected
+                          ? 'border-white/40 bg-white/[0.03]'
+                          : 'border-white/5 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2.5">
+                      <span className="text-[13px] font-bold text-white/90 flex items-center gap-1.5">
+                        {theme.name}
+                        {isCustom && (
+                          <span className="px-1.5 py-0.5 rounded-md bg-white/10 border border-white/15 text-[9px] font-medium text-white/80 font-mono">custom</span>
+                        )}
+                      </span>
+                      {isActive && <div className="w-2 h-2 rounded-full bg-white shadow-sm" />}
+                    </div>
+                    <div className="flex gap-1.5 p-2.5 rounded-xl bg-black/60 border border-white/[0.04]">
+                      <div className="w-4 h-4 rounded-lg border border-white/10" style={{ backgroundColor: theme.background }} />
+                      <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: theme.foreground }} />
+                      <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: theme.cursor }} />
+                      <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: theme.blue }} />
+                      <div className="w-4 h-4 rounded-lg" style={{ backgroundColor: theme.green }} />
+                    </div>
+                    <div className="mt-3 flex items-center gap-1.5">
+                      {isCustom ? (
+                        <>
                           <button
                             onClick={(e) => { e.stopPropagation(); setSelectedThemeId(duplicateTheme(key)); }}
-                            className="flex-1 px-2 py-1 rounded bg-white/5 hover:bg-white/10 text-[10px] text-white/65 transition-colors"
+                            className="flex-1 h-8 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/5 text-[11px] text-white/70 hover:text-white transition-colors"
                           >
                             Duplicate
                           </button>
-                        )}
-                      </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setRenameThemeId(key); }}
+                            className="flex-1 h-8 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/5 text-[11px] text-white/70 hover:text-white transition-colors"
+                          >
+                            Rename
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleExportTheme(key); }}
+                            className="flex-1 h-8 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/5 text-[11px] text-white/70 hover:text-white transition-colors"
+                          >
+                            Export
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteThemeId(key); }}
+                            className="flex-1 h-8 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-[11px] text-rose-300 transition-colors"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSelectedThemeId(duplicateTheme(key)); }}
+                          className="flex-1 h-8 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/5 text-[11px] text-white/70 hover:text-white transition-colors"
+                        >
+                          Duplicate Theme
+                        </button>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-
-              {/* Customization audit C1: live color editor for the selected custom theme */}
-              {selThemeId && selThemeId in customThemes && (
-                <div className="rounded-lg border border-forest/25 bg-black/40 p-4 animate-fade-in">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Theme Editor</span>
-                    <span className="text-[10px] text-white/40">{customThemes[selThemeId].name}</span>
                   </div>
-                  <p className="text-[10px] text-white/40 mb-3">
-                    Editing updates the terminal live. Click a swatch to pick a color.
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
-                    {THEME_COLOR_SLOTS.map(([slot, label]) => (
-                      <label key={slot} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="color"
-                          value={toHexColor(customThemes[selThemeId][slot] ?? '')}
-                          onChange={(e) => updateThemeColors(selThemeId, { [slot]: e.target.value })}
-                          className="w-7 h-7 shrink-0 rounded cursor-pointer bg-transparent border border-white/10"
-                          aria-label={label}
-                        />
-                        <span className="text-[10px] text-white/60 truncate">{label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
-          )}
 
-          {activeTab === 'terminal' && (
-            <div className="space-y-5">
-              {/* UX audit P3 #28: global default shell for new panes (per-pane
-                  overrides still win). Empty = system default. */}
-              <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">Default Shell for New Panes</label>
-                <input
-                  type="text"
-                  value={defaultShell}
-                  onChange={(e) => setDefaultShell(e.target.value.trim())}
-                  placeholder="/bin/zsh (empty = system default)"
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright"
-                />
-                <span className="block text-[10px] text-white/40 mt-0.5">Used for new panes unless a pane has its own shell override (right-click → Set Shell).</span>
+            {selThemeId && selThemeId in customThemes && (
+              <div className="p-5 rounded-2xl border border-white/10 bg-white/[0.02] space-y-3 animate-fade-in">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[13px] font-bold text-white/90">Theme Editor</span>
+                  <span className="text-[11px] text-white/40 font-mono">{customThemes[selThemeId].name}</span>
+                </div>
+                <p className="text-[11px] text-white/40 mb-3">
+                  Live preview active. Click a swatch below to customize palette channels.
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {THEME_COLOR_SLOTS.map(([slot, label]) => (
+                    <label key={slot} className="flex items-center gap-2.5 p-2 rounded-xl bg-black/40 border border-white/5 cursor-pointer hover:border-white/15 transition-colors">
+                      <input
+                        type="color"
+                        value={toHexColor(customThemes[selThemeId][slot] ?? '')}
+                        onChange={(e) => updateThemeColors(selThemeId, { [slot]: e.target.value })}
+                        className="w-7 h-7 shrink-0 rounded-lg cursor-pointer bg-transparent border border-white/20"
+                        aria-label={label}
+                      />
+                      <span className="text-xs text-white/80 truncate">{label}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
+            )}
+          </div>
+        )}
 
-              <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">Default Working Directory for New Panes</label>
-                <input
-                  type="text"
-                  value={defaultCwd}
-                  onChange={(e) => updateSettings({ defaultCwd: e.target.value.trim() })}
-                  placeholder="/Users/you/projects (empty = session directory)"
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono"
-                />
-                <span className="block text-[10px] text-white/40 mt-0.5">New panes open here unless the pane you split already has its own working directory.</span>
+        {/* --- TAB 3: TERMINAL --- */}
+        {activeSettingsTab === 'terminal' && (
+          <div className="space-y-4 max-w-3xl">
+            {/* Default Shell Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Default Shell for New Panes</label>
+              <input
+                type="text"
+                value={defaultShell}
+                onChange={(e) => setDefaultShell(e.target.value.trim())}
+                placeholder="/bin/zsh (empty = system default)"
+                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-mono transition-colors"
+              />
+              <span className="block text-[10px] text-white/40 mt-1">Used for new panes unless overridden via context menu.</span>
+            </div>
+
+            {/* Default Working Directory Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Default Working Directory (CWD)</label>
+              <input
+                type="text"
+                value={defaultCwd}
+                onChange={(e) => updateSettings({ defaultCwd: e.target.value.trim() })}
+                placeholder="/Users/you/projects (empty = session directory)"
+                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-mono transition-colors"
+              />
+              <span className="block text-[10px] text-white/40 mt-1">New panes open here unless the split parent has its own directory.</span>
+            </div>
+
+            {/* Default Shell Arguments Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Default Shell Arguments</label>
+              <input
+                type="text"
+                value={shellArgs}
+                onChange={(e) => updateSettings({ shellArgs: e.target.value })}
+                placeholder="--login (space-separated; empty = none)"
+                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-mono transition-colors"
+              />
+              <span className="block text-[10px] text-white/40 mt-1">Passed to the default shell on every new pane spawn.</span>
+            </div>
+
+            {/* Default Shell Environment Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Default Shell Environment</label>
+              <textarea
+                value={shellEnv}
+                onChange={(e) => updateSettings({ shellEnv: e.target.value })}
+                placeholder={'EDITOR=nvim\nGIT_EDITOR=nvim\nMY_VAR=value'}
+                rows={3}
+                className="w-full p-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 font-mono resize-y"
+              />
+              <span className="block text-[10px] text-white/40 mt-1">One KEY=VALUE per line. Merged into every new pane session.</span>
+            </div>
+
+            {/* Scrollback Lines Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Scrollback Buffer</label>
+                <span className="text-[13px] text-white/90 font-mono">{scrollback.toLocaleString()} lines</span>
               </div>
+              <input
+                type="number"
+                min={scrollbackMin}
+                max={scrollbackMax}
+                step={500}
+                value={scrollback}
+                onChange={(e) => setScrollback(Number(e.target.value))}
+                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30 font-mono"
+              />
+            </div>
 
-              {/* Customization audit C11: startup args + env for the default shell. */}
+            {/* Cursor Style Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Cursor Style</label>
+              <select
+                value={cursorStyle}
+                onChange={(e) => setCursorStyle(e.target.value as CursorStyle)}
+                className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30"
+              >
+                <option value="block">Block</option>
+                <option value="bar">Bar (Beam)</option>
+                <option value="underline">Underline</option>
+              </select>
+            </div>
+
+            {/* Cursor Blinking Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">Default Shell Arguments</label>
-                <input
-                  type="text"
-                  value={shellArgs}
-                  onChange={(e) => updateSettings({ shellArgs: e.target.value })}
-                  placeholder="--login (space-separated; empty = none)"
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono"
-                />
-                <span className="block text-[10px] text-white/40 mt-0.5">Passed to the default shell on every new pane. Skipped when a pane overrides the shell (right-click → Set Shell).</span>
+                <span className="block text-[13px] text-white/90">Cursor Blinking</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Smooth cursor blink animation</span>
               </div>
+              <ToggleSwitch checked={cursorBlink} onChange={(v) => setCursorBlink(v)} />
+            </div>
 
+            {/* Copy on Select Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">Default Shell Environment</label>
-                <textarea
-                  value={shellEnv}
-                  onChange={(e) => updateSettings({ shellEnv: e.target.value })}
-                  placeholder={'EDITOR=nvim\nGIT_EDITOR=nvim\nMY_VAR=value'}
-                  rows={3}
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright font-mono resize-y"
-                />
-                <span className="block text-[10px] text-white/40 mt-0.5">One KEY=VALUE per line. Merged into every new pane; built-in TERM/COLORTERM/LANG/VIBEGRID always win.</span>
+                <span className="block text-[13px] text-white/90">Copy on Select</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Automatically copy highlighted text to clipboard</span>
               </div>
+              <ToggleSwitch checked={copyOnSelect} onChange={(v) => setCopyOnSelect(v)} />
+            </div>
 
+            {/* Minimize to Tray Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
               <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">Scrollback Lines ({scrollback.toLocaleString()})</label>
-                <input
-                  type="number"
-                  min={scrollbackMin}
-                  max={scrollbackMax}
-                  step={500}
-                  value={scrollback}
-                  onChange={(e) => setScrollback(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
-                />
+                <span className="block text-[13px] text-white/90">Minimize to Tray</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Hides to system tray on window close</span>
               </div>
+              <ToggleSwitch checked={minimizeToTray} onChange={(v) => setMinimizeToTray(v)} />
+            </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">Cursor Style</label>
-                <select
-                  value={cursorStyle}
-                  onChange={(e) => setCursorStyle(e.target.value as CursorStyle)}
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
-                >
-                  <option value="block">Block</option>
-                  <option value="bar">Bar (Beam)</option>
-                  <option value="underline">Underline</option>
-                </select>
-              </div>
-
+            {/* Startup & Tray Section */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">Startup & System Tray</span>
+              
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">Cursor Blinking</span>
-                <input
-                  type="checkbox"
-                  checked={cursorBlink}
-                  onChange={(e) => setCursorBlink(e.target.checked)}
-                  className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
-                />
+                <div>
+                  <span className="block text-[13px] text-white/90">Launch at Login</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Start VibeGrid automatically on system login</span>
+                </div>
+                <ToggleSwitch checked={launchAtLogin} onChange={(v) => updateSettings({ launchAtLogin: v })} />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-semibold text-white/70">Copy on Select</span>
-                  <span className="block text-[10px] text-white/40 mt-0.5">Automatically copy text to the clipboard when you select it with the mouse.</span>
+                  <span className="block text-[13px] text-white/90">Start Maximized</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Open window maximized on startup</span>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={copyOnSelect}
-                  onChange={(e) => setCopyOnSelect(e.target.checked)}
-                  className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
-                />
+                <ToggleSwitch checked={startMaximized} onChange={(v) => updateSettings({ startMaximized: v })} />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-semibold text-white/70">Minimize to Tray</span>
-                  <span className="block text-[10px] text-white/40 mt-0.5">Closing the window hides VibeGrid to the system tray instead of quitting. Use the tray icon to show it again.</span>
+                  <span className="block text-[13px] text-white/90">Start Hidden to Tray</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Launch quietly in background</span>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={minimizeToTray}
-                  onChange={(e) => setMinimizeToTray(e.target.checked)}
-                  className="w-4 h-4 accent-forest-bright rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="border-t border-border/[0.06] pt-4">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Startup &amp; Tray</span>
-                <div className="space-y-4 mt-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Launch at login</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Start VibeGrid automatically when you log in (system LaunchAgent / autostart entry).</span>
-                    </div>
-                    <ToggleSwitch checked={launchAtLogin} onChange={(v) => updateSettings({ launchAtLogin: v })} />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Start maximized</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Open the window maximized on launch.</span>
-                    </div>
-                    <ToggleSwitch checked={startMaximized} onChange={(v) => updateSettings({ startMaximized: v })} />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Start hidden to tray</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Launch into the system tray without showing the window.</span>
-                    </div>
-                    <ToggleSwitch checked={startHidden} onChange={(v) => updateSettings({ startHidden: v })} />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Close to tray</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Close button hides to the tray instead of quitting (same as Minimize to Tray).</span>
-                    </div>
-                    <ToggleSwitch checked={closeToTray} onChange={(v) => updateSettings({ closeToTray: v })} />
-                  </div>
-                </div>
+                <ToggleSwitch checked={startHidden} onChange={(v) => updateSettings({ startHidden: v })} />
               </div>
 
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-xs font-semibold text-white/70 flex items-center gap-1.5">
-                    <Mic className="w-3.5 h-3.5 text-forest-bright" />
+                  <span className="block text-[13px] text-white/90">Close to Tray</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Close button minimizes to tray instead of quitting</span>
+                </div>
+                <ToggleSwitch checked={closeToTray} onChange={(v) => updateSettings({ closeToTray: v })} />
+              </div>
+            </div>
+
+            {/* Voice-to-Terminal Section */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[13px] font-bold text-white/90 flex items-center gap-1.5">
+                    <Mic className="w-4 h-4 text-white/80" />
                     Voice-to-Terminal
-                    {/* Gap 17: model-downloaded badge */}
                     {modelReady === false && (
-                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[9px] font-medium text-amber-400">model not downloaded</span>
+                      <span className="ml-1 px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[9px] font-mono text-amber-400">model downloading</span>
                     )}
                     {modelReady === true && (
-                      <span className="ml-1 px-1.5 py-0.5 rounded-full bg-forest/15 border border-forest/30 text-[9px] font-medium text-forest-light">model ready</span>
+                      <span className="ml-1 px-2 py-0.5 rounded-full bg-white/10 border border-white/20 text-[9px] font-mono text-white/80">ready</span>
                     )}
                   </span>
-                  <span className="block text-[10px] text-white/40 mt-0.5">Dictate into the focused pane with Cmd/Ctrl+Shift+V. Audio is transcribed locally with the Whisper model — nothing leaves your machine.</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Local Whisper dictation with Cmd/Ctrl+Shift+V</span>
                 </div>
                 <ToggleSwitch checked={voiceToTerminal} onChange={setVoiceToTerminal} />
               </div>
 
-              {/* Gap 10: silence timeout — how long to wait after you stop speaking before auto-inserting */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-1.5">Dictation language</label>
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Dictation Language</label>
                   <select
                     value={voiceLanguage}
                     onChange={(e) => updateSettings({ voiceLanguage: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
+                    className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30"
                   >
                     <option value="auto">Auto-detect</option>
                     <option value="en">English</option>
@@ -1031,24 +896,24 @@ export const SettingsModal: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-1.5">Model size</label>
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Model Size</label>
                   <select
                     value={voiceModelSize}
                     onChange={(e) => updateSettings({ voiceModelSize: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
+                    className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30"
                   >
                     <option value="tiny">Tiny (~75 MB) — fastest</option>
                     <option value="base">Base (~142 MB) — balanced</option>
                     <option value="small">Small (~466 MB) — accurate</option>
                     <option value="medium">Medium (~1.5 GB) — most accurate</option>
                   </select>
-                  <span className="block text-[10px] text-white/40 mt-1">Changing the model downloads it on your next dictation. Non-English / auto-detect uses the multilingual model.</span>
                 </div>
               </div>
 
               <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Auto-stop after silence ({voiceSilenceTimeoutMs} ms)</label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Silence Timeout</label>
+                  <span className="text-[13px] text-white/90 font-mono">{voiceSilenceTimeoutMs} ms</span>
                 </div>
                 <input
                   type="range"
@@ -1057,30 +922,27 @@ export const SettingsModal: React.FC = () => {
                   step={100}
                   value={voiceSilenceTimeoutMs}
                   onChange={(e) => setVoiceSilenceTimeoutMs(Number(e.target.value))}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
+                  className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
                 />
-                <span className="block text-[10px] text-white/40 mt-0.5">Lower = snappier dictation, higher = safer for natural pauses.</span>
               </div>
 
-              {/* Gap 14: microphone selection + UX audit P3 #29 mic test */}
               {!micLoading && micDevices.length > 0 && (
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-semibold text-white/70">Microphone</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Microphone Input</label>
                     <button
                       onClick={handleMicTest}
                       disabled={micTesting}
-                      title="Record for 1.6s and check the input level"
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-sans disabled:opacity-50 transition-colors"
+                      className="h-8 flex items-center gap-1.5 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-white/90 disabled:opacity-50 transition-colors cursor-pointer"
                     >
-                      <Mic className="w-3 h-3 text-black" />
-                      {micTesting ? 'Listening…' : 'Test Microphone'}
+                      <Mic className="w-3.5 h-3.5" />
+                      <span>{micTesting ? 'Testing…' : 'Test Mic'}</span>
                     </button>
                   </div>
                   <select
                     value={voiceInputDevice}
                     onChange={(e) => setVoiceInputDevice(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
+                    className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30"
                   >
                     <option value="">System Default</option>
                     {micDevices.map((d) => (
@@ -1091,104 +953,100 @@ export const SettingsModal: React.FC = () => {
                   </select>
                 </div>
               )}
-              <p className="text-[10px] text-white/35 mt-1.5 leading-relaxed">
-                On first dictation, VibeGrid downloads the local Whisper model (~142 MB) into your app data folder.
-                Press Cmd/Ctrl+Shift+V to start listening — speak, then press Enter to insert it in the focused pane,
-                Esc to cancel, or just stop talking and it auto-inserts after a short pause. You run the command yourself.
-              </p>
+            </div>
 
-              <div className="border-t border-border/[0.06] pt-4">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Terminal Behavior</span>
-                <div className="space-y-4 mt-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Right-click pastes</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Paste the clipboard on right-click instead of opening the context menu (tmux-style).</span>
-                    </div>
-                    <ToggleSwitch checked={rightClickPaste} onChange={(v) => updateSettings({ rightClickPaste: v })} />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Clickable links</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Open URLs with a click (optionally plus a modifier key).</span>
-                    </div>
-                    <ToggleSwitch checked={clickableLinks} onChange={(v) => updateSettings({ clickableLinks: v })} />
-                  </div>
-
-                  {clickableLinks && (
-                    <div>
-                      <label className="block text-xs font-semibold text-white/70 mb-1.5">Link modifier</label>
-                      <select
-                        value={linkModifier}
-                        onChange={(e) => updateSettings({ linkModifier: e.target.value as 'click' | 'meta' | 'ctrl' | 'alt' })}
-                        className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
-                      >
-                        <option value="click">Plain click</option>
-                        <option value="meta">Cmd / Win key</option>
-                        <option value="ctrl">Ctrl key</option>
-                        <option value="alt">Alt / Option key</option>
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Terminal bell sound</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Play a beep when a program rings the terminal bell.</span>
-                    </div>
-                    <ToggleSwitch checked={terminalBell} onChange={(v) => updateSettings({ terminalBell: v })} />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Scroll to bottom on output</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Auto-scroll when the shell emits output (classic terminal behavior).</span>
-                    </div>
-                    <ToggleSwitch checked={scrollOnOutput} onChange={(v) => updateSettings({ scrollOnOutput: v })} />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-semibold text-white/70">Confirm multi-line paste</span>
-                      <span className="block text-[10px] text-white/40 mt-0.5">Ask before pasting clipboard content that contains line breaks.</span>
-                    </div>
-                    <ToggleSwitch checked={pasteConfirmNewlines} onChange={(v) => updateSettings({ pasteConfirmNewlines: v })} />
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="text-xs font-semibold text-white/70">Terminal padding ({terminalPadding}px)</label>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={24}
-                      step={1}
-                      value={terminalPadding}
-                      onChange={(e) => updateSettings({ terminalPadding: Number(e.target.value) })}
-                      className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-white/70 mb-1.5">Word selection separators</label>
-                    <input
-                      type="text"
-                      value={wordSeparators}
-                      onChange={(e) => updateSettings({ wordSeparators: e.target.value })}
-                      placeholder=" "
-                      className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 font-mono placeholder-muted/30 focus:outline-none focus:border-forest-bright"
-                    />
-                    <span className="block text-[10px] text-white/40 mt-0.5">Characters treated as word boundaries when double-clicking to select text.</span>
-                  </div>
+            {/* Terminal Behavior Section */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">Terminal Behavior</span>
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-[13px] text-white/90">Right-Click Pastes</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Quick paste clipboard on right click</span>
                 </div>
+                <ToggleSwitch checked={rightClickPaste} onChange={(v) => updateSettings({ rightClickPaste: v })} />
               </div>
 
-              {/* Customization audit L7: free-form IPC interval (any value in
-                  4–2000 ms, not just the four presets) with quick-pick chips. */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-[13px] text-white/90">Clickable Links</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Open URLs in default browser</span>
+                </div>
+                <ToggleSwitch checked={clickableLinks} onChange={(v) => updateSettings({ clickableLinks: v })} />
+              </div>
+
+              {clickableLinks && (
+                <div>
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Link Modifier Key</label>
+                  <select
+                    value={linkModifier}
+                    onChange={(e) => updateSettings({ linkModifier: e.target.value as 'click' | 'meta' | 'ctrl' | 'alt' })}
+                    className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30"
+                  >
+                    <option value="click">Plain click</option>
+                    <option value="meta">Cmd / Win key</option>
+                    <option value="ctrl">Ctrl key</option>
+                    <option value="alt">Alt / Option key</option>
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-[13px] text-white/90">Terminal Bell</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Play audio beep on ASCII bell</span>
+                </div>
+                <ToggleSwitch checked={terminalBell} onChange={(v) => updateSettings({ terminalBell: v })} />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-[13px] text-white/90">Scroll on Output</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Auto-scroll viewport when receiving terminal stdout</span>
+                </div>
+                <ToggleSwitch checked={scrollOnOutput} onChange={(v) => updateSettings({ scrollOnOutput: v })} />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="block text-[13px] text-white/90">Confirm Multi-line Paste</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Prompt confirmation before pasting multi-line text</span>
+                </div>
+                <ToggleSwitch checked={pasteConfirmNewlines} onChange={(v) => updateSettings({ pasteConfirmNewlines: v })} />
+              </div>
+
               <div>
-                <label className="block text-xs font-semibold text-white/70 mb-2">IPC Batch Interval ({ipcBatchIntervalMs} ms)</label>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Terminal Padding</label>
+                  <span className="text-[13px] text-white/90 font-mono">{terminalPadding}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={24}
+                  step={1}
+                  value={terminalPadding}
+                  onChange={(e) => updateSettings({ terminalPadding: Number(e.target.value) })}
+                  className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Word Selection Separators</label>
+                <input
+                  type="text"
+                  value={wordSeparators}
+                  onChange={(e) => updateSettings({ wordSeparators: e.target.value })}
+                  placeholder=" "
+                  className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 font-mono focus:outline-none focus:border-white/30"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">IPC Batch Interval</label>
+                  <span className="text-[13px] text-white/90 font-mono">{ipcBatchIntervalMs} ms</span>
+                </div>
                 <input
                   type="number"
                   min={4}
@@ -1196,912 +1054,668 @@ export const SettingsModal: React.FC = () => {
                   step={1}
                   value={ipcBatchIntervalMs}
                   onChange={(e) => setIpcBatchIntervalMs(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
+                  className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30 font-mono"
                 />
-                <div className="flex items-center gap-1.5 mt-2">
+                <div className="flex items-center gap-2 mt-2.5">
                   {[8, 16, 33, 66].map((preset) => (
                     <button
                       key={preset}
                       onClick={() => setIpcBatchIntervalMs(preset)}
-                      className={`px-2 py-1 rounded-md border text-[10px] font-mono transition-colors ${
+                      className={`px-3 py-1 rounded-lg border text-xs font-mono transition-colors ${
                         ipcBatchIntervalMs === preset
-                          ? 'border-forest-bright bg-forest/15 text-forest-light'
-                          : 'border-border/10 bg-border/[0.03] text-foreground/50 hover:border-forest/40 hover:text-foreground/80'
+                          ? 'border-white/80 bg-white/15 text-white font-bold'
+                          : 'border-white/10 bg-white/[0.03] text-white/60 hover:border-white/30 hover:text-white'
                       }`}
                     >
                       {preset} ms
                     </button>
                   ))}
-                  <span className="text-[10px] text-white/35 ml-1">4–2000 ms · lower = faster echo, higher CPU</span>
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {activeTab === 'workspaces' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Active Workspaces ({workspaces.length})</span>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-4 py-2 rounded-2xl bg-foreground text-background hover:bg-foreground/90 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Create Workspace</span>
-                </button>
+        {/* --- TAB 4: WORKSPACES --- */}
+        {activeSettingsTab === 'workspaces' && (
+          <div className="space-y-5 max-w-3xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[13px] font-bold font-sans text-white/90">Workspaces</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">{workspaces.length} active workspaces managed</span>
               </div>
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white text-black hover:bg-white/90 text-[13px] font-semibold transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Create Workspace</span>
+              </button>
+            </div>
 
-              {/* Customization audit C12: per-workspace settings overrides for the
-                  ACTIVE workspace. Fields fall back to the global settings when
-                  left empty; the object is persisted with the workspace file. */}
-              {(() => {
-                const activeWs = workspaces.find((w) => w.id === activeWorkspaceId);
-                const ov = activeWs?.overrides ?? {};
-                const hasOverrides = Object.keys(ov).length > 0;
-                const setOv = (patch: WorkspaceOverrides) =>
-                  setWorkspaceOverrides(activeWorkspaceId, cleanOverrides({ ...ov, ...patch }));
-                return (
-                  <div className="rounded-lg border border-border/10 bg-background/20 p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Workspace Overrides</span>
-                        <span className="block text-[10px] text-white/40 mt-0.5">
-                          Terminal settings for “{activeWs?.name ?? 'this workspace'}” only — themes, font, shell and cwd. Empty fields inherit the global settings.
-                        </span>
-                      </div>
-                      {hasOverrides && (
-                        <button
-                          onClick={() => setWorkspaceOverrides(activeWorkspaceId, null)}
-                          className="shrink-0 px-2 py-1 rounded-md border border-border/10 text-[10px] text-foreground/50 hover:border-rose-500/40 hover:text-rose-300 transition-colors"
-                        >
-                          Clear all
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-semibold text-white/50 mb-1">Theme (workspace)</label>
-                        <select
-                          value={ov.themeName ?? ''}
-                          onChange={(e) => setOv({ themeName: e.target.value || undefined })}
-                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
-                        >
-                          <option value="">— inherit global —</option>
-                          {Object.entries(allThemes).map(([key, t]) => (
-                            <option key={key} value={key}>{t.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-semibold text-white/50 mb-1">Font Size (px, workspace)</label>
-                        <input
-                          type="number"
-                          min={fontSizeMin}
-                          max={fontSizeMax}
-                          value={ov.fontSize ?? ''}
-                          onChange={(e) => setOv({ fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
-                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-[10px] font-semibold text-white/50 mb-1">Font Family (workspace)</label>
-                        <input
-                          type="text"
-                          value={ov.fontFamily ?? ''}
-                          onChange={(e) => setOv({ fontFamily: e.target.value || undefined })}
-                          placeholder="empty = inherit global"
-                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-semibold text-white/50 mb-1">Default Shell (workspace)</label>
-                        <input
-                          type="text"
-                          value={ov.defaultShell ?? ''}
-                          onChange={(e) => setOv({ defaultShell: e.target.value.trim() || undefined })}
-                          placeholder="empty = inherit"
-                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-semibold text-white/50 mb-1">Default CWD (workspace)</label>
-                        <input
-                          type="text"
-                          value={ov.defaultCwd ?? ''}
-                          onChange={(e) => setOv({ defaultCwd: e.target.value.trim() || undefined })}
-                          placeholder="empty = inherit"
-                          className="w-full px-2 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright font-mono"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <label className="block text-[10px] font-semibold text-white/50 mb-1">Terminal Opacity (workspace) — {ov.terminalOpacity !== undefined ? `${Math.round(ov.terminalOpacity * 100)}%` : 'inherit global'}</label>
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="range"
-                            min={terminalOpacityMin}
-                            max={1}
-                            step={0.05}
-                            value={ov.terminalOpacity ?? 1}
-                            onChange={(e) => setOv({ terminalOpacity: Number(e.target.value) })}
-                            className="flex-1 accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                          />
-                          {ov.terminalOpacity !== undefined && (
-                            <button
-                              onClick={() => setOv({ terminalOpacity: undefined })}
-                              className="shrink-0 px-2 py-1 rounded-md border border-white/10 text-[10px] text-white/50 hover:border-white/30 hover:text-white/80 transition-colors"
-                            >
-                              Reset
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1.5 -mr-1.5">
-                {workspaces.map((ws) => (
-                  <div
-                    key={ws.id}
-                    className={`p-3 rounded-lg border flex items-center justify-between transition-colors ${
-                      ws.id === activeWorkspaceId
-                        ? 'border-forest-bright bg-forest/10'
-                        : 'border-white/10 bg-black/40 hover:border-forest/40'
-                    }`}
-                  >
+            {/* Active Workspace Overrides Box */}
+            {(() => {
+              const activeWs = workspaces.find((w) => w.id === activeWorkspaceId);
+              const ov = activeWs?.overrides ?? {};
+              const hasOverrides = Object.keys(ov).length > 0;
+              const setOv = (patch: WorkspaceOverrides) =>
+                setWorkspaceOverrides(activeWorkspaceId, cleanOverrides({ ...ov, ...patch }));
+              return (
+                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
-                      <div className="text-xs font-bold text-white/90">{ws.name}</div>
-                      <div className="text-[10px] text-white/35 font-mono mt-0.5">ID: {ws.id}</div>
+                      <span className="text-[13px] font-bold text-white/90">Workspace Overrides</span>
+                      <span className="block text-[10px] text-white/40 mt-0.5">
+                        Scoped settings for "{activeWs?.name ?? 'Active Workspace'}"
+                      </span>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      {ws.id !== activeWorkspaceId && (
-                        <button
-                          // Audit fix: route through the guard so switching from
-                          // Settings warns before terminating running processes,
-                          // matching Header / Sidebar / Palette behavior.
-                          onClick={() => requestSwitchWorkspace(ws.id)}
-                          className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-xs text-white/65 transition-colors"
-                        >
-                          Switch
-                        </button>
-                      )}
-
+                    {hasOverrides && (
                       <button
-                        onClick={() => setRenameWsId(ws.id)}
-                        className="p-1.5 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
-                        title="Rename"
-                        aria-label={`Rename workspace ${ws.name}`}
+                        onClick={() => setWorkspaceOverrides(activeWorkspaceId, null)}
+                        className="px-3 py-1 rounded-xl border border-white/10 text-xs text-white/60 hover:text-rose-400 hover:border-rose-500/30 transition-colors"
                       >
-                        <Edit2 className="w-3.5 h-3.5" />
+                        Clear All Overrides
                       </button>
-
-                      {/* UX audit P3 #20: duplicate a workspace's layout. */}
-                      <button
-                        onClick={() => duplicateWorkspace(ws.id)}
-                        className="p-1.5 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
-                        title="Duplicate Workspace"
-                        aria-label={`Duplicate workspace ${ws.name}`}
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Customization audit C23: archive / unarchive. */}
-                      <button
-                        onClick={() => toggleArchive(ws.id)}
-                        className="p-1.5 rounded hover:bg-white/5 text-white/45 hover:text-white/80 transition-colors"
-                        title={ws.archived ? 'Unarchive Workspace' : 'Archive Workspace'}
-                        aria-label={ws.archived ? `Unarchive workspace ${ws.name}` : `Archive workspace ${ws.name}`}
-                      >
-                        <Archive className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Customization audit L16: the delete button is ALWAYS shown —
-                          deleting the last workspace resets to a fresh default. */}
-                      <button
-                        onClick={() => setDeleteWsId(ws.id)}
-                        className="p-1.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
-                        title="Delete Workspace"
-                        aria-label={`Delete workspace ${ws.name}`}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {activeTab === 'limits' && (
-            <div className="space-y-5">
-              <p className="text-[11px] text-white/40 leading-relaxed">
-                Customization audit: every hard limit in VibeGrid is now a setting. Nothing is
-                silently capped unless you want it to be.
-              </p>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Max Panes ({maxPanes})</label>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={64}
-                  value={maxPanes}
-                  onChange={(e) => updateSettings({ maxPanes: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-                <span className="block text-[10px] text-white/40 mt-0.5">Was hardcoded at 16. The WebGL context cap is the real GPU limit.</span>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Minimum Pane Size ({minPaneSize}px)</label>
-                </div>
-                <input
-                  type="range"
-                  min={40}
-                  max={400}
-                  step={10}
-                  value={minPaneSize}
-                  onChange={(e) => updateSettings({ minPaneSize: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">Snap divider to equal split on release</span>
-                <ToggleSwitch checked={dividerSnap} onChange={(v) => updateSettings({ dividerSnap: v })} />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Snap threshold ({Math.round(snapEpsilon * 100)}% of equal split)</label>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={0.2}
-                  step={0.01}
-                  value={snapEpsilon}
-                  onChange={(e) => updateSettings({ snapEpsilon: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">Double-click divider to re-equalize</span>
-                <ToggleSwitch checked={doubleClickEqualize} onChange={(v) => updateSettings({ doubleClickEqualize: v })} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Font size min ({fontSizeMin}px)</label>
-                  <input
-                    type="range"
-                    min={4}
-                    max={96}
-                    value={fontSizeMin}
-                    onChange={(e) => updateSettings({ fontSizeMin: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Font size max ({fontSizeMax}px)</label>
-                  <input
-                    type="range"
-                    min={4}
-                    max={96}
-                    value={fontSizeMax}
-                    onChange={(e) => updateSettings({ fontSizeMax: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Scrollback max ({scrollbackMax.toLocaleString()})</label>
-                  <input
-                    type="range"
-                    min={1000}
-                    max={1000000}
-                    step={1000}
-                    value={scrollbackMax}
-                    onChange={(e) => updateSettings({ scrollbackMax: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Terminal opacity min ({terminalOpacityMin})</label>
-                  <input
-                    type="range"
-                    min={0.05}
-                    max={1}
-                    step={0.05}
-                    value={terminalOpacityMin}
-                    onChange={(e) => updateSettings({ terminalOpacityMin: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Toast stack ({toastMaxCount})</label>
-                  <input
-                    type="range"
-                    min={1}
-                    max={20}
-                    value={toastMaxCount}
-                    onChange={(e) => updateSettings({ toastMaxCount: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Toast duration ({toastDefaultDurationMs}ms)</label>
-                  <input
-                    type="range"
-                    min={500}
-                    max={30000}
-                    step={500}
-                    value={toastDefaultDurationMs}
-                    onChange={(e) => updateSettings({ toastDefaultDurationMs: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Palette recents ({paletteRecentsMax})</label>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={50}
-                  value={paletteRecentsMax}
-                  onChange={(e) => updateSettings({ paletteRecentsMax: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-                <span className="block text-[10px] text-white/40 mt-0.5">How many recently-used commands the palette remembers.</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Voice silence min ({voiceSilenceTimeoutMin}ms)</label>
-                  <input
-                    type="range"
-                    min={100}
-                    max={60000}
-                    step={100}
-                    value={voiceSilenceTimeoutMin}
-                    onChange={(e) => updateSettings({ voiceSilenceTimeoutMin: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-white/70 mb-2">Voice silence max ({voiceSilenceTimeoutMax}ms)</label>
-                  <input
-                    type="range"
-                    min={100}
-                    max={60000}
-                    step={100}
-                    value={voiceSilenceTimeoutMax}
-                    onChange={(e) => updateSettings({ voiceSilenceTimeoutMax: Number(e.target.value) })}
-                    className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Autosave interval ({autosaveIntervalMs}ms)</label>
-                </div>
-                <input
-                  type="range"
-                  min={100}
-                  max={10000}
-                  step={100}
-                  value={autosaveIntervalMs}
-                  onChange={(e) => updateSettings({ autosaveIntervalMs: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">First-run hint duration ({hintDurationMs === 0 ? 'sticky' : hintDurationMs + 'ms'})</label>
-                </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={30000}
-                  step={1000}
-                  value={hintDurationMs}
-                  onChange={(e) => updateSettings({ hintDurationMs: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Max WebGL contexts ({maxWebglSlots})</label>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={64}
-                  value={maxWebglSlots}
-                  onChange={(e) => updateSettings({ maxWebglSlots: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-                <span className="block text-[10px] text-white/40 mt-0.5">Past this many panes, new ones render with the CPU canvas renderer instead of GPU WebGL.</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">Show splash screen at startup</span>
-                <ToggleSwitch checked={showSplash} onChange={(v) => updateSettings({ showSplash: v })} />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Cursor width ({cursorWidth}px, bar style)</label>
-                </div>
-                <input
-                  type="range"
-                  min={1}
-                  max={8}
-                  step={1}
-                  value={cursorWidth}
-                  onChange={(e) => updateSettings({ cursorWidth: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="border-t border-white/[0.06] pt-4">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Confirmations</span>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  {([
-                    ['paneClose', 'Close pane'],
-                    ['quit', 'Quit with running processes'],
-                    ['layoutShrink', 'Shrink / reset grid'],
-                    ['workspaceDelete', 'Delete workspace'],
-                  ] as const).map(([key, label]) => (
-                    <div key={key}>
-                      <label className="block text-xs font-semibold text-white/70 mb-1.5">{label}</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Theme Override</label>
                       <select
-                        value={confirmations[key]}
-                        onChange={(e) => updateSettings({ confirmations: { ...confirmations, [key]: e.target.value as 'always' | 'never' } })}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
+                        value={ov.themeName ?? ''}
+                        onChange={(e) => setOv({ themeName: e.target.value || undefined })}
+                        className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30"
                       >
-                        <option value="always">Always ask</option>
-                        <option value="never">Never ask (act immediately)</option>
+                        <option value="">— inherit global —</option>
+                        {Object.entries(allThemes).map(([key, t]) => (
+                          <option key={key} value={key}>{t.name}</option>
+                        ))}
                       </select>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'appearance' && (
-            <div className="space-y-5">
-              {/* Customization audit C3: chrome color scheme. The TERMINAL theme
-                  stays an independent pick under the Themes tab — light mode
-                  offers the VibeLight palette there too. */}
-              <div>
-                <span className="block text-xs font-semibold text-white/70">Color Scheme (UI chrome)</span>
-                <span className="block text-[10px] text-white/40 mt-0.5">'System' follows the OS (and the window theme in the desktop app). The terminal palette is a separate choice under Themes.</span>
-                <div className="flex gap-1.5 mt-2">
-                  {(['dark', 'light', 'system'] as ThemeMode[]).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => updateSettings({ themeMode: m })}
-                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-                        themeMode === m
-                          ? 'border-forest-bright bg-forest/15 text-forest-light'
-                          : 'border-white/10 bg-white/[0.03] text-white/55 hover:border-forest/40 hover:text-white/80'
-                      }`}
-                    >
-                      {m === 'dark' ? 'Dark' : m === 'light' ? 'Light' : 'Follow System'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-semibold text-white/70">Animations</span>
-                  <span className="block text-[10px] text-white/40 mt-0.5">Master switch for UI motion (also respects OS reduced-motion).</span>
-                </div>
-                <ToggleSwitch checked={animationsEnabled} onChange={(v) => updateSettings({ animationsEnabled: v })} />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">UI Zoom ({uiZoom}%)</label>
-                </div>
-                <input
-                  type="range"
-                  min={80}
-                  max={150}
-                  step={5}
-                  value={uiZoom}
-                  onChange={(e) => updateSettings({ uiZoom: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">Compact mode (tighter chrome)</span>
-                <ToggleSwitch checked={compactMode} onChange={(v) => updateSettings({ compactMode: v })} />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">Show status bar</span>
-                <ToggleSwitch checked={!hideStatusBar} onChange={(v) => updateSettings({ hideStatusBar: !v })} />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white/70">Show header</span>
-                <ToggleSwitch checked={!hideHeader} onChange={(v) => updateSettings({ hideHeader: !v })} />
-              </div>
-
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-xs font-semibold text-white/70">Sidebar width ({sidebarWidth}px)</label>
-                </div>
-                <input
-                  type="range"
-                  min={160}
-                  max={480}
-                  step={8}
-                  value={sidebarWidth}
-                  onChange={(e) => updateSettings({ sidebarWidth: Number(e.target.value) })}
-                  className="w-full accent-forest-bright bg-black/40 h-2 rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <span className="text-xs font-semibold text-white/70">UI accent color</span>
-                  <span className="block text-[10px] text-white/40 mt-0.5">Overrides the accent derived from your terminal theme. Reset to auto-derive.</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    value={uiAccentColor ?? '#3c95f0'}
-                    onChange={(e) => updateSettings({ uiAccentColor: e.target.value })}
-                    className="w-8 h-8 rounded cursor-pointer bg-transparent border border-white/10"
-                  />
-                  {uiAccentColor && (
-                    <button
-                      onClick={() => updateSettings({ uiAccentColor: null })}
-                      className="px-2 py-1 rounded-lg border border-white/10 text-[10px] text-white/60 hover:text-white transition-colors"
-                    >
-                      Reset
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="border-t border-white/[0.06] pt-4">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">Status bar badges</span>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  {([
-                    ['workspace', 'Workspace name'],
-                    ['font', 'Font size'],
-                    ['gpu', 'GPU / CPU'],
-                    ['panes', 'Pane count'],
-                  ] as const).map(([key, label]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-xs text-white/70">{label}</span>
-                      <ToggleSwitch
-                        checked={statusBarBadges[key]}
-                        onChange={(v) => updateSettings({ statusBarBadges: { ...statusBarBadges, [key]: v } })}
+                    <div>
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Font Size Override (px)</label>
+                      <input
+                        type="number"
+                        min={fontSizeMin}
+                        max={fontSizeMax}
+                        value={ov.fontSize ?? ''}
+                        onChange={(e) => setOv({ fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
+                        placeholder="inherit"
+                        className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30 font-mono"
                       />
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'keyboard' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Custom Keybindings</span>
-                <button
-                  // UX audit P0 #2: resetting keybindings is destructive — confirm.
-                  onClick={() => setConfirmResetKeybindings(true)}
-                  className="px-3.5 py-1.5 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-amber-400 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Reset Defaults</span>
-                </button>
-              </div>
-
-              <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">Click a shortcut to reassign it, then press the new key combination. Press <kbd className="px-1.5 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-[10px] text-zinc-300">Esc</kbd> to cancel. Conflicts are detected automatically.</p>
-
-              <div className="space-y-2">
-                {Object.values(keybindings).map((kb) => (
-                  <div
-                    key={kb.id}
-                    className={`p-3 rounded-xl border flex items-center justify-between text-xs transition-colors ${
-                      recordingId === kb.id
-                        ? 'border-white bg-white/10 text-white'
-                        : 'border-white/[0.08] bg-black/40 hover:border-white/20'
-                    }`}
-                  >
-                    <div>
-                      <div className="font-sans font-bold text-white/90">{kb.label}</div>
-                      <div className="text-[10px] text-zinc-400 font-mono">{kb.id}</div>
+                    <div className="col-span-1 sm:col-span-2">
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Font Family Override</label>
+                      <input
+                        type="text"
+                        value={ov.fontFamily ?? ''}
+                        onChange={(e) => setOv({ fontFamily: e.target.value || undefined })}
+                        placeholder="empty = inherit global"
+                        className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30 font-mono"
+                      />
                     </div>
+                    <div>
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Default Shell Override</label>
+                      <input
+                        type="text"
+                        value={ov.defaultShell ?? ''}
+                        onChange={(e) => setOv({ defaultShell: e.target.value.trim() || undefined })}
+                        placeholder="empty = inherit"
+                        className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30 font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">Default CWD Override</label>
+                      <input
+                        type="text"
+                        value={ov.defaultCwd ?? ''}
+                        onChange={(e) => setOv({ defaultCwd: e.target.value.trim() || undefined })}
+                        placeholder="empty = inherit"
+                        className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30 font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Workspaces List Cards */}
+            <div className="space-y-2">
+              {workspaces.map((ws) => (
+                <div
+                  key={ws.id}
+                  className={`p-4 rounded-2xl border flex items-center justify-between transition-colors ${
+                    ws.id === activeWorkspaceId
+                      ? 'border-white/80 bg-white/[0.06] shadow-[0_0_16px_rgba(255,255,255,0.06)]'
+                      : 'border-white/5 bg-white/[0.02] hover:border-white/20'
+                  }`}
+                >
+                  <div>
+                    <div className="text-[13px] font-bold text-white/90 flex items-center gap-2">
+                      <span>{ws.name}</span>
+                      {ws.id === activeWorkspaceId && (
+                        <span className="px-2 py-0.5 rounded-md bg-white/10 text-[9px] font-mono text-white/80 font-normal">active</span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-white/40 font-mono mt-0.5">ID: {ws.id}</div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {ws.id !== activeWorkspaceId && (
+                      <button
+                        onClick={() => requestSwitchWorkspace(ws.id)}
+                        className="h-8 px-3 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-semibold transition-all cursor-pointer"
+                      >
+                        Switch
+                      </button>
+                    )}
 
                     <button
-                      onClick={() => setRecordingId(recordingId === kb.id ? null : kb.id)}
-                      title={recordingId === kb.id ? 'Press a key combination to record it' : 'Click to reassign'}
-                      className={`flex items-center gap-2 px-3 py-1 font-mono border rounded-lg text-[11px] transition-colors ${
-                        recordingId === kb.id
-                          ? 'border-white bg-white/20 text-white animate-pulse'
-                          : 'border-white/10 bg-white/5 text-zinc-300 hover:border-white/30'
-                      }`}
+                      onClick={() => setRenameWsId(ws.id)}
+                      className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                      title="Rename"
+                      aria-label={`Rename workspace ${ws.name}`}
                     >
-                      {recordingId === kb.id ? 'Press keys…' : kb.currentKey}
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
+
+                    <button
+                      onClick={() => duplicateWorkspace(ws.id)}
+                      className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                      title="Duplicate Workspace"
+                      aria-label={`Duplicate workspace ${ws.name}`}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => toggleArchive(ws.id)}
+                      className="p-2 rounded-xl bg-white/[0.04] hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                      title={ws.archived ? 'Unarchive Workspace' : 'Archive Workspace'}
+                      aria-label={ws.archived ? `Unarchive workspace ${ws.name}` : `Archive workspace ${ws.name}`}
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => setDeleteWsId(ws.id)}
+                      className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors"
+                      title="Delete Workspace"
+                      aria-label={`Delete workspace ${ws.name}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB 5: LIMITS --- */}
+        {activeSettingsTab === 'limits' && (
+          <div className="space-y-4 max-w-3xl">
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Max Panes Allowed</label>
+                <span className="text-[13px] text-white/90 font-mono">{maxPanes} panes</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={64}
+                value={maxPanes}
+                onChange={(e) => updateSettings({ maxPanes: Number(e.target.value) })}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Minimum Pane Size</label>
+                <span className="text-[13px] text-white/90 font-mono">{minPaneSize}px</span>
+              </div>
+              <input
+                type="range"
+                min={40}
+                max={400}
+                step={10}
+                value={minPaneSize}
+                onChange={(e) => updateSettings({ minPaneSize: Number(e.target.value) })}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+              <div>
+                <span className="block text-[13px] text-white/90">Snap Divider on Release</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Snap to center split when near equal threshold</span>
+              </div>
+              <ToggleSwitch checked={dividerSnap} onChange={(v) => updateSettings({ dividerSnap: v })} />
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+              <div>
+                <span className="block text-[13px] text-white/90">Double-Click Divider to Equalize</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Quickly restore equal split by double-clicking sash</span>
+              </div>
+              <ToggleSwitch checked={doubleClickEqualize} onChange={(v) => updateSettings({ doubleClickEqualize: v })} />
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Max WebGL Contexts</label>
+                <span className="text-[13px] text-white/90 font-mono">{maxWebglSlots}</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={64}
+                value={maxWebglSlots}
+                onChange={(e) => updateSettings({ maxWebglSlots: Number(e.target.value) })}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
+              <div>
+                <span className="block text-[13px] text-white/90">Show Cinematic Splash Screen</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Play splash intro animation on app launch</span>
+              </div>
+              <ToggleSwitch checked={showSplash} onChange={(v) => updateSettings({ showSplash: v })} />
+            </div>
+
+            {/* Confirmations Cards */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">Safety & Confirmations</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {([
+                  ['paneClose', 'Close pane'],
+                  ['quit', 'Quit with running processes'],
+                  ['layoutShrink', 'Shrink / reset grid'],
+                  ['workspaceDelete', 'Delete workspace'],
+                ] as const).map(([key, label]) => (
+                  <div key={key}>
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-white/40 block mb-1.5">{label}</label>
+                    <select
+                      value={confirmations[key]}
+                      onChange={(e) => updateSettings({ confirmations: { ...confirmations, [key]: e.target.value as 'always' | 'never' } })}
+                      className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 focus:outline-none focus:border-white/30"
+                    >
+                      <option value="always">Always ask</option>
+                      <option value="never">Never ask (act immediately)</option>
+                    </select>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Customization audit C22: macros (action sequences + pauses). */}
-              <div className="mt-6 border-t border-white/[0.08] pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Macros ({macros.length})</span>
+        {/* --- TAB 6: APPEARANCE --- */}
+        {activeSettingsTab === 'appearance' && (
+          <div className="space-y-4 max-w-3xl">
+            {/* Color Scheme Card */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Color Scheme (UI Chrome)</label>
+              <div className="flex gap-2">
+                {(['dark', 'light', 'system'] as ThemeMode[]).map((m) => (
                   <button
-                    onClick={addMacro}
-                    className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
+                    key={m}
+                    onClick={() => updateSettings({ themeMode: m })}
+                    className={`h-10 px-4 rounded-xl border text-[13px] font-medium transition-all ${
+                      themeMode === m
+                        ? 'border-white/80 bg-white text-black font-semibold'
+                        : 'border-white/10 bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08]'
+                    }`}
                   >
-                    <Plus className="w-3.5 h-3.5" /> New Macro
+                    {m === 'dark' ? 'Dark Mode' : m === 'light' ? 'Light Mode' : 'Follow System'}
                   </button>
-                </div>
-                <p className="text-[11px] text-white/40 leading-relaxed mb-3">
-                  Macros run a sequence of app actions with optional pauses — trigger them from the command palette or a keybinding
-                  (e.g. <kbd className="px-1 py-0.5 font-mono bg-white/5 border border-white/10 rounded text-[10px]">Mod+Alt+1</kbd>).
-                  Actions that close panes keep their confirmations.
-                </p>
-                {macros.length === 0 && (
-                  <p className="text-[11px] text-white/35 text-center py-3">No macros yet — create one to automate multi-step workflows.</p>
-                )}
-                <div className="space-y-3">
-                  {macros.map((macro) => (
-                    <div key={macro.id} className="p-3 rounded-lg border border-white/10 bg-black/40 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={macro.name}
-                          onChange={(e) => updateMacro(macro.id, { name: e.target.value.slice(0, 60) })}
-                          placeholder="Macro name"
-                          className="flex-1 min-w-0 px-2 py-1 rounded bg-background/40 border border-border/10 text-xs text-foreground/90 placeholder-muted/30 focus:outline-none focus:border-forest-bright"
-                        />
-                        <input
-                          type="text"
-                          value={macro.keybinding}
-                          onChange={(e) => updateMacro(macro.id, { keybinding: e.target.value.trim() })}
-                          placeholder="Keybinding (Mod+Alt+1)"
-                          className="w-40 shrink-0 px-2 py-1 font-mono rounded bg-background/40 border border-border/10 text-[11px] text-forest-light placeholder-muted/30 focus:outline-none focus:border-forest-bright"
-                        />
-                        <button
-                          onClick={() => runMacro(macro)}
-                          title="Run now"
-                          aria-label={`Run macro ${macro.name}`}
-                          className="p-1.5 rounded hover:bg-forest/20 text-forest-light transition-colors"
-                        >
-                          <Play className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => deleteMacro(macro.id)}
-                          title="Delete macro"
-                          aria-label={`Delete macro ${macro.name}`}
-                          className="p-1.5 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="space-y-1.5">
-                        {macro.steps.map((step, si) => (
-                          <div key={si} className="flex items-center gap-1.5">
-                            <select
-                              value={step.type === 'action' ? step.actionId ?? '' : 'delay'}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === 'delay') setMacroStep(macro.id, si, { type: 'delay', ms: 300 });
-                                else setMacroStep(macro.id, si, { type: 'action', actionId: v });
-                              }}
-                              className="flex-1 min-w-0 px-2 py-1 rounded bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
-                            >
-                              <option value="delay">— pause —</option>
-                              {MACRO_ACTIONS.map((a) => (
-                                <option key={a.id} value={a.id}>{a.label}</option>
-                              ))}
-                            </select>
-                            {step.type === 'delay' ? (
-                              <input
-                                type="number"
-                                min={0}
-                                max={10000}
-                                step={50}
-                                value={step.ms ?? 300}
-                                onChange={(e) => setMacroStep(macro.id, si, { ms: Number(e.target.value) })}
-                                className="w-24 shrink-0 px-2 py-1 rounded bg-background/40 border border-border/10 text-xs text-foreground/90 focus:outline-none focus:border-forest-bright"
-                              />
-                            ) : (
-                              <span className="w-24 shrink-0 text-right text-[10px] text-white/35 truncate">
-                                {getMacroAction(step.actionId ?? '')?.category ?? ''}
-                              </span>
-                            )}
-                            <button
-                              onClick={() => removeMacroStep(macro.id, si)}
-                              title="Remove step"
-                              aria-label="Remove macro step"
-                              className="p-1 rounded hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors shrink-0"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => addMacroStep(macro.id)}
-                        className="text-[10px] text-forest-light hover:text-forest-bright flex items-center gap-1 transition-colors"
-                      >
-                        <Plus className="w-3 h-3" /> Add step
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </div>
             </div>
-          )}
 
-          {/* Customization audit S1/S8: settings profiles + MCP endpoint info. */}
-          {activeTab === 'profiles' && (
-            <div className="space-y-5">
+            {/* Animations Switch */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">Settings Profiles</span>
-                <p className="text-[11px] text-zinc-400 font-sans mt-1">Save your current settings (fonts, themes, terminal options, voice, startup behavior…) as a named profile and switch between them. Profiles are stored locally.</p>
+                <span className="block text-[13px] text-white/90">UI Animations</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Smooth transitions and modal fades</span>
               </div>
+              <ToggleSwitch checked={animationsEnabled} onChange={(v) => updateSettings({ animationsEnabled: v })} />
+            </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={profileName}
-                  onChange={(e) => setProfileName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') saveProfile();
-                  }}
-                  placeholder="Profile name (e.g. Work / Home)"
-                  className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/[0.08] text-xs font-sans text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30"
-                />
-                <button
-                  onClick={saveProfile}
-                  className="px-4 py-2 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-sans flex items-center gap-1.5 transition-colors"
+            {/* UI Zoom */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">UI Zoom</label>
+                <span className="text-[13px] text-white/90 font-mono">{uiZoom}%</span>
+              </div>
+              <input
+                type="range"
+                min={80}
+                max={150}
+                step={5}
+                value={uiZoom}
+                onChange={(e) => updateSettings({ uiZoom: Number(e.target.value) })}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
+
+            {/* Sidebar Width */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Sidebar Width</label>
+                <span className="text-[13px] text-white/90 font-mono">{sidebarWidth}px</span>
+              </div>
+              <input
+                type="range"
+                min={160}
+                max={480}
+                step={8}
+                value={sidebarWidth}
+                onChange={(e) => updateSettings({ sidebarWidth: Number(e.target.value) })}
+                className="w-full accent-white bg-black/40 h-2 rounded-full cursor-pointer"
+              />
+            </div>
+
+            {/* Status Bar Badges */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">Status Bar Badges</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {([
+                  ['workspace', 'Workspace Name'],
+                  ['font', 'Font Size Display'],
+                  ['gpu', 'GPU / CPU Status'],
+                  ['panes', 'Active Pane Count'],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-[13px] text-white/80">{label}</span>
+                    <ToggleSwitch
+                      checked={statusBarBadges[key]}
+                      onChange={(v) => updateSettings({ statusBarBadges: { ...statusBarBadges, [key]: v } })}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- TAB 7: KEYBOARD --- */}
+        {activeSettingsTab === 'keyboard' && (
+          <div className="space-y-5 max-w-3xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[13px] font-bold font-sans text-white/90">Custom Keybindings</span>
+                <span className="block text-[10px] text-white/40 mt-0.5">Click any shortcut to reassign</span>
+              </div>
+              <button
+                onClick={() => setConfirmResetKeybindings(true)}
+                className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-[13px] text-white/90 transition-all cursor-pointer"
+              >
+                <RotateCcw className="w-4 h-4 text-white/70" />
+                <span>Reset Defaults</span>
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {Object.values(keybindings).map((kb) => (
+                <div
+                  key={kb.id}
+                  className={`p-4 rounded-2xl border flex items-center justify-between text-xs transition-colors ${
+                    recordingId === kb.id
+                      ? 'border-white bg-white/10 text-white'
+                      : 'border-white/5 bg-white/[0.02] hover:border-white/15'
+                  }`}
                 >
-                  <Plus className="w-3.5 h-3.5" /> Save Current
+                  <div>
+                    <div className="font-sans font-bold text-white/90 text-[13px]">{kb.label}</div>
+                    <div className="text-[10px] text-white/40 font-mono mt-0.5">{kb.id}</div>
+                  </div>
+
+                  <button
+                    onClick={() => setRecordingId(recordingId === kb.id ? null : kb.id)}
+                    className={`h-9 px-3.5 rounded-xl font-mono text-xs border transition-all ${
+                      recordingId === kb.id
+                        ? 'border-white bg-white text-black font-bold animate-pulse'
+                        : 'border-white/10 bg-black/40 text-white/80 hover:border-white/30'
+                    }`}
+                  >
+                    {recordingId === kb.id ? 'Press keys…' : kb.currentKey}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Macros Studio */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[13px] font-bold text-white/90">Macros Studio</span>
+                  <span className="block text-[10px] text-white/40 mt-0.5">Automate multi-action sequences</span>
+                </div>
+                <button
+                  onClick={addMacro}
+                  className="h-9 flex items-center gap-1.5 px-3.5 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-semibold transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>New Macro</span>
                 </button>
               </div>
 
-              <div className="space-y-2">
-                {listSettingsProfiles().length === 0 && (
-                  <p className="text-[11px] text-zinc-500 font-mono text-center py-4">No profiles saved yet.</p>
-                )}
-                {listSettingsProfiles().map((name) => (
-                  <div key={name} className="p-3.5 rounded-xl border border-white/[0.08] bg-black/40 flex items-center justify-between">
-                    <span className="text-xs font-bold font-sans text-white/90 truncate">{name}</span>
-                    <div className="flex items-center gap-2 shrink-0">
+              <div className="space-y-3">
+                {macros.map((macro) => (
+                  <div key={macro.id} className="p-4 rounded-xl border border-white/10 bg-black/40 space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={macro.name}
+                        onChange={(e) => updateMacro(macro.id, { name: e.target.value.slice(0, 60) })}
+                        placeholder="Macro name"
+                        className="flex-1 h-9 px-3 rounded-lg bg-black/60 border border-white/10 text-xs text-white/90 focus:outline-none focus:border-white/30"
+                      />
+                      <input
+                        type="text"
+                        value={macro.keybinding}
+                        onChange={(e) => updateMacro(macro.id, { keybinding: e.target.value.trim() })}
+                        placeholder="Keybinding (Mod+Alt+1)"
+                        className="w-36 h-9 px-3 font-mono rounded-lg bg-black/60 border border-white/10 text-xs text-white/80 focus:outline-none focus:border-white/30"
+                      />
                       <button
-                        onClick={() => {
-                          if (loadSettingsProfile(name)) {
-                            addToast({ type: 'success', title: 'Profile applied', description: `"${name}" is now active.` });
-                          } else {
-                            addToast({ type: 'error', title: 'Could not apply profile', description: `"${name}" appears to be corrupt.` });
-                          }
-                        }}
-                        className="px-3.5 py-1.5 rounded-2xl bg-white text-black hover:bg-zinc-200 text-xs font-extrabold font-sans transition-colors"
+                        onClick={() => runMacro(macro)}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                        title="Run macro"
                       >
-                        Apply
+                        <Play className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => deleteSettingsProfile(name)}
-                        title={`Delete profile ${name}`}
-                        aria-label={`Delete profile ${name}`}
-                        className="p-1.5 rounded-lg hover:bg-rose-950/60 text-white/45 hover:text-rose-400 transition-colors"
+                        onClick={() => deleteMacro(macro.id)}
+                        className="p-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors"
+                        title="Delete macro"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
+
+                    <div className="space-y-1.5">
+                      {macro.steps.map((step, si) => (
+                        <div key={si} className="flex items-center gap-2">
+                          <select
+                            value={step.type === 'action' ? step.actionId ?? '' : 'delay'}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (v === 'delay') setMacroStep(macro.id, si, { type: 'delay', ms: 300 });
+                              else setMacroStep(macro.id, si, { type: 'action', actionId: v });
+                            }}
+                            className="flex-1 h-8 px-2.5 rounded-lg bg-black/60 border border-white/10 text-xs text-white/90 focus:outline-none"
+                          >
+                            <option value="delay">— pause delay —</option>
+                            {MACRO_ACTIONS.map((a) => (
+                              <option key={a.id} value={a.id}>{a.label}</option>
+                            ))}
+                          </select>
+                          {step.type === 'delay' && (
+                            <input
+                              type="number"
+                              min={0}
+                              max={10000}
+                              step={50}
+                              value={step.ms ?? 300}
+                              onChange={(e) => setMacroStep(macro.id, si, { ms: Number(e.target.value) })}
+                              className="w-20 h-8 px-2 rounded-lg bg-black/60 border border-white/10 text-xs text-white/90 focus:outline-none font-mono"
+                            />
+                          )}
+                          <button
+                            onClick={() => removeMacroStep(macro.id, si)}
+                            className="p-1.5 rounded-lg hover:bg-rose-500/20 text-rose-300 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => addMacroStep(macro.id)}
+                      className="text-xs text-white/70 hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" /> Add Step
+                    </button>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Customization audit S8: MCP/HTTP endpoint info. */}
-              <div className="border-t border-white/[0.08] pt-4">
-                <div className="flex items-center gap-2">
-                  <Globe className="w-3.5 h-3.5 text-white/80" />
-                  <span className="text-xs font-bold font-sans text-white/90 uppercase tracking-wider">MCP / HTTP Endpoint</span>
+        {/* --- TAB 8: PROFILES --- */}
+        {activeSettingsTab === 'profiles' && (
+          <div className="space-y-5 max-w-3xl">
+            <div>
+              <span className="text-[13px] font-bold font-sans text-white/90">Settings Profiles</span>
+              <p className="text-[11px] text-white/40 mt-0.5">Save complete configurations as named presets.</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') saveProfile();
+                }}
+                placeholder="Profile name (e.g. Fullstack Dev / Minimal)"
+                className="flex-1 h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30"
+              />
+              <button
+                onClick={saveProfile}
+                className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white text-black hover:bg-white/90 text-[13px] font-semibold transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Save Profile</span>
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {listSettingsProfiles().map((name) => (
+                <div key={name} className="p-4 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-between">
+                  <span className="text-[13px] font-bold text-white/90">{name}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        if (loadSettingsProfile(name)) {
+                          addToast({ type: 'success', title: 'Profile applied', description: `"${name}" is now active.` });
+                        } else {
+                          addToast({ type: 'error', title: 'Could not apply profile', description: `"${name}" appears to be corrupt.` });
+                        }
+                      }}
+                      className="h-8 px-3 rounded-xl bg-white text-black hover:bg-white/90 text-xs font-semibold transition-all cursor-pointer"
+                    >
+                      Apply
+                    </button>
+                    <button
+                      onClick={() => deleteSettingsProfile(name)}
+                      className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <p className="text-[11px] text-zinc-400 font-sans mt-1 leading-relaxed">
-                  VibeGrid exposes a read-only state API that MCP clients and scripts can query (pane list, output history). The server listens on localhost only.
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <code className="flex-1 px-3 py-2 rounded-xl bg-black/40 border border-white/[0.08] text-[11px] font-mono text-zinc-300 truncate">
-                    http://127.0.0.1:{httpPort ?? '…'}/panes
-                  </code>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`http://127.0.0.1:${httpPort ?? 8792}/panes`);
-                      addToast({ type: 'success', title: 'Endpoint copied' });
-                    }}
-                    className="px-3 py-2 rounded-xl border border-white/10 text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors"
-                    title="Copy endpoint URL"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <p className="text-[10px] text-zinc-500 font-mono mt-1.5">
-                  Port override: <code className="font-mono text-zinc-400">VIBEGRID_HTTP_PORT</code> env var (default 8792).
-                </p>
+              ))}
+            </div>
+
+            {/* MCP HTTP Endpoint */}
+            <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-white/80" />
+                <span className="text-[13px] font-bold text-white/90">MCP / HTTP Endpoint</span>
+              </div>
+              <p className="text-[11px] text-white/40 leading-relaxed">
+                VibeGrid state API for local AI agents and external scripts:
+              </p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-xs font-mono text-white/80 truncate">
+                  http://127.0.0.1:{httpPort ?? '8792'}/panes
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`http://127.0.0.1:${httpPort ?? 8792}/panes`);
+                    addToast({ type: 'success', title: 'Endpoint copied' });
+                  }}
+                  className="h-10 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white/80 hover:text-white transition-colors cursor-pointer"
+                  title="Copy endpoint URL"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Footer: import / export / reset */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.08] bg-white/[0.02]">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleExport}
-              className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-colors"
-              title="Download settings as JSON"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export</span>
-            </button>
-            <button
-              onClick={() => importInputRef.current?.click()}
-              className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 flex items-center gap-1.5 transition-colors"
-              title="Import settings from JSON"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Import</span>
-            </button>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) setPendingImportFile(file);
-                e.target.value = '';
-              }}
-            />
           </div>
-          <button
-            // UX audit P0 #2: resetting ALL settings is destructive — confirm.
-            onClick={() => setConfirmResetAll(true)}
-            className="px-4 py-2 rounded-2xl border border-white/10 text-xs font-mono uppercase tracking-wider text-zinc-400 hover:text-amber-400 hover:bg-white/5 flex items-center gap-1.5 transition-colors"
-            title="Reset all settings to defaults"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Reset All</span>
-          </button>
-        </div>
+        )}
       </div>
 
+      {/* Footer: Import / Export / Reset matching Sidebar buttons */}
+      <div className="flex items-center justify-between px-8 py-4 border-t border-white/5 bg-white/[0.02] shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExport}
+            className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/90 text-[13px] font-normal transition-all cursor-pointer"
+            title="Download settings as JSON"
+          >
+            <Download className="w-4 h-4 text-white/70" />
+            <span>Export</span>
+          </button>
+          <button
+            onClick={() => importInputRef.current?.click()}
+            className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/90 text-[13px] font-normal transition-all cursor-pointer"
+            title="Import settings from JSON"
+          >
+            <Upload className="w-4 h-4 text-white/70" />
+            <span>Import</span>
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) setPendingImportFile(file);
+              e.target.value = '';
+            }}
+          />
+        </div>
+        <button
+          onClick={() => setConfirmResetAll(true)}
+          className="h-10 flex items-center gap-2 px-4 rounded-2xl bg-white/[0.04] hover:bg-rose-500/10 border border-white/10 hover:border-rose-500/30 text-white/90 hover:text-rose-400 text-[13px] font-normal transition-all cursor-pointer"
+          title="Reset all settings to defaults"
+        >
+          <RotateCcw className="w-4 h-4 text-white/70" />
+          <span>Reset All</span>
+        </button>
+      </div>
+
+      {/* Confirmation & Input Modals */}
       {showCreateModal && (
         <InputModal
           title="Create New Workspace"
@@ -2128,8 +1742,6 @@ export const SettingsModal: React.FC = () => {
         <ConfirmModal
           title="Delete Workspace"
           message={
-            // Customization audit L16: deleting the LAST workspace resets to a
-            // fresh default instead of refusing.
             workspaces.length === 1
               ? `Delete the last workspace "${deleteTarget.name}"? VibeGrid will reset to a fresh Default Workspace and terminate any running terminals.`
               : deleteRunningCount > 0
@@ -2143,7 +1755,6 @@ export const SettingsModal: React.FC = () => {
         />
       )}
 
-      {/* Customization audit C1: theme create / rename / delete modals */}
       {showCreateThemeModal && (
         <InputModal
           title="Create Custom Theme"
@@ -2186,7 +1797,6 @@ export const SettingsModal: React.FC = () => {
         />
       )}
 
-      {/* UX audit P0 #2: reset-all confirmation */}
       {confirmResetAll && (
         <ConfirmModal
           title="Reset All Settings?"
@@ -2201,7 +1811,6 @@ export const SettingsModal: React.FC = () => {
         />
       )}
 
-      {/* UX audit P0 #2: keybinding reset confirmation */}
       {confirmResetKeybindings && (
         <ConfirmModal
           title="Reset Keybindings?"
@@ -2216,8 +1825,6 @@ export const SettingsModal: React.FC = () => {
         />
       )}
 
-      {/* UX audit P0 #3: import confirmation (current settings are backed up
-          to localStorage before applying, so the user can restore). */}
       {pendingImportFile && (
         <ConfirmModal
           title="Import Settings?"
