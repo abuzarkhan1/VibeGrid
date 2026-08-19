@@ -19,8 +19,11 @@ use tauri::Runtime;
 /// call sites used to hand-roll the same string, risking drift).
 pub const ERR_PANE_NOT_FOUND: &str = "Pane ID not found";
 
+/// Safe minimum dimensions to prevent EOF on initial mount and layout collapse.
+pub const MIN_PTY_COLS: u16 = 20;
+pub const MIN_PTY_ROWS: u16 = 5;
+
 pub struct PaneSession {
-    pub id: String,
     pub master: Box<dyn MasterPty + Send>,
     pub writer: Box<dyn Write + Send>,
     pub child: Box<dyn Child + Send + Sync>,
@@ -81,9 +84,9 @@ impl<R: Runtime> PtyManager<R> {
         let pane_id = Uuid::new_v4().to_string();
         let pty_system = native_pty_system();
 
-        // Enforce safe minimum PTY dimensions (min 20 cols, min 5 rows) to prevent EOF on initial mount
-        let safe_cols = std::cmp::max(20, cols);
-        let safe_rows = std::cmp::max(5, rows);
+        // Enforce safe minimum PTY dimensions to prevent EOF on initial mount
+        let safe_cols = std::cmp::max(MIN_PTY_COLS, cols);
+        let safe_rows = std::cmp::max(MIN_PTY_ROWS, rows);
 
         let size = PtySize {
             rows: safe_rows,
@@ -145,7 +148,6 @@ impl<R: Runtime> PtyManager<R> {
         spawn_pty_reader(pane_id.clone(), reader, batcher);
 
         let session = PaneSession {
-            id: pane_id.clone(),
             master: pair.master,
             writer,
             child,
@@ -178,8 +180,8 @@ impl<R: Runtime> PtyManager<R> {
     pub fn resize_pane(&self, pane_id: &str, cols: u16, rows: u16) -> Result<(), String> {
         let sessions = self.sessions.lock();
         if let Some(session) = sessions.get(pane_id) {
-            let safe_cols = std::cmp::max(20, cols);
-            let safe_rows = std::cmp::max(5, rows);
+            let safe_cols = std::cmp::max(MIN_PTY_COLS, cols);
+            let safe_rows = std::cmp::max(MIN_PTY_ROWS, rows);
 
             let size = PtySize {
                 rows: safe_rows,
@@ -215,10 +217,9 @@ impl<R: Runtime> PtyManager<R> {
             return Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"));
         };
         {
-            // Release the pane's buffers/history immediately (audit: memory
-            // leak fix) — the reader thread may be blocked or already gone.
+            // Release the pane's buffers/history and purge exited tracking immediately
             if let Some(batcher) = self.batcher.lock().as_ref() {
-                batcher.pane_exited(pane_id);
+                batcher.cleanup_pane(pane_id);
             }
             #[cfg(unix)]
             {
@@ -266,8 +267,12 @@ impl<R: Runtime> PtyManager<R> {
     /// Terminate all PTY sessions on application exit (NFR-012)
     pub fn kill_all_panes(&self) {
         let mut sessions = self.sessions.lock();
-        for (_, mut session) in sessions.drain() {
+        let batcher_guard = self.batcher.lock();
+        for (pane_id, mut session) in sessions.drain() {
             let _ = session.child.kill();
+            if let Some(batcher) = batcher_guard.as_ref() {
+                batcher.cleanup_pane(&pane_id);
+            }
         }
     }
 }

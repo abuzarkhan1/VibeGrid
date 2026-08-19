@@ -35,10 +35,7 @@ pub(crate) fn parse_shortcut(accel: &str) -> Result<Shortcut, String> {
 pub fn set_global_summon(app: tauri::AppHandle, state: State<'_, AppState>, accel: String) -> Result<String, String> {
     let shortcut = parse_shortcut(&accel)?;
 
-    let mut guard = state
-        .global_summon
-        .lock()
-        .map_err(|e| format!("Global shortcut lock poisoned: {e}"))?;
+    let mut guard = state.global_summon.lock();
 
     // Unregister the previous binding (best-effort — it may not be registered).
     if let Some(prev) = guard.take() {

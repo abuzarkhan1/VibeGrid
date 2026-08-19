@@ -30,7 +30,7 @@ pub fn spawn_pty_reader<R: Runtime>(
                     break;
                 }
                 Ok(n) => {
-                    batcher.push_output(pane_id.clone(), &buffer[..n]);
+                    batcher.push_output(&pane_id, &buffer[..n]);
                 }
                 Err(err) => {
                     eprintln!("[PtyReader] Error reading from pane {}: {}", pane_id, err);
