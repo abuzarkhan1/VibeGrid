@@ -41,7 +41,7 @@ fn search_binary_in_paths(binary_name: &str) -> Option<PathBuf> {
     }
 
     // 2. Check well-known directories on Unix/macOS
-    let home = dirs::home_dir();
+    let home = crate::utils::paths::get_home_dir();
     let candidate_dirs: Vec<PathBuf> = vec![
         PathBuf::from("/opt/homebrew/bin"),
         PathBuf::from("/usr/local/bin"),

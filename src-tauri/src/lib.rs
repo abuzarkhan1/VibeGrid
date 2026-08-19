@@ -6,8 +6,9 @@ pub mod pty;
 pub mod speech;
 pub mod http_server;
 pub mod mcp_server;
+pub mod utils;
 
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use config::WorkspaceManager;
 use ipc::IpcBatcher;
@@ -28,7 +29,7 @@ pub struct AppState {
     /// hardcoded at setup with no way to reassign or unregister). Stored so
     /// set_global_summon can unregister the old binding before registering the
     /// new one. None = not registered (registration is best-effort).
-    pub global_summon: Mutex<Option<Shortcut>>,
+    pub global_summon: parking_lot::Mutex<Option<Shortcut>>,
 }
 
 fn show_main_window(app: &tauri::AppHandle) {
@@ -99,7 +100,7 @@ pub fn run() {
                 batcher,
                 workspace_manager,
                 speech: Arc::new(speech::SpeechManager::new()),
-                global_summon: Mutex::new(None),
+                global_summon: parking_lot::Mutex::new(None),
             });
 
             // System tray icon: show / quit (UX audit 5.2)
@@ -146,7 +147,7 @@ pub fn run() {
                     toggle_main_window(app);
                 }) {
                     Ok(()) => {
-                        *app.state::<AppState>().global_summon.lock().unwrap() = Some(summon);
+                        *app.state::<AppState>().global_summon.lock() = Some(summon);
                     }
                     Err(e) => {
                         eprintln!(
@@ -184,7 +185,6 @@ pub fn run() {
             commands::get_http_port,
             commands::pane_snapshot,
             commands::save_workspace,
-            commands::load_workspace,
             commands::list_workspaces,
             commands::delete_workspace,
             commands::voice_model_status,
@@ -199,7 +199,6 @@ pub fn run() {
             commands::voice_set_model_size,
             commands::set_global_summon,
             autostart::autostart_set_enabled,
-            autostart::autostart_is_enabled,
         ])
         .build(tauri::generate_context!())
         .expect("error while building VibeGrid application");

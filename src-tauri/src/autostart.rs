@@ -55,30 +55,7 @@ pub fn set_enabled(enabled: bool) -> Result<(), String> {
 /// The OS-specific file the autostart state lives in (macOS/Linux only — the
 /// Windows backend uses the registry).
 fn autostart_path() -> Option<PathBuf> {
-    #[cfg(target_os = "macos")]
-    {
-        let home = std::env::var("HOME").ok()?;
-        Some(
-            PathBuf::from(home)
-                .join("Library")
-                .join("LaunchAgents")
-                .join(format!("{LABEL}.plist")),
-        )
-    }
-    #[cfg(target_os = "linux")]
-    {
-        let home = std::env::var("HOME").ok()?;
-        Some(
-            PathBuf::from(home)
-                .join(".config")
-                .join("autostart")
-                .join("vibegrid.desktop"),
-        )
-    }
-    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-    {
-        None
-    }
+    crate::utils::paths::get_autostart_path(LABEL)
 }
 
 #[cfg(target_os = "macos")]
@@ -202,11 +179,6 @@ fn disable() -> Result<(), String> {
 #[tauri::command]
 pub fn autostart_set_enabled(enabled: bool) -> Result<(), String> {
     set_enabled(enabled)
-}
-
-#[tauri::command]
-pub fn autostart_is_enabled() -> bool {
-    is_enabled()
 }
 
 #[cfg(test)]

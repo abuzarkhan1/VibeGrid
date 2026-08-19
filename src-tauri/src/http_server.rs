@@ -41,18 +41,7 @@ pub fn fallback_window_end(requested: u16) -> u16 {
 /// Directory holding the runtime state files shared between the running app
 /// and the separate `--mcp` stdio process: the bound port and the auth token.
 fn state_dir() -> Option<std::path::PathBuf> {
-    let explicit = std::env::var("VIBEGRID_HOME").ok();
-    let home = explicit
-        .clone()
-        .or_else(|| std::env::var("HOME").ok())
-        .or_else(|| std::env::var("USERPROFILE").ok());
-    let base = home?;
-    let dir = if explicit.is_some() {
-        std::path::PathBuf::from(base)
-    } else {
-        std::path::PathBuf::from(base).join(".vibegrid")
-    };
-    Some(dir)
+    crate::utils::paths::get_app_data_dir()
 }
 
 /// State file that records the port the running app actually bound, so the
@@ -134,14 +123,7 @@ pub fn persisted_token() -> Option<String> {
 /// Last `cap` bytes of `s`, never splitting a UTF-8 character. Used to keep
 /// MCP responses bounded.
 fn tail(s: &str, cap: usize) -> &str {
-    if s.len() <= cap {
-        return s;
-    }
-    let mut start = s.len() - cap;
-    while !s.is_char_boundary(start) {
-        start += 1;
-    }
-    &s[start..]
+    crate::utils::utf8::tail_utf8(s, cap)
 }
 
 /// The `/panes` handler: requires the per-launch bearer token (audit/security:

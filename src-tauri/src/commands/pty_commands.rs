@@ -12,6 +12,7 @@ use crate::AppState;
 /// The underlying `openpty` + process spawn is blocking work — run it off the
 /// async runtime thread (audit improvement: spawn_blocking) so a slow spawn
 /// can't stall other IPC commands.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn spawn_pty(
     state: State<'_, AppState>,
@@ -21,10 +22,12 @@ pub async fn spawn_pty(
     shell: Option<String>,
     shell_args: Option<Vec<String>>,
     shell_env: Option<HashMap<String, String>>,
+    env: Option<HashMap<String, String>>,
 ) -> Result<String, String> {
+    let effective_env = env.or(shell_env);
     let manager = state.pty_manager.clone();
     let batcher = state.batcher.clone();
-    spawn_blocking(move || manager.spawn_pane(cols, rows, cwd, shell, shell_args, shell_env, batcher))
+    spawn_blocking(move || manager.spawn_pane(cols, rows, cwd, shell, shell_args, effective_env, batcher))
         .await
         .map_err(|e| format!("Spawn task failed: {e}"))?
 }
