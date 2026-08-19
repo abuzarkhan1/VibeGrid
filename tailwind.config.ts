@@ -12,7 +12,6 @@ const config: Config = {
         surface: 'var(--color-surface, #141721)',
         'surface-hover': 'var(--color-surface-hover, #1c202e)',
         'surface-active': 'var(--color-surface-active, #24293b)',
-        surfaceCard: 'var(--color-surface, #141721)',
         border: 'var(--color-border, rgba(255, 255, 255, 0.08))',
         'border-subtle': 'var(--color-border-subtle, rgba(255, 255, 255, 0.04))',
         foreground: 'var(--ink-primary, #F3F4F6)',
@@ -75,8 +74,6 @@ const config: Config = {
           light: 'var(--accent-primary, #8B5CF6)',
           dark: '#7C3AED',
         },
-        neon: 'var(--accent-primary, #8B5CF6)',
-        bgDark: 'var(--color-bg, #090a0f)',
         pane: {
           bg: 'var(--glass-density-2, rgba(255, 255, 255, 0.06))',
           header: 'var(--glass-density-3, rgba(255, 255, 255, 0.10))',
@@ -88,19 +85,16 @@ const config: Config = {
         'glass-edge': 'var(--glass-edge-effect)',
         'glass-panel': 'var(--glass-edge-effect), 0 8px 32px 0 rgba(0, 0, 0, 0.25)',
         'glass-panel-dense': 'var(--glass-edge-effect), 0 12px 36px 0 rgba(0, 0, 0, 0.35)',
-        'glass-pill': 'var(--glass-edge-effect)',
         'accent-glow': '0 0 20px var(--accent-glow, rgba(139, 92, 246, 0.4))',
       },
       backdropBlur: {
         'glass-sm': '8px',
         'glass': '16px',
-        'glass-dense': '24px',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
         ui: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        code: ['JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Consolas', 'Courier New', 'monospace'],
       },
       animation: {
         'fade-in': 'fadeIn 0.12s ease-out forwards',
