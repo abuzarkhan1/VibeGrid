@@ -5,6 +5,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { AgentCatalogCard } from './AgentCatalogCard';
 import { PaneAgentMatrix } from './PaneAgentMatrix';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import {
   HETEROGENEOUS_ROLE_PODS,
   COMMON_VAULT_KEYS,
@@ -70,6 +71,7 @@ export const AgentLauncherModal: React.FC<AgentLauncherModalProps> = ({
   const [newVaultKey, setNewVaultKey] = useState('');
   const [newVaultVal, setNewVaultVal] = useState('');
   const [copiedInstallId, setCopiedInstallId] = useState<string | null>(null);
+  const [pendingDeleteVaultKey, setPendingDeleteVaultKey] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -103,15 +105,24 @@ export const AgentLauncherModal: React.FC<AgentLauncherModalProps> = ({
       onProceedToCustomizer();
     }
 
-    provisionActivePanes().then((launchedCount) => {
-      addToast({
-        type: 'success',
-        title: 'AI Agents Provisioned',
-        description: launchedCount > 0
-          ? `Successfully launched AI agents across ${launchedCount} terminal panes.`
-          : `Assigned AI coding agents across ${terminals.length} terminal panes.`,
+    provisionActivePanes()
+      .then((launchedCount) => {
+        addToast({
+          type: 'success',
+          title: 'AI Agents Provisioned',
+          description: launchedCount > 0
+            ? `Successfully launched AI agents across ${launchedCount} terminal panes.`
+            : `Assigned AI coding agents across ${terminals.length} terminal panes.`,
+        });
+      })
+      .catch((err) => {
+        console.error('[AgentLauncherModal] Provisioning error:', err);
+        addToast({
+          type: 'error',
+          title: 'Launch failed',
+          description: 'Could not provision panes.',
+        });
       });
-    }).catch(console.error);
   };
 
   const handleToggleFlag = (flag: string) => {
@@ -572,9 +583,10 @@ export const AgentLauncherModal: React.FC<AgentLauncherModalProps> = ({
                       />
                       <button
                         type="button"
-                        onClick={() => handleRemoveVaultEntry(k)}
-                        className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                        onClick={() => setPendingDeleteVaultKey(k)}
+                        className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer"
                         title="Remove key"
+                        aria-label={`Remove ${k}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -636,6 +648,20 @@ export const AgentLauncherModal: React.FC<AgentLauncherModalProps> = ({
           </div>
         </div>
       </div>
+
+      {pendingDeleteVaultKey && (
+        <ConfirmModal
+          title="Remove API Key?"
+          message={`Are you sure you want to remove "${pendingDeleteVaultKey}" from your vault?`}
+          confirmLabel="Remove Key"
+          isDanger={true}
+          onConfirm={() => {
+            handleRemoveVaultEntry(pendingDeleteVaultKey);
+            setPendingDeleteVaultKey(null);
+          }}
+          onClose={() => setPendingDeleteVaultKey(null)}
+        />
+      )}
     </div>
   );
 };

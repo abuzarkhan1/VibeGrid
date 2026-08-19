@@ -11,6 +11,30 @@ import { useSettingsStore } from './useSettingsStore';
 import { useCustomizationStore } from './useCustomizationStore';
 
 export const ONBOARDING_COMPLETED_KEY = 'vibegrid_onboarding_completed_v1';
+export const VAULT_STORAGE_KEY = 'vibegrid_vault_v1';
+
+function loadVaultEnv(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(VAULT_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('[OnboardingStore] Failed to load persisted vault keys:', e);
+  }
+  return {};
+}
+
+function saveVaultEnv(env: Record<string, string>) {
+  try {
+    localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(env));
+  } catch (e) {
+    console.warn('[OnboardingStore] Failed to save vault keys:', e);
+  }
+}
 
 interface OnboardingState {
   isOpen: boolean;
@@ -88,7 +112,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
     workspaceName: 'AI Command Center',
     workspaceEmoji: '🚀',
     workspaceCwd: '',
-    workspaceEnv: {},
+    workspaceEnv: loadVaultEnv(),
     isLaunching: false,
 
     openOnboarding: (step = 'splash') => {
@@ -178,6 +202,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
     },
 
     setWorkspaceEnv: (workspaceEnv: Record<string, string>) => {
+      saveVaultEnv(workspaceEnv);
       set({ workspaceEnv });
     },
 

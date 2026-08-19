@@ -15,6 +15,7 @@ import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { fuzzyScore } from '@/lib/commandUtils';
 import { writeToPty } from '@/lib/tauri';
 import { InputModal } from './InputModal';
+import { ConfirmModal } from './ConfirmModal';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
 interface CommandItem {
@@ -88,6 +89,7 @@ export const CommandPalette: React.FC = () => {
   const [showCmdModal, setShowCmdModal] = useState(false);
   const [cmdLabel, setCmdLabel] = useState('');
   const [cmdCommand, setCmdCommand] = useState('');
+  const [pendingDeleteCmd, setPendingDeleteCmd] = useState<UserCommand | null>(null);
   const [recents, setRecents] = useState<string[]>(loadRecents);
   const importInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -101,7 +103,7 @@ export const CommandPalette: React.FC = () => {
     }
   }, [isCommandPaletteOpen]);
 
-  if (!isCommandPaletteOpen && !showWsModal && !showTitleModal && !showFolderModal && !showCmdModal) return null;
+  if (!isCommandPaletteOpen && !showWsModal && !showTitleModal && !showFolderModal && !showCmdModal && !pendingDeleteCmd) return null;
 
   const presets: PresetCount[] = [1, 2, 3, 4, 5, 6, 8, 9, 12, 16];
 
@@ -669,7 +671,7 @@ export const CommandPalette: React.FC = () => {
                         <Play className="w-3.5 h-3.5" />
                       </button>
                       <button
-                        onClick={() => deleteUserCommand(uc.id)}
+                        onClick={() => setPendingDeleteCmd(uc)}
                         title="Delete command"
                         aria-label={`Delete ${uc.label}`}
                         className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 transition-colors cursor-pointer"
@@ -685,13 +687,27 @@ export const CommandPalette: React.FC = () => {
         </div>
       )}
 
+      {pendingDeleteCmd && (
+        <ConfirmModal
+          title="Delete Command?"
+          message={`Are you sure you want to delete the custom command "${pendingDeleteCmd.label}"?`}
+          confirmLabel="Delete Command"
+          isDanger={true}
+          onConfirm={() => {
+            deleteUserCommand(pendingDeleteCmd.id);
+            setPendingDeleteCmd(null);
+            addToast({ type: 'success', title: 'Command deleted' });
+          }}
+          onClose={() => setPendingDeleteCmd(null)}
+        />
+      )}
+
       {showFolderModal && (
         <InputModal
           title="Open New Pane in Folder"
           placeholder="/path/to/project"
           initialValue=""
           onBrowse={(path) => {
-            // Native picker selected a folder — open the pane immediately.
             const trimmed = path.trim();
             if (trimmed && focusedPaneId) {
               const ok = splitPane(focusedPaneId, 'horizontal');

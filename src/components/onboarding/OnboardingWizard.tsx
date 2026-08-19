@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { OnboardingProgressBar } from './OnboardingProgressBar';
 import { OnboardingFooter } from './OnboardingFooter';
@@ -6,19 +6,21 @@ import { CinematicSplashScreen } from '@/components/splash/CinematicSplashScreen
 import { LayoutStudio } from '@/components/studio/LayoutStudio';
 import { AgentLauncher } from '@/components/agent/AgentLauncher';
 import { WorkspaceCustomizer } from '@/components/customizer/WorkspaceCustomizer';
+import { ConfirmModal } from '@/components/ui/ConfirmModal';
 
 export const OnboardingWizard: React.FC = () => {
   const isOpen = useOnboardingStore((s) => s.isOpen);
   const currentStep = useOnboardingStore((s) => s.currentStep);
   const setStep = useOnboardingStore((s) => s.setStep);
   const skipToDefault = useOnboardingStore((s) => s.skipToDefault);
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
       if (e.key === 'Escape' && currentStep !== 'splash') {
         e.preventDefault();
-        skipToDefault();
+        setShowSkipConfirm(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -73,6 +75,20 @@ export const OnboardingWizard: React.FC = () => {
           {}
           <OnboardingFooter />
         </div>
+      )}
+
+      {showSkipConfirm && (
+        <ConfirmModal
+          title="Skip setup?"
+          message="Your agent configuration won't be saved."
+          confirmLabel="Skip Setup"
+          isDanger={true}
+          onConfirm={() => {
+            setShowSkipConfirm(false);
+            skipToDefault();
+          }}
+          onClose={() => setShowSkipConfirm(false)}
+        />
       )}
     </div>
   );

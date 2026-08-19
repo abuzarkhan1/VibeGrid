@@ -208,13 +208,13 @@ export function buildAgentCommand(config: import('@/types/agent').PaneAgentConfi
   const bin = config.binaryPath || (config.agentId === 'claude-code' ? 'claude' : config.agentId === 'antigravity' ? 'agy' : config.agentId);
   parts.push(bin);
 
-  if (config.agentId === 'aider' && config.model) {
-    parts.push(`--model ${config.model}`);
-  } else if (config.agentId === 'ollama') {
+  if (config.agentId === 'ollama') {
     parts.push('run');
     if (config.model) {
       parts.push(config.model);
     }
+  } else if (config.model) {
+    parts.push(`--model ${config.model}`);
   }
 
   if (config.cliArgs && config.cliArgs.length > 0) {

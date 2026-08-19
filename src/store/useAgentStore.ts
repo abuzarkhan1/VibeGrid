@@ -89,6 +89,14 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
   },
 
   applyRolePod: (pod, paneNodeIds) => {
+    if (pod.paneCount > paneNodeIds.length) {
+      useUIStore.getState().addToast({
+        type: 'warning',
+        title: 'Not enough panes',
+        description: `This pod needs ${pod.paneCount} panes. You only have ${paneNodeIds.length}. Add more panes first.`,
+      });
+      return;
+    }
     const newAssignments: Record<string, PaneAgentConfig> = {};
     pod.assignments.forEach((assignment, index) => {
       const paneNodeId = paneNodeIds[index];

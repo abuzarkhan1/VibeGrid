@@ -3,6 +3,7 @@ import { usePaneStore, getTerminalNodes, killPanesInLayout } from './usePaneStor
 import { PaneNode, TerminalNode, PresetCount } from '@/types/layout';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri } from '@/lib/tauri';
+import { useUIStore } from './useUIStore';
 
 export interface WorkspaceOverrides {
   themeName?: string;
@@ -545,6 +546,11 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       }
     } catch (e) {
       console.warn('[WorkspaceStore] Load workspaces notice:', e);
+      useUIStore.getState().addToast({
+        type: 'error',
+        title: 'Workspaces could not be loaded',
+        description: 'Your workspace data may be corrupted. A new default workspace has been created.',
+      });
     } finally {
       set({ isLoading: false });
     }

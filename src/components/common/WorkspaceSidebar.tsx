@@ -62,6 +62,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
     setExpandedFolders((prev) => ({ ...prev, [id]: prev[id] === undefined ? false : !prev[id] }));
   };
 
+  const handleWorkspaceClick = (id: string) => {
+    switchWorkspace(id);
+    setExpandedFolders((prev) => ({ ...prev, [id]: true }));
+  };
+
   const handleNewWorkspace = () => {
     setShowCreateModal(true);
   };
@@ -217,16 +222,28 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
               <div key={ws.id} className="space-y-1">
                 {/* Project Folder Row (Exact same pill UI/UX as New Workspace) */}
                 <div
-                  onClick={() => toggleFolder(ws.id)}
+                  onClick={() => handleWorkspaceClick(ws.id)}
                   className={`group relative flex items-center justify-between h-10 px-3.5 rounded-2xl text-[13px] transition-all cursor-pointer ${
-                    isWsActive && activeViewMode === 'hub'
+                    isWsActive
                       ? 'text-white bg-white/[0.06] border border-white/10 font-normal'
                       : 'text-white/50 hover:text-white bg-transparent hover:bg-white/[0.03] border border-transparent hover:border-white/10'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 truncate">
+                  <div className="flex items-center gap-2 truncate">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFolder(ws.id);
+                      }}
+                      className="p-0.5 rounded hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                      title={isFolderOpen ? 'Collapse thread' : 'Expand thread'}
+                      aria-label={isFolderOpen ? 'Collapse thread' : 'Expand thread'}
+                    >
+                      <ChevronRight className={`w-3.5 h-3.5 transition-transform ${isFolderOpen ? 'rotate-90 text-white/80' : 'text-white/40'}`} />
+                    </button>
                     <Folder className={`w-4 h-4 shrink-0 transition-colors ${
-                      isWsActive && activeViewMode === 'hub'
+                      isWsActive
                         ? 'text-white'
                         : 'text-white/50 group-hover:text-white'
                     }`} />

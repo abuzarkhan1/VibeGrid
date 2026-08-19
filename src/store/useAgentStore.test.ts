@@ -139,7 +139,7 @@ describe('useAgentStore', () => {
       initialPrompt: 'Fix failing tests in auth.rs',
       autoStart: true,
     });
-    expect(claudeCmd).toBe('claude --dangerously-skip-permissions "Fix failing tests in auth.rs"');
+    expect(claudeCmd).toBe('claude --model claude-3-7-sonnet --dangerously-skip-permissions "Fix failing tests in auth.rs"');
 
     const aiderCmd = buildAgentCommand({
       agentId: 'aider',
