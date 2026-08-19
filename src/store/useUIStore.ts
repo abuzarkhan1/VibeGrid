@@ -84,15 +84,11 @@ interface UIState {
   /** Unified "max panes reached" toast (audit: 3 hand-rolled copies drifted). */
   notifyMaxPanes: () => void;
 
-  // View state & navigation matching desktop design layout
+  // View state matching desktop design layout
   activeViewMode: 'hub' | 'grid';
   activeThreadTitle: string;
-  historyStack: ('hub' | 'grid')[];
-  historyPointer: number;
   setActiveViewMode: (mode: 'hub' | 'grid') => void;
   setActiveThreadTitle: (title: string) => void;
-  navigateBack: () => void;
-  navigateForward: () => void;
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -111,49 +107,11 @@ export const useUIStore = create<UIState>((set, get) => ({
   isCreateWsModalOpen: false,
 
   activeViewMode: 'hub',
-  activeThreadTitle: 'Codex UI Design Alignment',
-  historyStack: ['hub'],
-  historyPointer: 0,
+  activeThreadTitle: 'VibeGrid',
 
-  setActiveViewMode: (mode: 'hub' | 'grid') => {
-    set((state) => {
-      const nextStack = state.historyStack.slice(0, state.historyPointer + 1);
-      nextStack.push(mode);
-      return {
-        activeViewMode: mode,
-        historyStack: nextStack,
-        historyPointer: nextStack.length - 1,
-      };
-    });
-  },
+  setActiveViewMode: (mode: 'hub' | 'grid') => set({ activeViewMode: mode }),
 
   setActiveThreadTitle: (title: string) => set({ activeThreadTitle: title }),
-
-  navigateBack: () => {
-    set((state) => {
-      if (state.historyPointer > 0) {
-        const nextPointer = state.historyPointer - 1;
-        return {
-          historyPointer: nextPointer,
-          activeViewMode: state.historyStack[nextPointer],
-        };
-      }
-      return state;
-    });
-  },
-
-  navigateForward: () => {
-    set((state) => {
-      if (state.historyPointer < state.historyStack.length - 1) {
-        const nextPointer = state.historyPointer + 1;
-        return {
-          historyPointer: nextPointer,
-          activeViewMode: state.historyStack[nextPointer],
-        };
-      }
-      return state;
-    });
-  },
 
   toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
