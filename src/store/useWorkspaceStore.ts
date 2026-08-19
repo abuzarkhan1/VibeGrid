@@ -14,7 +14,7 @@ export interface WorkspaceOverrides {
   terminalOpacity?: number;
 }
 
-interface Workspace {
+export interface Workspace {
   id: string;
   name: string;
   layout: PaneNode;

@@ -5,7 +5,7 @@ import { useUIStore } from '@/store/useUIStore';
 import { usePaneStore, getTerminalNodes } from '@/store/usePaneStore';
 import { PresetCount } from '@/types/layout';
 import { useSettingsStore, THEMES, UserCommand } from '@/store/useSettingsStore';
-import { useWorkspaceStore } from '@/store/useWorkspaceStore';
+import { useWorkspaceStore, Workspace } from '@/store/useWorkspaceStore';
 import { useKeybindingsStore } from '@/store/useKeybindingsStore';
 import { useVoiceStore } from '@/store/useVoiceStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
@@ -90,6 +90,7 @@ export const CommandPalette: React.FC = () => {
   const [cmdLabel, setCmdLabel] = useState('');
   const [cmdCommand, setCmdCommand] = useState('');
   const [pendingDeleteCmd, setPendingDeleteCmd] = useState<UserCommand | null>(null);
+  const [pendingDeleteWs, setPendingDeleteWs] = useState<Workspace | null>(null);
   const [recents, setRecents] = useState<string[]>(loadRecents);
   const importInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -286,6 +287,15 @@ export const CommandPalette: React.FC = () => {
       action: () => {
         useWorkspaceStore.getState().duplicateWorkspace(ws.id);
         addToast({ type: 'success', title: 'Workspace duplicated' });
+      },
+    })),
+    ...workspaces.map((ws) => ({
+      id: `ws-delete-${ws.id}`,
+      label: workspaces.length === 1 ? `Reset Workspace to Default: ${ws.name}` : `Delete Workspace: ${ws.name}`,
+      category: 'Workspace',
+      icon: <Trash2 className="w-4 h-4 text-rose-400" />,
+      action: () => {
+        setPendingDeleteWs(ws);
       },
     })),
     {
@@ -728,6 +738,29 @@ export const CommandPalette: React.FC = () => {
             addToast({ type: 'success', title: 'Command deleted' });
           }}
           onClose={() => setPendingDeleteCmd(null)}
+        />
+      )}
+
+      {pendingDeleteWs && (
+        <ConfirmModal
+          title={workspaces.length === 1 ? `Reset "${pendingDeleteWs.name}"?` : `Delete "${pendingDeleteWs.name}"?`}
+          message={
+            workspaces.length === 1
+              ? 'This is your only workspace. Deleting it will terminate running processes and reset to a fresh default workspace. Continue?'
+              : `This workspace and its running terminal processes will be permanently deleted. Continue?`
+          }
+          confirmLabel={workspaces.length === 1 ? 'Reset Workspace' : 'Delete Workspace'}
+          isDanger={true}
+          onConfirm={() => {
+            useWorkspaceStore.getState().deleteWorkspace(pendingDeleteWs.id);
+            setPendingDeleteWs(null);
+            addToast({
+              type: 'info',
+              title: workspaces.length === 1 ? 'Workspace Reset' : 'Workspace Deleted',
+              description: `"${pendingDeleteWs.name}" was ${workspaces.length === 1 ? 'reset' : 'deleted'}.`,
+            });
+          }}
+          onClose={() => setPendingDeleteWs(null)}
         />
       )}
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus,
   Folder,
@@ -6,6 +6,7 @@ import {
   Settings,
   Trash2,
   Edit2,
+  Copy,
   Type,
   Palette,
   Terminal as TerminalIcon,
@@ -27,12 +28,19 @@ interface WorkspaceSidebarProps {
   onToggle: () => void;
 }
 
+interface ContextMenuPos {
+  x: number;
+  y: number;
+  wsId: string;
+}
+
 export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onToggle }) => {
   const {
     workspaces,
     activeWorkspaceId,
     isLoading,
     renameWorkspace,
+    duplicateWorkspace,
     deleteWorkspace,
     switchWorkspace,
     createWorkspace,
@@ -58,6 +66,18 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
   const [newWsFolderName, setNewWsFolderName] = useState<string>('');
   const [renameWsId, setRenameWsId] = useState<string | null>(null);
   const [deleteWsId, setDeleteWsId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuPos | null>(null);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClose = () => setContextMenu(null);
+    window.addEventListener('click', handleClose);
+    window.addEventListener('contextmenu', handleClose);
+    return () => {
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('contextmenu', handleClose);
+    };
+  }, [contextMenu]);
 
   const renameTarget = workspaces.find((w) => w.id === renameWsId);
   const deleteTarget = workspaces.find((w) => w.id === deleteWsId);
@@ -268,6 +288,11 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                 {/* Project Folder Row (Exact same pill UI/UX as New Workspace) */}
                 <div
                   onClick={() => handleWorkspaceClick(ws.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({ x: e.clientX, y: e.clientY, wsId: ws.id });
+                  }}
                   className={`group relative flex items-center justify-between h-10 px-3.5 rounded-2xl text-[13px] transition-all cursor-pointer ${
                     isWsActive
                       ? 'text-white bg-white/[0.06] border border-white/10 font-normal'
@@ -295,7 +320,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                     <span className="truncate">{ws.name}</span>
                   </div>
 
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -303,23 +328,36 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
                         setRenameWsId(ws.id);
                       }}
                       title="Rename Project"
-                      className="p-1 rounded-md hover:bg-white/[0.08] text-white/40 hover:text-white transition-colors"
+                      aria-label="Rename Project"
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
                     >
-                      <Edit2 className="w-3 h-3" />
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    {workspaces.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteWsId(ws.id);
-                        }}
-                        title="Delete Project"
-                        className="p-1 rounded-md hover:bg-white/[0.08] text-white/40 hover:text-white transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        duplicateWorkspace(ws.id);
+                        addToast({ type: 'success', title: 'Project Duplicated', description: `Created copy of "${ws.name}".` });
+                      }}
+                      title="Duplicate Project"
+                      aria-label="Duplicate Project"
+                      className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteWsId(ws.id);
+                      }}
+                      title={workspaces.length === 1 ? 'Reset Project to Default' : 'Delete Project'}
+                      aria-label={workspaces.length === 1 ? 'Reset Project to Default' : 'Delete Project'}
+                      className="p-1.5 rounded-lg hover:bg-rose-500/20 text-white/40 hover:text-rose-300 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
@@ -390,15 +428,86 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
         />
       )}
 
+      {/* Right-Click Context Menu */}
+      {contextMenu && (() => {
+        const target = workspaces.find((w) => w.id === contextMenu.wsId);
+        if (!target) return null;
+        return (
+          <div
+            style={{
+              left: Math.min(contextMenu.x, (typeof window !== 'undefined' ? window.innerWidth : 1200) - 180),
+              top: Math.min(contextMenu.y, (typeof window !== 'undefined' ? window.innerHeight : 800) - 200),
+            }}
+            className="fixed z-50 min-w-[170px] bg-[#1a1b26]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1 font-sans text-xs select-none animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-2.5 py-1 text-[10px] font-mono text-white/40 uppercase tracking-wider truncate border-b border-white/5 mb-1">
+              {target.name}
+            </div>
+            <button
+              onClick={() => {
+                switchWorkspace(target.id);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
+            >
+              <Folder className="w-3.5 h-3.5" />
+              <span>Switch to Project</span>
+            </button>
+            <button
+              onClick={() => {
+                setRenameWsId(target.id);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Rename</span>
+            </button>
+            <button
+              onClick={() => {
+                duplicateWorkspace(target.id);
+                setContextMenu(null);
+                addToast({ type: 'success', title: 'Project Duplicated', description: `Created copy of "${target.name}".` });
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors text-left cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Duplicate</span>
+            </button>
+            <div className="h-px bg-white/5 my-1" />
+            <button
+              onClick={() => {
+                setDeleteWsId(target.id);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-rose-400 hover:text-rose-200 hover:bg-rose-500/20 transition-colors text-left cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{workspaces.length === 1 ? 'Reset to Default' : 'Delete Project'}</span>
+            </button>
+          </div>
+        );
+      })()}
+
       {deleteTarget && (
         <ConfirmModal
-          title={`Delete "${deleteTarget.name}"?`}
-          message="This project configuration will be permanently removed. Continue?"
-          confirmLabel="Delete Project"
+          title={workspaces.length === 1 ? `Reset "${deleteTarget.name}"?` : `Delete "${deleteTarget.name}"?`}
+          message={
+            workspaces.length === 1
+              ? 'This is your only workspace. Deleting it will terminate running processes and reset to a fresh default workspace. Continue?'
+              : `This project configuration will be permanently removed. Any active terminal processes in this workspace will be terminated. Continue?`
+          }
+          confirmLabel={workspaces.length === 1 ? 'Reset Project' : 'Delete Project'}
           isDanger={true}
           onConfirm={() => {
             deleteWorkspace(deleteTarget.id);
             setDeleteWsId(null);
+            addToast({
+              type: 'info',
+              title: workspaces.length === 1 ? 'Project Reset' : 'Project Deleted',
+              description: `"${deleteTarget.name}" was ${workspaces.length === 1 ? 'reset' : 'deleted'}.`,
+            });
           }}
           onClose={() => setDeleteWsId(null)}
         />

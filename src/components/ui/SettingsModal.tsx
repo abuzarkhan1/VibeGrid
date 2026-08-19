@@ -1739,9 +1739,18 @@ export const SettingsModal: React.FC = () => {
                 ? `Delete workspace "${deleteTarget.name}"? This will terminate ${deleteRunningCount} running terminal${deleteRunningCount > 1 ? 's' : ''} in it. This action cannot be undone.`
                 : `Delete workspace "${deleteTarget.name}"? This action cannot be undone.`
           }
-          confirmLabel="Delete Workspace"
+          confirmLabel={workspaces.length === 1 ? 'Reset Workspace' : 'Delete Workspace'}
           isDanger={true}
-          onConfirm={() => deleteWorkspace(deleteWsId)}
+          onConfirm={() => {
+            const name = deleteTarget.name;
+            deleteWorkspace(deleteWsId);
+            setDeleteWsId(null);
+            addToast({
+              type: 'info',
+              title: workspaces.length === 1 ? 'Workspace Reset' : 'Workspace Deleted',
+              description: `"${name}" was ${workspaces.length === 1 ? 'reset' : 'deleted'}.`,
+            });
+          }}
           onClose={() => setDeleteWsId(null)}
         />
       )}
