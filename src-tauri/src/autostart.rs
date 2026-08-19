@@ -18,6 +18,9 @@ const LABEL: &str = "com.vibegrid.VibeGrid";
 /// Is VibeGrid currently configured to launch at login?
 /// - macOS/Linux: the autostart file exists.
 /// - Windows: the HKCU Run registry value exists (checked via reg.exe).
+///
+/// Only used by tests to assert state after enable/disable.
+#[cfg(test)]
 pub fn is_enabled() -> bool {
     #[cfg(target_os = "macos")]
     {

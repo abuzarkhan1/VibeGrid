@@ -120,12 +120,6 @@ pub fn persisted_token() -> Option<String> {
     if token.is_empty() { None } else { Some(token) }
 }
 
-/// Last `cap` bytes of `s`, never splitting a UTF-8 character. Used to keep
-/// MCP responses bounded.
-fn tail(s: &str, cap: usize) -> &str {
-    crate::utils::utf8::tail_utf8(s, cap)
-}
-
 /// The `/panes` handler: requires the per-launch bearer token (audit/security:
 /// arbitrary local processes could previously read ALL terminal output — which
 /// can contain secrets — with no authentication), then returns each pane's
@@ -149,7 +143,7 @@ async fn panes_handler(
         .iter()
         .map(|(id, out)| PaneState {
             id: id.clone(),
-            output: tail(out, MCP_OUTPUT_CAP_BYTES).to_string(),
+            output: crate::utils::utf8::tail_utf8(out, MCP_OUTPUT_CAP_BYTES).to_string(),
         })
         .collect();
     (StatusCode::OK, Json(panes))
@@ -299,6 +293,7 @@ mod tests {
 
     #[test]
     fn tail_keeps_last_bytes_without_splitting_utf8() {
+        use crate::utils::utf8::tail_utf8 as tail;
         let s = "hello wörld ünïcode";
         assert_eq!(tail(s, 1000), s); // under cap → unchanged
         let t = tail(s, 6);
