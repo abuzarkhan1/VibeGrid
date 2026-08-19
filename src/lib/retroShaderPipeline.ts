@@ -145,9 +145,6 @@ void main() {
 }
 `;
 
-/**
- * WebGL Retro Shader Pipeline Controller
- */
 export class RetroShaderRenderer {
   private canvas: HTMLCanvasElement;
   private gl: WebGLRenderingContext | null = null;
@@ -195,7 +192,6 @@ export class RetroShaderRenderer {
     this.program = program;
     gl.useProgram(program);
 
-    // Full-screen quad
     const positions = new Float32Array([
       -1, -1,
        1, -1,

@@ -15,4 +15,3 @@ export interface LayoutPresetDefinition {
   recommendedRatio: RatioPreset;
   generator: (ratio?: number) => PaneNode;
 }
-

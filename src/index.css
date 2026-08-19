@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* ── Core Semantic Variables ── */
+
     --color-bg: #1A1B26;
     --color-bg-rgb: 9 10 15;
     --color-surface: #1A1B26;
@@ -22,26 +22,22 @@
     --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
     color-scheme: dark;
 
-    /* ── Functional Glassmorphism Density Scale ── */
-    --glass-density-1: rgba(255, 255, 255, 0.03); /* Base OS/Desktop layer */
-    --glass-density-2: rgba(255, 255, 255, 0.06); /* Sidebar, Background panels */
-    --glass-density-3: rgba(255, 255, 255, 0.10); /* Active cards, Hover states */
-    --glass-density-4: rgba(255, 255, 255, 0.15); /* Code editor / Diff background */
-    --glass-density-5: rgba(255, 255, 255, 0.25); /* Modals, Dropdowns, Tooltips */
+    --glass-density-1: rgba(255, 255, 255, 0.03);
+    --glass-density-2: rgba(255, 255, 255, 0.06);
+    --glass-density-3: rgba(255, 255, 255, 0.10);
+    --glass-density-4: rgba(255, 255, 255, 0.15);
+    --glass-density-5: rgba(255, 255, 255, 0.25);
 
-    /* Glass Refraction Edges */
-    --glass-border-light: rgba(255, 255, 255, 0.15); /* Top and Left */
-    --glass-border-dark: rgba(0, 0, 0, 0.30);       /* Bottom and Right */
-    --glass-edge-effect: 
+    --glass-border-light: rgba(255, 255, 255, 0.15);
+    --glass-border-dark: rgba(0, 0, 0, 0.30);
+    --glass-edge-effect:
       inset 1px 1px 0px 0px var(--glass-border-light),
       inset -1px -1px 0px 0px var(--glass-border-dark);
 
-    /* Solid Ink Tokens (Opaque High-Contrast) */
-    --ink-primary: #F3F4F6;      /* 95% opacity white for main text */
-    --ink-secondary: #9CA3AF;    /* 60% opacity white for metadata */
-    --ink-muted: #6B7280;        /* 40% opacity white for disabled/muted */
+    --ink-primary: #F3F4F6;
+    --ink-secondary: #9CA3AF;
+    --ink-muted: #6B7280;
 
-    /* Pure White Accents & Glow */
     --accent-primary: #FFFFFF;
     --color-accent: #FFFFFF;
     --color-accent-secondary: #FFFFFF;
@@ -49,10 +45,9 @@
     --color-accent-rgba: 255, 255, 255;
     --accent-glow: rgba(255, 255, 255, 0.15);
 
-    /* Semantic Diff Tokens */
-    --diff-add-text: #4ADE80;               /* Solid bright green for text */
+    --diff-add-text: #4ADE80;
     --color-diff-add: #4ADE80;
-    --diff-remove-text: #F87171;            /* Solid bright red for text */
+    --diff-remove-text: #F87171;
     --color-diff-remove: #F87171;
   }
 
@@ -96,11 +91,6 @@
   }
 }
 
-/* ================================================================
-   CUSTOMIZATION AUDIT: global appearance classes
-   ================================================================ */
-
-/* Master animation switch: applied to <html> when animations are disabled. */
 .vibegrid-no-anim *,
 .vibegrid-no-anim *::before,
 .vibegrid-no-anim *::after {
@@ -117,7 +107,6 @@
   }
 }
 
-/* Compact chrome: slightly tighter header/status/pane padding. */
 .vibegrid-compact header {
   height: 36px !important;
   min-height: 36px;
@@ -129,7 +118,6 @@
   min-height: 24px;
 }
 
-/* Fade-in animations */
 @keyframes fade-in-up {
   0%   { opacity: 0; transform: translateY(8px); }
   100% { opacity: 1; transform: translateY(0); }
@@ -142,9 +130,6 @@
   .animate-fade-in { animation: none !important; }
 }
 
-/* ================================================================
-   Custom styling for Allotment dividers & containers
-   ================================================================ */
 .vibegrid-allotment {
   --separator-border: var(--color-border, rgba(255, 255, 255, 0.08));
   --focus-border: rgba(255, 255, 255, 0.3);
@@ -172,7 +157,6 @@
   border-radius: 2px;
 }
 
-/* Custom thin glass scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -191,7 +175,6 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
-/* xterm.js custom styling overrides */
 .xterm {
   padding: 4px;
 }
@@ -209,7 +192,6 @@
   background: rgba(255, 255, 255, 0.22);
 }
 
-/* Font ligatures for monospace fonts */
 .font-ligatures .xterm-rows {
   font-variant-ligatures: normal;
   font-feature-settings: "liga" 1, "calt" 1;
@@ -220,9 +202,6 @@
   font-feature-settings: "liga" 1, "calt" 1;
 }
 
-/* ================================================================
-   PANE FRAME — explicit pane boundaries with clean white focus
-   ================================================================ */
 .vg-pane-frame {
   border-radius: var(--pane-radius, 10px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -235,9 +214,6 @@
   box-shadow: 0 0 20px rgba(255, 255, 255, 0.12) !important;
 }
 
-/* ================================================================
-   LIGHT CHROME ADAPTATIONS
-   ================================================================ */
 html.vibegrid-light {
   --glass-density-1: rgba(0, 0, 0, 0.02);
   --glass-density-2: rgba(0, 0, 0, 0.04);
@@ -253,13 +229,6 @@ html.vibegrid-light {
   --diff-remove-text: #B91C1C;
 }
 
-/* ================================================================
-   CUSTOM SCROLLBAR UTILITY — mirrors the global thin glass scrollbar
-   styles but scoped to an explicit class so components can opt-in.
-   Referenced by SettingsModal, AgentSidebar, and similar scrollable
-   panels that need the styled scrollbar without relying on the global
-   ::-webkit-scrollbar selector being present.
-   ================================================================ */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;

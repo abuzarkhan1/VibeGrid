@@ -8,10 +8,9 @@ export const LayoutStudio: React.FC = () => {
   const draftLayout = useOnboardingStore((s) => s.draftLayout);
   const setPresetSelected = useOnboardingStore((s) => s.setPresetSelected);
 
-  // Keyboard navigation for presets 1..8
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture when typing in text inputs or holding modifier keys
+
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
 
@@ -31,7 +30,7 @@ export const LayoutStudio: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-5 w-full max-w-4xl mx-auto py-1">
-      {/* Header section */}
+      {}
       <div>
         <div className="flex items-center gap-2 text-violet-400 font-mono text-xs font-semibold uppercase tracking-wider mb-1">
           <LayoutGrid className="w-4 h-4" />
@@ -45,10 +44,10 @@ export const LayoutStudio: React.FC = () => {
         </p>
       </div>
 
-      {/* Preset Grid Template Selector */}
+      {}
       <GridTemplatePicker />
 
-      {/* Live Grid Interactive Preview */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-[11px] font-semibold text-white/70 uppercase tracking-wider font-mono flex items-center gap-1.5">

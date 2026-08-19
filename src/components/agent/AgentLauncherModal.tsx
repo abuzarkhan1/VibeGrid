@@ -62,7 +62,6 @@ export const AgentLauncherModal: React.FC<AgentLauncherModalProps> = ({
   const terminalIds = terminals.map((t) => t.id);
   const addToast = useUIStore((s) => s.addToast);
 
-  // Workspace environment vault
   const workspaceEnv = useOnboardingStore((s) => s.workspaceEnv);
   const setWorkspaceEnv = useOnboardingStore((s) => s.setWorkspaceEnv);
 

@@ -26,7 +26,6 @@ export interface PaneAgentConfig {
   autoStart: boolean;
 }
 
-
 export interface HeterogeneousRolePod {
   id: string;
   name: string;

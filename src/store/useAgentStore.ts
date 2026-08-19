@@ -15,7 +15,6 @@ interface AgentStoreState {
   selectedAutoStart: boolean;
   paneAssignments: Record<string, PaneAgentConfig>;
 
-  // Actions
   openLauncher: () => void;
   closeLauncher: () => void;
   setSelectedAgent: (id: string) => void;
@@ -147,12 +146,10 @@ export const useAgentStore = create<AgentStoreState>((set, get) => ({
       const config = paneAssignments[term.id];
       if (!config) continue;
 
-      // Update pane title in store
       if (config.name) {
         usePaneStore.getState().setPaneTitle(term.id, config.name);
       }
 
-      // If autoStart is enabled and terminal has active PTY
       if (config.autoStart && config.agentId !== 'shell' && term.paneId) {
         const cmd = buildAgentCommand(config);
         if (cmd) {

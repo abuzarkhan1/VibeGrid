@@ -18,7 +18,6 @@ import {
   listenDictationError,
 } from '@/lib/tauri';
 
-// ── Shared Web Audio (gap 15: reuse one AudioContext instead of one per sound) ──
 let sharedAudioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
@@ -26,7 +25,7 @@ function getAudioContext(): AudioContext | null {
     if (!sharedAudioCtx) {
       sharedAudioCtx = new AudioContext();
     }
-    // Autoplay policies may suspend the context; resume on demand.
+
     if (sharedAudioCtx.state === 'suspended') {
       sharedAudioCtx.resume().catch(() => {});
     }
@@ -36,7 +35,6 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
-/** Play a soft notification tone to confirm dictation was inserted. */
 function playInsertSound() {
   const ctx = getAudioContext();
   if (!ctx) return;
@@ -46,7 +44,6 @@ function playInsertSound() {
     g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
     g.connect(ctx.destination);
 
-    // Two-tone ding: 880 Hz + 1320 Hz (pleasant A5/E6 chime)
     for (const freq of [880, 1320]) {
       const o = ctx.createOscillator();
       o.type = 'sine';
@@ -56,11 +53,10 @@ function playInsertSound() {
       o.stop(ctx.currentTime + 0.35);
     }
   } catch {
-    // AudioContext unavailable — silence is fine.
+
   }
 }
 
-/** Play a short error buzz when dictation fails. */
 function playErrorSound() {
   const ctx = getAudioContext();
   if (!ctx) return;
@@ -78,11 +74,10 @@ function playErrorSound() {
     o.start(ctx.currentTime);
     o.stop(ctx.currentTime + 0.3);
   } catch {
-    // AudioContext unavailable.
+
   }
 }
 
-/** Map a mic/start-recording error to actionable guidance (gap 20). */
 function describeMicError(e: unknown): string {
   const msg = String(e);
   const lower = msg.toLowerCase();
@@ -105,17 +100,14 @@ export function useVoiceToTerminal() {
   const [isModelReady, setIsModelReady] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const listeningRef = useRef(false);
-  // Guards: Enter/Esc presses must not double-fire while Rust auto-stop is running.
+
   const insertInFlightRef = useRef(false);
   const cancelInFlightRef = useRef(false);
-  // True only after a manual path (Enter / toggle-stop) actually inserted text.
-  // The auto-stop watcher checks this instead of insertInFlightRef, so a manual
-  // path that LOST the IPC race ("No audio captured" — the watcher consumed the
-  // audio first) never suppresses the watcher's own dictation-result event.
+
   const committedRef = useRef(false);
-  // One persistent toast for the whole download — updated in place, not stacked.
+
   const progressToastRef = useRef<string | null>(null);
-  // Clears the 'inserted' flash after a moment (gap 3)
+
   const flashTimerRef = useRef<number | null>(null);
 
   const setListeningState = useCallback(
@@ -123,9 +115,7 @@ export function useVoiceToTerminal() {
       listeningRef.current = v;
       setListening(v);
       if (!v) setLevel(0);
-      // A fresh recording starts from an un-committed state: clear any pending
-      // 'inserted' flash timer so a quick re-dictation never blanks the
-      // indicator mid-listen.
+
       if (v) {
         committedRef.current = false;
         if (flashTimerRef.current) {
@@ -137,7 +127,6 @@ export function useVoiceToTerminal() {
     [setListening, setLevel]
   );
 
-  // Check model status on mount + subscribe to download progress
   useEffect(() => {
     let cancelled = false;
     let unlisten: (() => void) | undefined;

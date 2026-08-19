@@ -46,8 +46,6 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
 
-  // Memoize per-line style derivation so parent re-renders don't recompute
-  // row styles for every line when diffLines itself hasn't changed.
   const renderedRows = useMemo(
     () =>
       diffLines.map((line, idx) => {
@@ -88,7 +86,7 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
 
   return (
     <div className="flex flex-col h-full w-full bg-black select-none font-sans overflow-hidden">
-      {/* Diff Header Bar */}
+      {}
       <div className="h-10 px-3.5 bg-black/40 backdrop-blur-xl border-b border-white/10 flex items-center justify-between shrink-0 z-10">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-white/10 border border-white/20 text-white/80">
@@ -104,7 +102,7 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
           </span>
         </div>
 
-        {/* Actions */}
+        {}
         <div className="flex items-center gap-1.5">
           <button
             onClick={handleCopyDiff}
@@ -125,7 +123,7 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
         </div>
       </div>
 
-      {/* Main Diff Content */}
+      {}
       <div className="flex-1 overflow-auto p-3 font-mono text-[12px] leading-relaxed">
         <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl bg-black/40 backdrop-blur-md">
           <table className="w-full border-collapse text-left font-mono">
@@ -166,7 +164,7 @@ export const ContentAwareDiffViewer: React.FC<ContentAwareDiffViewerProps> = ({
         </div>
       </div>
 
-      {/* Diff Footer Status */}
+      {}
       <div className="h-7 px-3.5 bg-black/40 backdrop-blur-xl border-t border-white/10 flex items-center justify-between text-[11px] text-white/40 font-mono shrink-0">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-white/80" />

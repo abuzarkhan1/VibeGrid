@@ -23,8 +23,7 @@ pub fn voice_model_status(app: AppHandle, state: State<'_, AppState>) -> Result<
 
 #[tauri::command]
 pub async fn voice_ensure_model(app: AppHandle, state: State<'_, AppState>) -> Result<String, String> {
-    // Download (or confirm) the model on a blocking thread so the async runtime
-    // is not stalled by a multi-MB download.
+
     let handle = app.clone();
     let speech = state.speech.clone();
     tauri::async_runtime::spawn_blocking(move || speech.ensure_model(&handle))
@@ -38,14 +37,10 @@ pub fn voice_start_recording(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    // Audit find 6: resolve/validate the model path BEFORE opening the mic. If
-    // this failed after start_recording, the command would error but the mic
-    // would keep capturing with no auto-stop watcher and no listening state on
-    // the frontend — leaving it open until the app exits.
+
     let model = state.speech.model_path(&app)?;
     state.speech.start_recording()?;
-    // Spawn the watcher that streams audio levels to the UI and auto-commits
-    // after silence.
+
     SpeechManager::spawn_auto_stop_watcher(app, Arc::clone(&state.speech), model);
     Ok(())
 }
@@ -61,8 +56,7 @@ pub async fn voice_stop_recording(
     app: AppHandle,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    // Resolve the model path (cheap), then run Whisper inference on a blocking
-    // thread so the main thread / UI is never frozen during transcription.
+
     let model = state.speech.model_path(&app)?;
     let speech = state.speech.clone();
     tauri::async_runtime::spawn_blocking(move || speech.stop_and_transcribe(&model))
@@ -70,32 +64,27 @@ pub async fn voice_stop_recording(
         .map_err(|e| format!("Transcription task failed: {e}"))?
 }
 
-/// Configure the auto-stop silence timeout (ms) — gap 10.
 #[tauri::command]
 pub fn voice_set_silence_timeout(state: State<'_, AppState>, ms: u64) -> u64 {
     state.speech.set_silence_timeout_ms(ms)
 }
 
-/// Configure the Whisper transcription language ('auto' = auto-detect) — audit C28.
 #[tauri::command]
 pub fn voice_set_language(state: State<'_, AppState>, language: String) -> String {
     state.speech.set_language(language)
 }
 
-/// Configure the Whisper model size (tiny | base | small | medium) — audit C28.
 #[tauri::command]
 pub fn voice_set_model_size(state: State<'_, AppState>, size: String) -> String {
     state.speech.set_model_size(size)
 }
 
-/// Prefer a specific microphone by name ('' = system default) — gap 14.
 #[tauri::command]
 pub fn voice_set_input_device(state: State<'_, AppState>, name: String) -> Result<(), String> {
     state.speech.set_input_device(name);
     Ok(())
 }
 
-/// List available microphone names for the Settings dropdown — gap 14.
 #[tauri::command]
 pub fn voice_list_input_devices() -> Vec<String> {
     SpeechManager::list_input_devices()

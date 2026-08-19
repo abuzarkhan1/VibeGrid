@@ -19,8 +19,7 @@ interface TerminalContextMenuProps {
 export const TerminalContextMenu: React.FC<TerminalContextMenuProps> = ({ x, y, items, onClose }) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  // Keep the menu inside the viewport
-  useEffect(() => {  
+  useEffect(() => {
     const el = ref.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();

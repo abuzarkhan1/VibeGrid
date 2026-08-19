@@ -18,7 +18,7 @@ export const AgentLauncher: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto py-2 select-none">
-      {/* Step Header */}
+      {}
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 text-white/60 font-mono text-xs font-semibold uppercase tracking-wider mb-1">

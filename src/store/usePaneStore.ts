@@ -5,11 +5,6 @@ import { useSettingsStore } from './useSettingsStore';
 
 export type { PresetCount } from '@/types/layout';
 
-// Workspace isolation: PTYs are killed ONLY by explicit destructive actions
-// (closePane / shrinking a layout preset / resetLayout / deleteWorkspace).
-// Switching workspaces never kills, and EXPANDING a preset grid never kills —
-// existing terminals (with their live paneIds) are kept and only the missing
-// panes are added alongside them.
 function killPanesInLayout(layout: PaneNode) {
   for (const t of getTerminalNodes(layout)) {
     if (t.paneId) killPty(t.paneId).catch(() => {});
@@ -36,20 +31,9 @@ interface PaneState {
   maxPanes: number;
   layoutMode: 'preset' | 'custom';
   presetCount: PresetCount;
-  /**
-   * Monotonic generation counter bumped on every STRUCTURAL layout change
-   * (preset re-grid, split, close, reset). App.tsx keys the root GridRenderer
-   * on it, forcing a full remount of the Allotment tree. This is the only
-   * reliable fix for allotment v1's in-place restructure bug: when the same
-   * Allotment component instance receives a deeper/taller child tree (e.g.
-   * preset 6→9 changes the nesting depth), it keeps stale internal sizes and
-   * collapses panes to zero — reset()/ResizeObserver cannot recover it, but a
-   * fresh mount always measures correctly. Terminals re-attach to their live
-   * PTY paneIds on remount (workspace-switch path), so no shell is lost.
-   */
+
   gridVersion: number;
 
-  // Actions
   splitPane: (targetId: string, direction: SplitDirection) => boolean;
   closePane: (targetId: string) => void;
   setRatio: (splitId: string, ratio: number) => void;
@@ -57,17 +41,17 @@ interface PaneState {
   setPanePtyId: (nodeId: string, ptyPaneId: string) => void;
   setPaneTitle: (nodeId: string, title: string) => void;
   setPaneCwd: (nodeId: string, cwd: string) => void;
-  /** Per-pane shell override (audit: `shell` field was dead — now wired). */
+
   setPaneShell: (nodeId: string, shell: string) => void;
-  /** Per-pane appearance overrides (customization audit C13). */
+
   setPaneAppearance: (nodeId: string, patch: PaneAppearance) => void;
-  /** Remove ALL per-pane appearance overrides for a pane (C13). */
+
   clearPaneAppearance: (nodeId: string) => void;
-  /** Swap the content of two terminal panes (audit: pane swap was MISSING). */
+
   swapPanes: (idA: string, idB: string) => void;
   toggleMaximize: (id?: string) => void;
   navigateFocus: (direction: 'left' | 'right' | 'up' | 'down' | 'next' | 'prev') => void;
-  /** 0-based tree-order index of a terminal node (per-pane identity cues). */
+
   getPaneIndex: (nodeId: string) => number;
   setLayoutPreset: (count: PresetCount) => void;
   resetLayout: () => void;

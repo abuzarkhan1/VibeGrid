@@ -4,10 +4,6 @@ import { PaneNode, TerminalNode, PresetCount } from '@/types/layout';
 import { invoke } from '@tauri-apps/api/core';
 import { isTauri } from '@/lib/tauri';
 
-/** Per-workspace settings overrides (customization audit C12). Each field is
- *  optional; an absent field falls back to the global setting. Persisted with
- *  the workspace file and applied to the terminal panes of that workspace
- *  only. Only fields a user actively overrides are present in the object. */
 export interface WorkspaceOverrides {
   themeName?: string;
   fontSize?: number;
@@ -23,23 +19,15 @@ interface Workspace {
   layout: PaneNode;
   createdAt: number;
   updatedAt: number;
-  /** On-disk schema version (audit improvement) — kept in sync with Rust. */
+
   version: number;
-  /** Per-workspace settings overrides (customization audit C12), persisted to
-   *  disk with the workspace. Absent = use the global settings. */
+
   overrides?: WorkspaceOverrides;
-  /** Optional emoji badge shown in the sidebar (customization audit C23). */
+
   emoji?: string;
-  /** Soft-delete (customization audit C23): archived workspaces keep their
-   *  files and running terminals but leave the active sidebar list. */
+
   archived?: boolean;
-  /**
-   * In-memory-only view state captured when the workspace is left, restored
-   * when it is switched back to (workspace isolation): which pane was focused,
-   * whether one was maximized, and the grid mode/preset identity so preset
-   * grids come back as presets (not as custom split trees). Not persisted to
-   * disk — paneIds don't survive a restart, so these ids would be stale.
-   */
+
   view?: {
     focusedPaneId: string | null;
     maximizedPaneId: string | null;
@@ -53,25 +41,19 @@ interface WorkspaceState {
   activeWorkspaceId: string;
   isLoading: boolean;
 
-  // Actions
   createWorkspace: (name: string, opts?: { activate?: boolean }) => string;
   switchWorkspace: (id: string) => void;
   renameWorkspace: (id: string, newName: string) => void;
   deleteWorkspace: (id: string) => void;
-  /** Duplicate a workspace's layout into a new workspace (fresh shells — the
-   * copy is sanitized so it never shares the original's live paneIds). UX
-   * audit P3: no way to stage a copy of a workspace before. */
+
   duplicateWorkspace: (id: string) => string;
-  /** Set/clear per-workspace settings overrides (customization audit C12).
-   *  Pass {} or null to clear. Persists with the workspace file. */
+
   setWorkspaceOverrides: (id: string, overrides: WorkspaceOverrides | null) => void;
-  /** Set the sidebar emoji badge (customization audit C23). '' clears it. */
+
   setWorkspaceEmoji: (id: string, emoji: string) => void;
-  /** Archive / unarchive a workspace (customization audit C23). Archived
-   *  workspaces leave the active list but keep their files + terminals. */
+
   toggleArchive: (id: string) => void;
-  /** A brand-new empty workspace (customization audit L16 — the fresh default
-   *  that replaces the last workspace when it is deleted). */
+
   freshDefaultWorkspace: () => Workspace;
   loadWorkspaces: () => Promise<void>;
   saveCurrentWorkspace: () => Promise<void>;
@@ -79,10 +61,6 @@ interface WorkspaceState {
 
 const defaultWorkspaceId = 'default-workspace';
 
-// Collision-proof workspace id: two workspaces created in the same millisecond
-// used to collide on `ws-${Date.now()}` (audit: create+duplicate in the same
-// tick silently overwrote one file). Adds a random suffix. Charset stays
-// [a-zA-Z0-9_-] to match the Rust-side is_safe_id validation.
 function newWorkspaceId(): string {
   return `ws-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }

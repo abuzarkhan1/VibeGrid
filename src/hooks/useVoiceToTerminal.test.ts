@@ -26,7 +26,7 @@ describe('isTypingTarget', () => {
   it('returns false for xterm\'s hidden helper textarea (the always-focused terminal input)', () => {
     const textarea = document.createElement('textarea');
     textarea.className = 'xterm-helper-textarea';
-    // Even though it is a TEXTAREA, xterm\'s hidden input must not block the voice shortcut.
+
     expect(isTypingTarget(textarea)).toBe(false);
   });
 
@@ -65,7 +65,7 @@ describe('barHeights', () => {
   it('keeps a small idle shimmer at level 0 and respects the 3px floor', () => {
     const bars = barHeights(0, 24);
     expect(bars.every((h) => h >= 3)).toBe(true);
-    // Idle shimmer stays low (the dome envelope caps it well under speech levels).
+
     expect(Math.max(...bars)).toBeLessThan(8);
   });
 
@@ -79,12 +79,12 @@ describe('barHeights', () => {
   it('scales heights with level and stays deterministic', () => {
     const low = barHeights(0.1, 24);
     const high = barHeights(1, 24);
-    // Every bar is taller (or equal) at a higher level…
+
     expect(high.every((h, i) => h >= low[i])).toBe(true);
-    // …and the peak stays within bounds.
+
     expect(Math.max(...high)).toBeLessThanOrEqual(26);
     expect(Math.min(...high)).toBeGreaterThanOrEqual(3);
-    // Deterministic: same input → same output.
+
     expect(barHeights(0.5, 24)).toEqual(barHeights(0.5, 24));
   });
 
@@ -92,7 +92,7 @@ describe('barHeights', () => {
     const t0 = barHeights(0.5, 24, 0);
     const t1 = barHeights(0.5, 24, 0.3);
     const t2 = barHeights(0.5, 24, 0.6);
-    // A traveling wave must actually change bar heights as time advances.
+
     expect(t0).not.toEqual(t1);
     expect(t1).not.toEqual(t2);
     expect(t0).not.toEqual(t2);

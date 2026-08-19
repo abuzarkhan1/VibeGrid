@@ -16,19 +16,17 @@ describe('VibeGrid Keybindings Store', () => {
   });
 
   it('rejects an exact conflict with another binding', () => {
-    // 'open-settings' tries to take split-horizontal's Mod+D → rejected
+
     const ok = useKeybindingsStore.getState().updateKeybinding('open-settings', 'Mod+D');
     expect(ok).toBe(false);
     expect(useKeybindingsStore.getState().keybindings['open-settings'].currentKey).toBe('Mod+,');
   });
 
   it('treats Mod / Cmd / Ctrl aliases as the same key (audit find 7)', () => {
-    // 'Ctrl+D' is an alias of split-horizontal's 'Mod+D' — must conflict since
-    // it matches identically at runtime on most platforms.
+
     const ok = useKeybindingsStore.getState().updateKeybinding('open-settings', 'Ctrl+D');
     expect(ok).toBe(false);
 
-    // 'Cmd+D' is the same effective key too.
     const ok2 = useKeybindingsStore.getState().updateKeybinding('command-palette', 'Cmd+D');
     expect(ok2).toBe(false);
   });
@@ -51,7 +49,6 @@ describe('VibeGrid Keybindings Store', () => {
     expect(useKeybindingsStore.getState().matchesKeybinding(ev, 'split-vertical')).toBe(true);
   });
 
-  // Audit: global-summon + voice-toggle are now reassignable store bindings.
   it('defaults the global-summon binding to Mod+Shift+Space', () => {
     expect(useKeybindingsStore.getState().keybindings['global-summon'].defaultKey).toBe('Mod+Shift+Space');
     expect(useKeybindingsStore.getState().keybindings['global-summon'].category).toBe('Global');

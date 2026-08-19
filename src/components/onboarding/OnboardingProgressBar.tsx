@@ -41,7 +41,7 @@ export const OnboardingProgressBar: React.FC<OnboardingProgressBarProps> = ({
 
         return (
           <React.Fragment key={s.id}>
-            {/* Step Node */}
+            {}
             <button
               type="button"
               disabled={(!isPast && !isActive) || s.id === 'splash'}

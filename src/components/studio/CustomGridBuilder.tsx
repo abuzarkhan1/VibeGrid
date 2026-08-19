@@ -44,7 +44,7 @@ export const CustomGridBuilder: React.FC = () => {
       className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-white/[0.02] border border-white/10 p-6 rounded-xl select-none backdrop-blur-md"
       onMouseUp={() => setIsMouseDown(false)}
     >
-      {/* Left: Drag-to-Select Matrix Canvas (5 cols) */}
+      {}
       <div className="lg:col-span-5 flex flex-col items-center justify-center p-4 bg-black/40 border border-white/10 rounded-xl backdrop-blur-md">
         <div className="flex items-center justify-between w-full mb-4">
           <div className="flex items-center gap-2">
@@ -58,7 +58,7 @@ export const CustomGridBuilder: React.FC = () => {
           </span>
         </div>
 
-        {/* 8x8 Interactive Selection Cells with Drag & Hover */}
+        {}
         <div
           className="grid grid-cols-8 gap-1.5 p-3 bg-black/60 border border-white/10 rounded-xl select-none"
           onMouseLeave={() => {

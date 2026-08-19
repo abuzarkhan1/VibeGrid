@@ -43,12 +43,10 @@ export const LayoutStudioModal: React.FC<LayoutStudioModalProps> = ({
     const newRoot = buildActiveLayout();
     const terms = getTerminalNodes(newRoot);
 
-    // 1. Sync custom styling settings into SettingsStore
     useSettingsStore.getState().updateSettings({
       terminalPadding,
     });
 
-    // 2. Inject CSS variable overrides for live sash/gutter and border-radius
     document.documentElement.style.setProperty(
       '--sash-size',
       `${gutterWidth || 1}px`

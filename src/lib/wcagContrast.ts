@@ -1,8 +1,5 @@
 import { WCAGContrastResult } from '@/types/customization';
 
-/**
- * Converts a hex color string (3, 6, or 8 digits, with or without '#') into RGB components.
- */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } {
   let clean = hex.replace('#', '').trim();
   if (clean.length === 3) {
@@ -19,9 +16,6 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } {
   };
 }
 
-/**
- * Calculates standard relative luminance for an sRGB color per WCAG 2.1 specifications.
- */
 export function getRelativeLuminance(r: number, g: number, b: number): number {
   const [rs, gs, bs] = [r, g, b].map((val) => {
     const s = val / 255;
@@ -30,10 +24,6 @@ export function getRelativeLuminance(r: number, g: number, b: number): number {
   return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 }
 
-/**
- * Computes the WCAG contrast ratio between two colors (e.g. text foreground and terminal background).
- * Formula: (L1 + 0.05) / (L2 + 0.05), where L1 is the lighter color luminance.
- */
 export function calculateContrastRatio(fgHex: string, bgHex: string): number {
   const fg = hexToRgb(fgHex);
   const bg = hexToRgb(bgHex);
@@ -44,9 +34,6 @@ export function calculateContrastRatio(fgHex: string, bgHex: string): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-/**
- * Returns full WCAG 2.1 validation breakdown for accessibility scorecards.
- */
 export function evaluateWCAG(fgHex: string, bgHex: string): WCAGContrastResult {
   const ratio = calculateContrastRatio(fgHex, bgHex);
   const rounded = Math.round(ratio * 10) / 10;

@@ -31,7 +31,6 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     expect(screen.getByLabelText(/Launch Screen/i)).toBeTruthy();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('VibeGrid');
 
-    // Skip splash using keyboard Space
     fireEvent.keyDown(window, { key: 'Space' });
 
     await waitFor(() => {
@@ -47,14 +46,12 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     expect(screen.getByText('AI Pair')).toBeTruthy();
     expect(screen.getByText('Quad Swarm')).toBeTruthy();
 
-    // Select Quad Swarm preset
     const quadBtn = screen.getByText('Quad Swarm').closest('button');
     expect(quadBtn).toBeTruthy();
     if (quadBtn) fireEvent.click(quadBtn);
 
     expect(useOnboardingStore.getState().presetSelected).toBe(4);
 
-    // Click Continue
     const continueBtn = screen.getByRole('button', { name: /Continue/i });
     fireEvent.click(continueBtn);
 
@@ -68,17 +65,14 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     expect(screen.getByText(/Agent & Provider Engine|AI Agent & Shell Provider/i)).toBeTruthy();
     expect(screen.getByText('Pane Assignment Matrix')).toBeTruthy();
 
-    // Find agent selector comboboxes
     const selects = screen.getAllByRole('combobox');
     expect(selects.length).toBeGreaterThan(0);
     fireEvent.change(selects[0], { target: { value: 'aider' } });
 
-    // Expand first pane config
     const expandButtons = screen.getAllByTitle(/Expand detailed config/i);
     expect(expandButtons.length).toBeGreaterThan(0);
     fireEvent.click(expandButtons[0]);
 
-    // Click Continue
     const continueBtn = screen.getByRole('button', { name: /Continue/i });
     fireEvent.click(continueBtn);
 
@@ -91,13 +85,11 @@ describe('OnboardingWizard End-to-End User Journey', () => {
 
     expect(screen.getByText(/Workspace Studio & Styling|Workspace Identity/i)).toBeTruthy();
 
-    // Change workspace name via placeholder
     const nameInput = screen.getByPlaceholderText('e.g. Fullstack AI Agent Lab');
     fireEvent.change(nameInput, { target: { value: 'Production Nexus' } });
 
     expect(useOnboardingStore.getState().workspaceName).toBe('Production Nexus');
 
-    // Click Launch Workspace
     const launchBtn = screen.getByRole('button', { name: /Launch Workspace/i });
     fireEvent.click(launchBtn);
 
@@ -106,7 +98,6 @@ describe('OnboardingWizard End-to-End User Journey', () => {
       expect(localStorage.getItem(ONBOARDING_COMPLETED_KEY)).toBe('1');
     });
 
-    // Check workspace store created and pane store updated
     const currentWs = useWorkspaceStore.getState().workspaces.find((w) => w.name === 'Production Nexus');
     expect(currentWs).toBeDefined();
     expect(usePaneStore.getState().root).toBeDefined();
@@ -129,12 +120,10 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     useOnboardingStore.setState({ currentStep: 'agents' });
     render(<OnboardingWizard />);
 
-    // Click progress bar button for visited step (Layout Studio)
     const layoutStepBtn = screen.getByRole('button', { name: /Layout Studio/i });
     fireEvent.click(layoutStepBtn);
     expect(useOnboardingStore.getState().currentStep).toBe('layout');
 
-    // From layout, click footer continue to advance to agents
     const continueBtn = screen.getByRole('button', { name: /Continue/i });
     fireEvent.click(continueBtn);
     expect(useOnboardingStore.getState().currentStep).toBe('agents');

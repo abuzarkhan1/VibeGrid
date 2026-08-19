@@ -43,7 +43,6 @@ export const DirectoryEnvSection: React.FC = () => {
         if (typeof selected === 'string') {
           setDefaultCwd(selected);
 
-          // Auto-suggest workspace name if default or empty
           const folderName = selected.split(/[/\\]/).filter(Boolean).pop();
           if (folderName && (!workspaceName.trim() || workspaceName === 'Default Workspace')) {
             const formatted = folderName
@@ -52,7 +51,6 @@ export const DirectoryEnvSection: React.FC = () => {
             setWorkspaceName(formatted);
           }
 
-          // Simulate / detect git branch
           setGitBranch('main', false);
         }
       } catch (err) {
@@ -102,7 +100,7 @@ export const DirectoryEnvSection: React.FC = () => {
 
   return (
     <div className="space-y-6 text-white/90 font-sans select-none">
-      {/* 1. CWD Folder Picker with Native Dialog */}
+      {}
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block font-mono">
@@ -136,7 +134,7 @@ export const DirectoryEnvSection: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Git Branch Detection Status Card */}
+      {}
       <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/5 border border-white/10 text-white/80">

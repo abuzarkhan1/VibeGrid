@@ -41,7 +41,6 @@ export const WorkspaceCustomizerModal: React.FC = () => {
   const saveCurrentWorkspace = useWorkspaceStore((s) => s.saveCurrentWorkspace);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
 
-  // Sync state on open
   useEffect(() => {
     if (isOpen) {
       syncFromCurrentState();
@@ -49,7 +48,7 @@ export const WorkspaceCustomizerModal: React.FC = () => {
   }, [isOpen, syncFromCurrentState]);
 
   const handleSaveAndApply = useCallback(() => {
-    // 1. Update active workspace state
+
     if (activeWorkspaceId) {
       if (workspaceName.trim()) {
         renameWorkspace(activeWorkspaceId, workspaceName.trim());
@@ -67,7 +66,6 @@ export const WorkspaceCustomizerModal: React.FC = () => {
       saveCurrentWorkspace();
     }
 
-    // 2. Update global settings
     const envLines = Object.entries(envVars)
       .map(([k, v]) => `${k}=${v}`)
       .join('\n');

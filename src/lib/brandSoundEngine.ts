@@ -1,8 +1,3 @@
-/**
- * VibeGrid Procedural Web Audio Synthesizer
- * Generates cinematic brand audio cues with 0 external sound files or asset dependencies.
- */
-
 let audioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
@@ -19,10 +14,6 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
-/**
- * Stage 1: Convergence Whoosh Sound
- * Sub-bass sweep accelerating from 45Hz -> 140Hz with modulated lowpass filter
- */
 export function playConvergenceWhoosh(volume = 0.35): void {
   try {
     const ctx = getAudioContext();
@@ -35,18 +26,15 @@ export function playConvergenceWhoosh(volume = 0.35): void {
     const now = ctx.currentTime;
     const duration = 0.85;
 
-    // Pitch sweep
     osc.type = 'sine';
     osc.frequency.setValueAtTime(45, now);
     osc.frequency.exponentialRampToValueAtTime(140, now + duration);
 
-    // Resonant Filter sweep
     filter.type = 'lowpass';
     filter.Q.setValueAtTime(2.0, now);
     filter.frequency.setValueAtTime(180, now);
     filter.frequency.exponentialRampToValueAtTime(600, now + duration);
 
-    // Gain envelope
     gain.gain.setValueAtTime(0.001, now);
     gain.gain.exponentialRampToValueAtTime(volume, now + duration * 0.7);
     gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
@@ -58,14 +46,10 @@ export function playConvergenceWhoosh(volume = 0.35): void {
     osc.start(now);
     osc.stop(now + duration);
   } catch {
-    // Audio context may be blocked by browser policy
+
   }
 }
 
-/**
- * Stage 2: Crystalline Snap Lock
- * High crystalline dual chime + mechanical snap transient
- */
 export function playCrystallineSnapLock(volume = 0.4): void {
   try {
     const ctx = getAudioContext();
@@ -73,7 +57,6 @@ export function playCrystallineSnapLock(volume = 0.4): void {
 
     const now = ctx.currentTime;
 
-    // Dual Chime Frequencies
     [3520, 5280].forEach((freq, idx) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -91,8 +74,7 @@ export function playCrystallineSnapLock(volume = 0.4): void {
       osc.stop(now + 0.22);
     });
 
-    // Mechanical snap click (high-frequency bandpass noise burst)
-    const bufferSize = ctx.sampleRate * 0.025; // 25ms
+    const bufferSize = ctx.sampleRate * 0.025;
     const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -117,7 +99,6 @@ export function playCrystallineSnapLock(volume = 0.4): void {
 
     whiteNoise.start(now);
   } catch {
-    // Graceful fallback
+
   }
 }
-

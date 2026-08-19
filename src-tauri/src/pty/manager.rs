@@ -15,11 +15,8 @@ use crate::ipc::IpcBatcher;
 use crate::pty::reader::spawn_pty_reader;
 use tauri::Runtime;
 
-/// Shared error message for unknown pane ids (audit: error consts — the three
-/// call sites used to hand-roll the same string, risking drift).
 pub const ERR_PANE_NOT_FOUND: &str = "Pane ID not found";
 
-/// Safe minimum dimensions to prevent EOF on initial mount and layout collapse.
 pub const MIN_PTY_COLS: u16 = 20;
 pub const MIN_PTY_ROWS: u16 = 5;
 
@@ -57,19 +54,10 @@ impl<R: Runtime> PtyManager<R> {
         }
     }
 
-    /// The batcher is created in `setup` (needs the AppHandle); stash it so
-    /// `kill_pane` can release per-pane buffers/history when a session is torn
-    /// down before the reader thread observes EOF (audit: memory leak fix).
     pub fn set_batcher(&self, batcher: IpcBatcher<R>) {
         *self.batcher.lock() = Some(batcher);
     }
 
-    /// Spawns a new PTY session and returns the assigned pane_id (UUID).
-    /// `shell` optionally overrides the user's default shell per-pane
-    /// (audit: the dead `TerminalNode.shell` field is now wired end-to-end).
-    /// `shell_args`/`shell_env` are the global default-shell startup config
-    /// (customization audit C11) — applied to the spawned command; the built-in
-    /// TERM/COLORTERM/LANG/VIBEGRID env always win over user overrides.
     #[allow(clippy::too_many_arguments)]
     pub fn spawn_pane(
         &self,
@@ -84,7 +72,6 @@ impl<R: Runtime> PtyManager<R> {
         let pane_id = Uuid::new_v4().to_string();
         let pty_system = native_pty_system();
 
-        // Enforce safe minimum PTY dimensions to prevent EOF on initial mount
         let safe_cols = std::cmp::max(MIN_PTY_COLS, cols);
         let safe_rows = std::cmp::max(MIN_PTY_ROWS, rows);
 
@@ -102,10 +89,6 @@ impl<R: Runtime> PtyManager<R> {
         let shell = shell.unwrap_or_else(get_default_shell);
         let mut cmd = CommandBuilder::new(&shell);
 
-        // Customization audit C11: startup args + user environment for the
-        // default shell. User env is applied FIRST so the built-in
-        // TERM/COLORTERM/LANG/VIBEGRID set below always wins — a user TERM
-        // override could break rendering, and later `env()` calls win.
         if let Some(args) = shell_args {
             for arg in args {
                 cmd.arg(arg);
@@ -117,7 +100,6 @@ impl<R: Runtime> PtyManager<R> {
             }
         }
 
-        // Configure Environment Variables (applied last — they win)
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
         cmd.env("LANG", "en_US.UTF-8");
@@ -144,9 +126,6 @@ impl<R: Runtime> PtyManager<R> {
             .take_writer()
             .map_err(|e| format!("Failed to take PTY writer: {}", e))?;
 
-        // Start background async PTY reader — pass a manager clone so it can
-        // evict the PaneSession from `sessions` when the process exits naturally
-        // (EOF), preventing zombie entries from accumulating.
         spawn_pty_reader(pane_id.clone(), reader, batcher, self.clone());
 
         let session = PaneSession {
@@ -160,7 +139,6 @@ impl<R: Runtime> PtyManager<R> {
         Ok(pane_id)
     }
 
-    /// Write input string/bytes to a specific PTY pane
     pub fn write_to_pane(&self, pane_id: &str, data: &str) -> Result<(), String> {
         let mut sessions = self.sessions.lock();
         if let Some(session) = sessions.get_mut(pane_id) {
@@ -178,7 +156,6 @@ impl<R: Runtime> PtyManager<R> {
         }
     }
 
-    /// Resize terminal pane PTY
     pub fn resize_pane(&self, pane_id: &str, cols: u16, rows: u16) -> Result<(), String> {
         let sessions = self.sessions.lock();
         if let Some(session) = sessions.get(pane_id) {
@@ -201,39 +178,19 @@ impl<R: Runtime> PtyManager<R> {
         }
     }
 
-    /// Remove a pane session that exited naturally (EOF on the reader side).
-    ///
-    /// Called by `spawn_pty_reader` when `read()` returns `Ok(0)` or an error,
-    /// so the `PaneSession` (master PTY handle + child handle) is released and
-    /// does not linger as a zombie in the sessions map.  The IPC batcher's
-    /// `pane_exited()` is *also* called by the reader to emit the
-    /// `terminal-exit` frontend event — this method only handles the manager side.
     pub fn remove_session(&self, pane_id: &str) {
-        // Drop the session outside the lock to avoid holding it while the
-        // destructor runs (closing the master fd can block briefly on some OSes).
+
         let session = self.sessions.lock().remove(pane_id);
         drop(session);
     }
 
-    /// Terminate and remove a PTY pane session gracefully (FR-004).
-    ///
-    /// Audit find 10: portable-pty's `Child::kill()` sends SIGHUP to the shell
-    /// process only — jobs it spawned can survive (and keep the PTY master
-    /// open). Where the shell is its own process-group leader we signal the
-    /// whole group; we then wait briefly for the shell to exit and force-kill
-    /// it (SIGKILL) if it lingers, so closing a pane actually stops the process
-    /// tree in the common case.
     pub fn kill_pane(&self, pane_id: &str) -> Result<(), String> {
-        // Remove the session and DROP the sessions lock before signalling and
-        // waiting for the child to exit (audit: the lock used to be held for the
-        // whole up-to-500ms reap, stalling every other pane's write/resize/spawn
-        // while one pane was closed). The temporary guard is dropped at the end
-        // of this statement.
+
         let Some(mut session) = self.sessions.lock().remove(pane_id) else {
             return Err(format!("{ERR_PANE_NOT_FOUND}: {pane_id}"));
         };
         {
-            // Release the pane's buffers/history and purge exited tracking immediately
+
             if let Some(batcher) = self.batcher.lock().as_ref() {
                 batcher.cleanup_pane(pane_id);
             }
@@ -241,16 +198,13 @@ impl<R: Runtime> PtyManager<R> {
             {
                 if let Some(pid) = session.child.process_id() {
                     let pid_i = pid as i32;
-                    // Only signal the group if the shell really is its leader —
-                    // killpg on a foreign group would be catastrophic. (Accepted
-                    // risk: a theoretical pid-reuse window between getpgid and
-                    // kill — microseconds, negligible for a local terminal app.)
+
                     if unsafe { libc::getpgid(pid_i) } == pid_i {
                         let _ = unsafe { libc::kill(-pid_i, libc::SIGHUP) };
                     }
                 }
             }
-            let _ = session.child.kill(); // SIGHUP on unix, TerminateProcess on windows
+            let _ = session.child.kill();
 
             #[cfg(unix)]
             {
@@ -262,7 +216,7 @@ impl<R: Runtime> PtyManager<R> {
                             thread::sleep(Duration::from_millis(20));
                         }
                         Ok(None) => {
-                            // SIGHUP was ignored — force kill.
+
                             if let Some(pid) = session.child.process_id() {
                                 let _ = unsafe { libc::kill(pid as i32, libc::SIGKILL) };
                             }
@@ -280,7 +234,6 @@ impl<R: Runtime> PtyManager<R> {
         Ok(())
     }
 
-    /// Terminate all PTY sessions on application exit (NFR-012)
     pub fn kill_all_panes(&self) {
         let mut sessions = self.sessions.lock();
         let batcher_guard = self.batcher.lock();
@@ -293,7 +246,6 @@ impl<R: Runtime> PtyManager<R> {
     }
 }
 
-/// Helper function to detect the user's default system shell
 fn get_default_shell() -> String {
     if cfg!(target_os = "windows") {
         env::var("COMSPEC").unwrap_or_else(|_| "powershell.exe".to_string())
@@ -320,18 +272,11 @@ mod tests {
 
     #[test]
     fn test_pty_manager_creation() {
-        // Explicit type so the default runtime (Wry) is selected.
+
         let manager: PtyManager = PtyManager::new();
         assert!(manager.sessions.lock().is_empty());
     }
 
-    /// End-to-end PTY lifecycle (audit: the core spawn → write → read → kill
-    /// path had zero coverage). Uses tauri's mock app so IpcBatcher can be
-    /// constructed without a running desktop app; the reader thread drives
-    /// real output through the batcher just like production.
-    ///
-    /// Unix-only: the marker command (`printf`) is POSIX, and the
-    /// process-group kill path under test is `#[cfg(unix)]` anyway.
     #[test]
     #[cfg(unix)]
     fn test_pty_lifecycle_spawn_write_read_kill() {
@@ -340,11 +285,9 @@ mod tests {
             .expect("mock app builds");
         let batcher: IpcBatcher<tauri::test::MockRuntime> = IpcBatcher::new(app.handle().clone());
         let manager: PtyManager<tauri::test::MockRuntime> = PtyManager::new();
-        // Wire the batcher in so kill_pane's per-pane buffer/history release
-        // (the audit memory-leak fix) is actually exercised by this test.
+
         manager.set_batcher(batcher.clone());
 
-        // 1. Spawn a real shell.
         let pane_id = manager
             .spawn_pane(80, 24, None, None, None, None, batcher.clone())
             .expect("spawn_pane should succeed");
@@ -353,20 +296,12 @@ mod tests {
             "session should exist after spawn"
         );
 
-        // 2. Write a command that echoes a unique marker, then read it back.
-        // NOTE: the command must NOT exit the shell — the reader releases the
-        // pane's history on EOF (pane_exited), so a shell that prints and exits
-        // in the same instant races the 16ms batch flush and flakily loses the
-        // marker. `sleep` keeps the process alive until kill_pane below, so the
-        // flush always lands before the assertion reads mcp_history.
         let marker = format!("VG_PTY_TEST_{}", Uuid::new_v4().simple());
         let cmd = format!("printf '{}'; printf '\\r\\n'; sleep 30\n", marker);
         manager
             .write_to_pane(&pane_id, &cmd)
             .expect("write_to_pane should succeed");
 
-        // The reader thread pushes output into the batcher's mcp_history;
-        // poll it (with a generous timeout) until the marker shows up.
         let deadline = std::time::Instant::now() + Duration::from_secs(10);
         let mut seen = String::new();
         while std::time::Instant::now() < deadline {
@@ -386,9 +321,6 @@ mod tests {
             "expected marker in pane output; got: {seen:?}"
         );
 
-        // 3. Kill the pane; the session must be removed, the child reaped, and
-        //    the batcher must release the pane's output history (audit: memory
-        //    leak fix — long sessions with many short-lived panes leaked).
         manager.kill_pane(&pane_id).expect("kill_pane should succeed");
         assert!(
             !manager.sessions.lock().contains_key(&pane_id),
@@ -399,7 +331,6 @@ mod tests {
             "batcher should release the pane's output history after kill"
         );
 
-        // Killing an already-removed pane reports ERR_PANE_NOT_FOUND.
         let err = manager.kill_pane(&pane_id).unwrap_err();
         assert!(
             err.contains(ERR_PANE_NOT_FOUND),
@@ -407,13 +338,6 @@ mod tests {
         );
     }
 
-    /// Customization audit C11: shell startup args + environment are applied
-    /// to the spawned process. Uses an explicit POSIX shell (`/bin/sh`) with
-    /// `-c` so the test is deterministic regardless of the runner's default
-    /// shell, and asserts the marker env var reaches the child. The script
-    /// ends with `sleep` so the shell stays alive while we poll — the reader
-    /// releases the pane's history on EOF (`pane_exited`), so an immediately
-    /// exiting shell would erase its own output before the assertion runs.
     #[test]
     #[cfg(unix)]
     fn test_spawn_applies_shell_args_and_env() {

@@ -26,7 +26,7 @@ const LayoutBlueprint: React.FC<{ grid: number[][] }> = ({ grid }) => {
   const svgH = 36;
   const cellW = (svgW - gap * (cols - 1)) / cols;
   const cellH = (svgH - gap * (rows - 1)) / rows;
-  
+
   return (
     <svg width={svgW} height={svgH} viewBox={`0 0 ${svgW} ${svgH}`} className="shrink-0 transition-transform duration-300 group-hover:scale-105">
       {grid.map((row, r) =>
@@ -60,15 +60,15 @@ export const CentralPromptCard: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center w-full h-full px-6 select-none font-sans animate-fade-in">
-      
+
       {/* Main Pure Black Transparent Glass Container (max-w-4xl) */}
       <div className="relative w-full max-w-4xl p-10 sm:p-12 rounded-3xl border border-white/[0.08] bg-black/60 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.9)] overflow-hidden">
-        
+
         {/* Ambient Top Glow for Glass Pop */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-1/2 bg-white/[0.03] blur-[100px] pointer-events-none"></div>
-        
+
         <div className="relative space-y-10">
-          
+
           {/* Workspace Identity Header */}
           <div className="flex items-center justify-between border-b border-white/[0.06] pb-6">
             <div className="flex items-center gap-4">
@@ -98,7 +98,7 @@ export const CentralPromptCard: React.FC = () => {
                 {LAYOUT_PRESETS.length} Presets Available
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {LAYOUT_PRESETS.map((preset) => (
                 <button
@@ -120,7 +120,7 @@ export const CentralPromptCard: React.FC = () => {
               ))}
             </div>
           </div>
-          
+
         </div>
       </div>
     </div>

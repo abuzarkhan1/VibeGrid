@@ -27,7 +27,6 @@ import { ConfirmModal } from './ConfirmModal';
 import { voiceModelStatus, listenModelProgress } from '@/lib/tauri';
 import { invoke } from '@tauri-apps/api/core';
 
-/** Styled toggle switch matching sidebar aesthetic */
 const ToggleSwitch: React.FC<{ checked: boolean; onChange: (v: boolean) => void }> = ({ checked, onChange }) => (
   <button
     type="button"
@@ -436,7 +435,7 @@ export const SettingsModal: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#181924] overflow-hidden font-sans animate-fade-in text-white/90">
-      {/* Top Header Bar */}
+
       <div className="px-8 py-5 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02] shrink-0">
         <div className="flex items-center gap-3">
           <h2 className="text-sm font-bold uppercase tracking-wider text-white/90 font-mono">
@@ -453,12 +452,11 @@ export const SettingsModal: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content Scroll Area */}
       <div className="flex-1 overflow-y-auto p-8 space-y-4 custom-scrollbar max-w-4xl">
-        {/* --- TAB 1: FONT --- */}
+
         {activeSettingsTab === 'font' && (
           <div className="space-y-4 max-w-3xl">
-            {/* Font Family Card */}
+
             <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Font Family</label>
@@ -484,7 +482,6 @@ export const SettingsModal: React.FC = () => {
               <span className="block text-[10px] text-white/40 mt-1">Any installed font family or CSS stack works — type it, or pick a quick pick.</span>
             </div>
 
-            {/* Font Size Card */}
             <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Font Size</label>
@@ -500,7 +497,6 @@ export const SettingsModal: React.FC = () => {
               />
             </div>
 
-            {/* Font Ligatures Card */}
             <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between">
               <div>
                 <span className="block text-[13px] text-white/90">Font Ligatures</span>
@@ -509,7 +505,6 @@ export const SettingsModal: React.FC = () => {
               <ToggleSwitch checked={fontLigatures} onChange={(v) => setFontLigatures(v)} />
             </div>
 
-            {/* Line Height Card */}
             <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Line Height</label>
@@ -526,7 +521,6 @@ export const SettingsModal: React.FC = () => {
               />
             </div>
 
-            {/* Terminal Opacity Card */}
             <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
               <div className="flex justify-between items-center">
                 <label className="text-[10px] font-mono uppercase tracking-wider text-white/40">Terminal Opacity</label>
@@ -545,7 +539,6 @@ export const SettingsModal: React.FC = () => {
           </div>
         )}
 
-        {/* --- TAB 2: THEME --- */}
         {activeSettingsTab === 'theme' && (
           <div className="space-y-5 max-w-4xl">
             <div className="flex items-center justify-between">
@@ -817,7 +810,7 @@ export const SettingsModal: React.FC = () => {
             {/* Startup & Tray Section */}
             <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
               <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">Startup & System Tray</span>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <span className="block text-[13px] text-white/90">Launch at Login</span>
@@ -958,7 +951,7 @@ export const SettingsModal: React.FC = () => {
             {/* Terminal Behavior Section */}
             <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-4">
               <span className="text-[10px] font-mono uppercase tracking-wider text-white/40 block">Terminal Behavior</span>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <span className="block text-[13px] text-white/90">Right-Click Pastes</span>
@@ -1674,7 +1667,6 @@ export const SettingsModal: React.FC = () => {
         )}
       </div>
 
-      {/* Footer: Import / Export / Reset matching Sidebar buttons */}
       <div className="flex items-center justify-between px-8 py-4 border-t border-white/5 bg-white/[0.02] shrink-0">
         <div className="flex items-center gap-2">
           <button
@@ -1715,7 +1707,6 @@ export const SettingsModal: React.FC = () => {
         </button>
       </div>
 
-      {/* Confirmation & Input Modals */}
       {showCreateModal && (
         <InputModal
           title="Create New Workspace"

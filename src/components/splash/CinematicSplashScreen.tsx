@@ -82,7 +82,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
   ));
 
   return (
-    <div 
+    <div
       className="vibegrid-splash-root"
       role="status"
       aria-live="polite"
@@ -133,8 +133,8 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           justify-content: center;
         }
 
-        .vibegrid-splash-root .icon-svg { 
-          width: 100%; height: 100%; overflow: visible; 
+        .vibegrid-splash-root .icon-svg {
+          width: 100%; height: 100%; overflow: visible;
         }
 
         /* Glassmorphism Cards */
@@ -147,7 +147,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           transform-box: fill-box;
           transform-origin: center;
         }
-        
+
         .vibegrid-splash-root .card-tl { animation: flyTL 0.5s cubic-bezier(.2,.7,.2,1) 0.05s forwards; }
         .vibegrid-splash-root .card-tr { animation: flyTR 0.5s cubic-bezier(.2,.7,.2,1) 0.12s forwards; }
         .vibegrid-splash-root .card-bl { animation: flyBL 0.5s cubic-bezier(.2,.7,.2,1) 0.19s forwards; }
@@ -206,7 +206,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           animation: letterUp 0.35s ease-out forwards;
           animation-delay: calc(0.7s + (var(--i) * 0.035s));
         }
-        
+
         @keyframes letterUp { to { opacity: 1; transform: translateY(0); } }
 
         .vibegrid-splash-root .brand-underline {
@@ -266,13 +266,13 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
       <div className="icon-stage">
         <svg className="icon-svg" viewBox="0 0 400 400">
           <defs>
-            {/* Glass Gradient for Cards */}
+            {}
             <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="rgba(255,255,255,0.9)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0.2)" />
             </linearGradient>
-            
-            {/* Neon Gradient for Ring */}
+
+            {}
             <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#ffffff" />
               <stop offset="100%" stopColor="rgba(255,255,255,0.6)" />
@@ -280,7 +280,7 @@ export const CinematicSplashScreen: React.FC<CinematicSplashScreenProps> = ({
           </defs>
 
           <circle className="ring" cx="200" cy="200" r="155" />
-          
+
           <rect className="card card-tl" x="108" y="108" width="84" height="84" rx="18" />
           <rect className="card card-tr" x="208" y="108" width="84" height="84" rx="18" />
           <rect className="card card-bl" x="108" y="208" width="84" height="84" rx="18" />

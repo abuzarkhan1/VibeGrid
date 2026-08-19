@@ -42,7 +42,6 @@ describe('useOnboardingStore', () => {
     const terms = getTerminalNodesFromTree(updated.draftLayout);
     expect(terms.length).toBe(4);
 
-    // Each terminal has an agent assignment
     for (const term of terms) {
       expect(updated.paneAgentAssignments[term.id]).toBeDefined();
     }

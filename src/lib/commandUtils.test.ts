@@ -65,7 +65,7 @@ describe('eventToAccelerator', () => {
 
 describe('escapeShellPath', () => {
   afterEach(() => {
-    // restore the real platform getter
+
     Object.defineProperty(navigator, 'platform', { value: '', configurable: true });
   });
 
@@ -85,12 +85,10 @@ describe('escapeShellPath', () => {
     Object.defineProperty(navigator, 'platform', { value: 'Win32', configurable: true });
     expect(isWindowsPlatform()).toBe(true);
     expect(escapeShellPath("C:\\Users\\me\\it's")).toBe("'C:\\Users\\me\\it''s'");
-    // simple path: still single-quoted
+
     expect(escapeShellPath('C:\\project')).toBe("'C:\\project'");
   });
 
-  // Regression: the old /win/i check matched "darwin" (macOS), which would
-  // have POSIX paths PowerShell-quoted on Mac. MacIntel must stay POSIX.
   it('treats macOS (MacIntel / darwin) as non-Windows', () => {
     Object.defineProperty(navigator, 'platform', { value: 'MacIntel', configurable: true });
     expect(isWindowsPlatform()).toBe(false);

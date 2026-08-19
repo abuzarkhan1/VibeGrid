@@ -5,17 +5,14 @@ use parking_lot::Mutex;
 use tauri::{async_runtime, AppHandle, Emitter, Runtime, Wry};
 use tokio::time::{self, Duration};
 
-const BATCH_INTERVAL_MS: u64 = 16; // ~60 FPS IPC batching (default)
+const BATCH_INTERVAL_MS: u64 = 16;
 const MIN_BATCH_INTERVAL_MS: u64 = 4;
 const MAX_BATCH_INTERVAL_MS: u64 = 2000;
-const HIGH_WATERMARK_BYTES: usize = 10 * 1024 * 1024; // 10MB backpressure high watermark
-const LOW_WATERMARK_BYTES: usize = 1024 * 1024; // 1MB low watermark
-// Per-pane output history kept for MCP + `pane_snapshot` (workspace isolation:
-// a hidden workspace's pane is unmounted, so this is what gets repainted when
-// the user switches back — 256KB ≈ a healthy scrollback of build/server logs).
+const HIGH_WATERMARK_BYTES: usize = 10 * 1024 * 1024;
+const LOW_WATERMARK_BYTES: usize = 1024 * 1024;
+
 const HISTORY_CAP_BYTES: usize = 256 * 1024;
 
-/// Clamps a requested IPC batching interval to the supported range 4..=2000.
 fn clamp_interval_ms(interval_ms: u64) -> u64 {
     interval_ms.clamp(MIN_BATCH_INTERVAL_MS, MAX_BATCH_INTERVAL_MS)
 }
@@ -57,8 +54,6 @@ impl<R: Runtime> IpcBatcher<R> {
         batcher
     }
 
-    /// Sets the IPC batching interval in milliseconds, clamped to the supported range,
-    /// and returns the clamped value that is now in effect.
     pub fn set_interval(&self, interval_ms: u64) -> u64 {
 
         let clamped = clamp_interval_ms(interval_ms);
@@ -66,7 +61,6 @@ impl<R: Runtime> IpcBatcher<R> {
         clamped
     }
 
-    /// Gets or creates a backpressure flag for a pane
     pub fn get_backpressure_flag(&self, pane_id: &str) -> Arc<AtomicBool> {
         let mut flags = self.backpressure_flags.lock();
         flags
@@ -75,12 +69,10 @@ impl<R: Runtime> IpcBatcher<R> {
             .clone()
     }
 
-    /// Push bytes for a specific pane into the buffer batch
     pub fn push_output(&self, pane_id: &str, data: &[u8]) {
         self.push_output_with_flag(pane_id, data, None);
     }
 
-    /// Optimized hot-path: push bytes using an optional pre-cached backpressure flag and zero-allocation key lookup.
     pub fn push_output_with_flag(&self, pane_id: &str, data: &[u8], cached_flag: Option<&std::sync::atomic::AtomicBool>) {
         let mut buffers = self.buffers.lock();
         let buf = if let Some(buf) = buffers.get_mut(pane_id) {
@@ -101,7 +93,6 @@ impl<R: Runtime> IpcBatcher<R> {
         }
     }
 
-    /// Explicitly release all state and memory tracked for a killed/deleted pane.
     pub fn cleanup_pane(&self, pane_id: &str) {
         self.buffers.lock().remove(pane_id);
         self.backpressure_flags.lock().remove(pane_id);
@@ -109,13 +100,6 @@ impl<R: Runtime> IpcBatcher<R> {
         self.exited_panes.lock().remove(pane_id);
     }
 
-    /// Return the recent output history kept for a pane (last ~256 KB) and
-    /// whether its process already exited. Used by the frontend when a
-    /// workspace is switched back to: the pane's terminal was unmounted while
-    /// hidden, so its live events (incl. terminal-exit) were dropped — this
-    /// restores what the process printed while the user was elsewhere and lets
-    /// the pane show its "process exited" banner immediately
-    /// (workspace isolation/persistence).
     pub fn pane_snapshot(&self, pane_id: &str) -> (String, bool) {
         let output = self
             .mcp_history
@@ -127,11 +111,6 @@ impl<R: Runtime> IpcBatcher<R> {
         (output, exited)
     }
 
-    /// Called by the PTY reader when a pane's process exits (EOF). Emits a
-    /// `terminal-exit` event to the frontend (which shows a "process exited"
-    /// banner) and releases all per-pane resources — the output buffer, the
-    /// backpressure flag and the MCP history entry — so long sessions with
-    /// many short-lived panes never leak memory.
     pub fn pane_exited(&self, pane_id: &str) {
         {
             let mut buffers = self.buffers.lock();
@@ -145,20 +124,11 @@ impl<R: Runtime> IpcBatcher<R> {
             let mut history = self.mcp_history.lock();
             history.remove(pane_id);
         }
-        // Remember the exit so a re-attached pane (workspace switch-back) can
-        // show the "process exited" banner even though it missed the live
-        // terminal-exit event while unmounted.
+
         {
             let mut exited = self.exited_panes.lock();
             exited.insert(pane_id.to_string(), true);
-            // Cap unbounded growth: after 500 entries, prune down to 400 by
-            // dropping the first 100. The ordering of a HashMap is arbitrary
-            // but deterministic within a run — oldest entries tend to come
-            // first from `.keys()` iteration on a HashMap (insertion-order is
-            // NOT guaranteed, but eviction of *some* 100 entries is fine here;
-            // the worst case is evicting a slightly newer entry, which just
-            // means a re-attached pane shows no banner — an acceptable trade-off
-            // versus an unbounded map in a long-running session).
+
             const EXITED_PANES_HARD_CAP: usize = 500;
             const EXITED_PANES_PRUNE_TARGET: usize = 400;
             if exited.len() > EXITED_PANES_HARD_CAP {
@@ -177,7 +147,6 @@ impl<R: Runtime> IpcBatcher<R> {
             .emit("terminal-exit", serde_json::json!({ "paneId": pane_id }));
     }
 
-    /// Flushes collected output on a configurable interval to the frontend via a single Tauri event
     fn start_flush_loop(&self) {
         let buffers = self.buffers.clone();
         let backpressure_flags = self.backpressure_flags.clone();
@@ -191,7 +160,6 @@ impl<R: Runtime> IpcBatcher<R> {
             loop {
                 interval.tick().await;
 
-                // Pick up live changes to the batching interval (set_batch_interval)
                 let live_interval_ms = interval_ms.load(Ordering::Relaxed);
                 if live_interval_ms != current_interval_ms {
                     current_interval_ms = live_interval_ms;
@@ -208,7 +176,7 @@ impl<R: Runtime> IpcBatcher<R> {
                     let mut map = HashMap::new();
                     for (pane_id, buf) in guard.iter_mut() {
                         if !buf.is_empty() {
-                            // Find the longest valid UTF-8 sequence boundary to prevent multi-byte UTF-8 character splitting
+
                             let (valid_chunk, bytes_to_drain) = match std::str::from_utf8(buf) {
                                 Ok(valid_str) => (Some(valid_str.to_string()), buf.len()),
                                 Err(utf8_err) => {
@@ -217,12 +185,10 @@ impl<R: Runtime> IpcBatcher<R> {
                                         let valid_str = std::str::from_utf8(&buf[..valid_up_to]).unwrap_or("");
                                         (Some(valid_str.to_string()), valid_up_to)
                                     } else if let Some(error_len) = utf8_err.error_len() {
-                                        // Non-UTF8 byte(s) at front of buffer: replace with replacement char and drain
-                                        // to prevent infinite buffer growth and terminal freeze (DoS).
+
                                         (Some("\u{FFFD}".to_string()), error_len)
                                     } else {
-                                        // Incomplete sequence at end of buffer. If buffer exceeds max UTF-8 codepoint length (4 bytes),
-                                        // force-drain 1 invalid byte so buffer never stalls forever.
+
                                         if buf.len() > 4 {
                                             (Some("\u{FFFD}".to_string()), 1)
                                         } else {
@@ -234,7 +200,7 @@ impl<R: Runtime> IpcBatcher<R> {
 
                             if let Some(chunk) = valid_chunk {
                                 if !chunk.is_empty() {
-                                    // Track history for MCP
+
                                     let mut history = mcp_history.lock();
                                     let h = if let Some(h) = history.get_mut(pane_id) {
                                         h
@@ -255,7 +221,6 @@ impl<R: Runtime> IpcBatcher<R> {
                                 buf.drain(..bytes_to_drain);
                             }
 
-                            // Clear backpressure flag if buffer drops below low watermark
                             if let Some(flag) = bp_flags.get(pane_id) {
                                 if flag.load(Ordering::Relaxed) && buf.len() < LOW_WATERMARK_BYTES {
                                     flag.store(false, Ordering::Relaxed);

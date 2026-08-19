@@ -30,8 +30,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
         e.stopPropagation();
         onClose();
       } else if (e.key === 'Enter') {
-        // If a button is focused (e.g. Cancel), let it handle its own click event
-        // naturally — do NOT intercept Enter and fire onConfirm accidentally.
+
         const activeEl = document.activeElement as HTMLElement | null;
         if (
           activeEl &&

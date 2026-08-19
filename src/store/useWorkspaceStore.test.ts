@@ -13,7 +13,6 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 const mockedInvoke = vi.mocked(invoke);
 
-/** 4-terminal custom split layout with runtime paneId sprinkled in. */
 function fourPaneLayout() {
   return {
     type: 'split',
@@ -49,7 +48,7 @@ describe('VibeGrid Workspace Persistence', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    // Reset workspace store to the default singleton state
+
     useWorkspaceStore.setState({
       workspaces: [
         {
@@ -62,13 +61,13 @@ describe('VibeGrid Workspace Persistence', () => {
         },
       ],
       activeWorkspaceId: 'default-workspace',
-      // Loaded: saves are allowed unless a test explicitly sets isLoading=true
+
       isLoading: false,
     });
   });
 
   it('saves the active workspace name with the layout as an object (gap: layout_json mismatch)', async () => {
-    // Rename + open 4 panes
+
     useWorkspaceStore.getState().renameWorkspace('default-workspace', 'My Project');
     usePaneStore.setState({ root: fourPaneLayout() as never });
     await useWorkspaceStore.getState().saveCurrentWorkspace();
@@ -78,7 +77,7 @@ describe('VibeGrid Workspace Persistence', () => {
       workspace: { name: string; layout: Record<string, unknown> };
     };
     expect(payload.workspace.name).toBe('My Project');
-    // The layout must be a structured object — NOT a layout_json string
+
     expect(typeof payload.workspace.layout).toBe('object');
     expect(payload.workspace.layout).not.toHaveProperty('layout_json');
   });
@@ -93,7 +92,7 @@ describe('VibeGrid Workspace Persistence', () => {
     const json = JSON.stringify(payload.workspace.layout);
     expect(json).not.toContain('paneId');
     expect(json).not.toContain('pty-');
-    // Titles and cwds survive
+
     expect(json).toContain('Web Server');
     expect(json).toContain('/app');
     expect(json).toContain('term-1');
@@ -117,7 +116,6 @@ describe('VibeGrid Workspace Persistence', () => {
     expect(state.workspaces[0].name).toBe('My Project');
     expect(state.activeWorkspaceId).toBe('default-workspace');
 
-    // Pane store got the 4-pane layout back
     const root = usePaneStore.getState().root as {
       type: string;
       children: unknown[];
@@ -128,21 +126,15 @@ describe('VibeGrid Workspace Persistence', () => {
     expect(json).toContain('term-2');
     expect(json).toContain('term-3');
     expect(json).toContain('term-4');
-    // Runtime paneIds must not survive the load
+
     expect(json).not.toContain('pty-');
 
-    // Derived state is reconstructed (persistence-fidelity audit fix)
     const pane = usePaneStore.getState();
     expect(pane.paneCount).toBe(4);
     expect(pane.layoutMode).toBe('custom');
     expect(pane.focusedPaneId).toBe('term-1');
   });
 
-  // Grid-collapse regression: a RESTART restores the saved layout through
-  // applyLayoutToPaneStore, which sets the pane-store root directly. That path
-  // must bump gridVersion — App.tsx keys the root GridRenderer on it, forcing
-  // a fresh Allotment mount so a restored deeper grid (2×2/3×3/4×4) can never
-  // inherit a stale collapsed layout from a previously-mounted Allotment tree.
   it('loadWorkspaces bumps gridVersion so the restored grid remounts fresh', async () => {
     mockedInvoke.mockResolvedValueOnce([
       {
@@ -186,11 +178,11 @@ describe('VibeGrid Workspace Persistence', () => {
   });
 
   it('never saves while isLoading is true (startup data-loss guard)', async () => {
-    // Simulate the startup window: isLoading is true until loadWorkspaces resolves
+
     useWorkspaceStore.setState({ isLoading: true });
     usePaneStore.setState({ root: fourPaneLayout() as never });
     await useWorkspaceStore.getState().saveCurrentWorkspace();
-    // The default mock returns [] for list_workspaces — but save must not run
+
     expect(mockedInvoke).not.toHaveBeenCalledWith('save_workspace', expect.anything());
   });
 
@@ -204,11 +196,10 @@ describe('VibeGrid Workspace Persistence', () => {
       isLoading: false,
     });
 
-    // Rename the INACTIVE workspace
     useWorkspaceStore.getState().renameWorkspace('ws-second', 'Renamed Second');
 
     expect(useWorkspaceStore.getState().workspaces.find((w) => w.id === 'ws-second')?.name).toBe('Renamed Second');
-    // The renamed workspace itself was written to disk (its id in the payload)
+
     expect(mockedInvoke).toHaveBeenCalledWith(
       'save_workspace',
       expect.objectContaining({ workspace: expect.objectContaining({ id: 'ws-second', name: 'Renamed Second' }) })
@@ -224,7 +215,7 @@ describe('VibeGrid Workspace Persistence', () => {
       activeWorkspaceId: 'default-workspace',
       isLoading: false,
     });
-    // 4-pane workspace with a maximized pane and preset-grid identity
+
     usePaneStore.setState({
       root: fourPaneLayout() as never,
       paneCount: 4,
@@ -234,7 +225,6 @@ describe('VibeGrid Workspace Persistence', () => {
       maximizedPaneId: 'term-3',
     });
 
-    // Switch away → view captured on the leaving workspace
     useWorkspaceStore.getState().switchWorkspace('ws-second');
     const leaving = useWorkspaceStore.getState().workspaces.find((w) => w.id === 'default-workspace');
     expect(leaving?.view).toEqual({
@@ -244,7 +234,6 @@ describe('VibeGrid Workspace Persistence', () => {
       presetCount: 4,
     });
 
-    // Switch back → view restored (focused + maximized + preset identity)
     useWorkspaceStore.getState().switchWorkspace('default-workspace');
     const ps = usePaneStore.getState();
     expect(ps.focusedPaneId).toBe('term-2');
@@ -265,7 +254,6 @@ describe('VibeGrid Workspace Persistence', () => {
 
     useWorkspaceStore.getState().switchWorkspace('default-workspace');
 
-    // Stale focused id (term-gone not in the tree) → falls back to first pane
     expect(usePaneStore.getState().focusedPaneId).toBe('term-1');
     expect(usePaneStore.getState().paneCount).toBe(4);
   });
@@ -292,21 +280,19 @@ describe('VibeGrid Workspace Persistence', () => {
       activeWorkspaceId: 'default-workspace',
       isLoading: false,
     });
-    // The current workspace has 4 live panes (with runtime paneIds)
+
     usePaneStore.setState({ root: fourPaneLayout() as never });
 
     useWorkspaceStore.getState().switchWorkspace('ws-second');
 
-    // Pre-switch save used the OLD workspace + the live 4-pane root
     const payload = mockedInvoke.mock.calls[0][1] as {
       workspace: { name: string; layout: Record<string, unknown> };
     };
     expect(payload.workspace.name).toBe('Default Workspace');
     expect(JSON.stringify(payload.workspace.layout)).toContain('term-1');
-    // The DISK copy is sanitized — runtime paneIds never leave the process
+
     expect(JSON.stringify(payload.workspace.layout)).not.toContain('pty-');
 
-    // Target workspace restored, active switched + persisted
     expect(useWorkspaceStore.getState().activeWorkspaceId).toBe('ws-second');
     expect(usePaneStore.getState().paneCount).toBe(1);
     expect(usePaneStore.getState().focusedPaneId).toBe('term-s');
@@ -326,9 +312,6 @@ describe('VibeGrid Workspace Persistence', () => {
 
     useWorkspaceStore.getState().switchWorkspace('ws-second');
 
-    // The leaving workspace's in-memory layout STILL carries the live paneIds
-    // (the kill-on-switch bug would have stripped them), so switching back
-    // re-attaches to the still-running PTYs instead of spawning fresh shells.
     const leaving = useWorkspaceStore.getState().workspaces.find((w) => w.id === 'default-workspace');
     expect(JSON.stringify(leaving?.layout)).toContain('pty-111');
     expect(JSON.stringify(leaving?.layout)).toContain('pty-444');
@@ -345,21 +328,18 @@ describe('VibeGrid Workspace Persistence', () => {
     });
     usePaneStore.setState({ root: { type: 'terminal', id: 'term-s', title: 'Terminal 2' } as never, paneCount: 1, layoutMode: 'preset', focusedPaneId: 'term-s' });
 
-    // Switch back to the 4-pane workspace — its LIVE layout (with paneIds)
-    // must be applied to the pane store so TerminalPane re-attaches.
     useWorkspaceStore.getState().switchWorkspace('default-workspace');
 
     expect(usePaneStore.getState().paneCount).toBe(4);
     const json = JSON.stringify(usePaneStore.getState().root);
     expect(json).toContain('term-1');
-    expect(json).toContain('pty-333'); // live PTY handles preserved for re-attach
+    expect(json).toContain('pty-333');
     expect(useWorkspaceStore.getState().activeWorkspaceId).toBe('default-workspace');
   });
 
   it('restores the last active workspace from localStorage on load (not just recency)', async () => {
     localStorage.setItem('vibegrid.active-workspace', 'ws-second');
-    // default-workspace is the most recently updated on disk, but the user was
-    // last working in ws-second — recency alone would pick the wrong one.
+
     mockedInvoke.mockResolvedValueOnce([
       { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-1', title: 'Terminal 1' }, created_at: 1000, updated_at: 5000, version: 1 },
       { id: 'ws-second', name: 'Second', layout: { type: 'terminal', id: 'term-2', title: 'Terminal 2' }, created_at: 1000, updated_at: 1000, version: 1 },
@@ -376,7 +356,6 @@ describe('VibeGrid Workspace Persistence', () => {
 
     const id = useWorkspaceStore.getState().createWorkspace('Deferred', { activate: false });
 
-    // Created, but the active workspace and live layout are untouched
     expect(useWorkspaceStore.getState().activeWorkspaceId).toBe('default-workspace');
     expect(usePaneStore.getState().paneCount).toBe(4);
     expect(JSON.stringify(usePaneStore.getState().root)).toContain('term-4');
@@ -384,7 +363,7 @@ describe('VibeGrid Workspace Persistence', () => {
   });
 
   it('createWorkspace() activates immediately and applies the empty layout', async () => {
-    usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1' } as never }); // no paneId → nothing running
+    usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1' } as never });
 
     const id = useWorkspaceStore.getState().createWorkspace('New WS');
 
@@ -438,20 +417,18 @@ describe('VibeGrid Workspace Persistence', () => {
     const copy = useWorkspaceStore.getState().workspaces.find((w) => w.id === id);
     expect(copy).toBeDefined();
     expect(copy?.name).toBe('Source Copy');
-    // The copy is sanitized: fresh shells, never sharing the original's PTYs.
+
     expect(JSON.stringify(copy?.layout)).not.toContain('pty-');
-    // Structure preserved (4 terminals, titles survive).
+
     expect(JSON.stringify(copy?.layout)).toContain('Web Server');
-    expect(usePaneStore.getState().paneCount).toBe(1); // did NOT switch
-    // Persisted to disk with the new id.
+    expect(usePaneStore.getState().paneCount).toBe(1);
+
     expect(mockedInvoke).toHaveBeenCalledWith(
       'save_workspace',
       expect.objectContaining({ workspace: expect.objectContaining({ id }) })
     );
   });
 
-  // Customization audit C12: per-workspace overrides are stored on the record,
-  // cleared when emptied, and persisted through save/load payloads.
   it('setWorkspaceOverrides stores, clears and persists overrides', () => {
     useWorkspaceStore.setState({
       workspaces: [
@@ -468,7 +445,6 @@ describe('VibeGrid Workspace Persistence', () => {
     const afterSet = useWorkspaceStore.getState().workspaces[0];
     expect(afterSet.overrides).toEqual({ themeName: 'nord', fontSize: 16, defaultShell: '/bin/zsh' });
 
-    // The persisted payload carries the overrides (Rust WorkspaceData field).
     const lastPayload = mockedInvoke.mock.calls.find((c) => c[0] === 'save_workspace')?.[1];
     expect((lastPayload as { workspace: { overrides?: unknown } }).workspace.overrides).toEqual({
       themeName: 'nord',
@@ -476,13 +452,10 @@ describe('VibeGrid Workspace Persistence', () => {
       defaultShell: '/bin/zsh',
     });
 
-    // Empty object clears the override (falls back to global settings).
     useWorkspaceStore.getState().setWorkspaceOverrides('a', null);
     expect(useWorkspaceStore.getState().workspaces[0].overrides).toBeUndefined();
   });
 
-  // Customization audit L16: deleting the LAST workspace used to refuse; now it
-  // resets to a fresh default workspace (running terminals included).
   it('deleting the last workspace resets to a fresh default instead of refusing', () => {
     const state = useWorkspaceStore.getState();
     expect(state.workspaces.length).toBe(1);
@@ -492,12 +465,12 @@ describe('VibeGrid Workspace Persistence', () => {
 
     const after = useWorkspaceStore.getState();
     expect(after.workspaces.length).toBe(1);
-    expect(after.workspaces[0].id).not.toBe(oldId); // fresh id — no disk collision
+    expect(after.workspaces[0].id).not.toBe(oldId);
     expect(after.workspaces[0].name).toBe('Default Workspace');
     expect(after.activeWorkspaceId).toBe(after.workspaces[0].id);
     expect(usePaneStore.getState().paneCount).toBe(1);
     expect(usePaneStore.getState().root.type).toBe('terminal');
-    // The on-disk delete was issued and the fresh workspace persisted.
+
     expect(mockedInvoke).toHaveBeenCalledWith('delete_workspace', { id: oldId });
     expect(mockedInvoke).toHaveBeenCalledWith(
       'save_workspace',

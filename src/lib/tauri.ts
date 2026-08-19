@@ -1,14 +1,10 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, EventCallback, UnlistenFn } from '@tauri-apps/api/event';
 
-// Check if running inside Tauri
 export const isTauri = (): boolean => {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 };
 
-/** Extra spawn options for a new pane (customization audit C11): startup args
- *  and environment for the DEFAULT shell. Only passed when the pane uses the
- *  global default shell (never for a per-pane shell override). */
 export interface SpawnPtyOptions {
   shellArgs?: string[];
   shellEnv?: Record<string, string>;

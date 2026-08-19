@@ -7,7 +7,7 @@ import { Palette } from 'lucide-react';
 export const WorkspaceCustomizer: React.FC = () => {
   return (
     <div className="flex flex-col gap-5 w-full max-w-4xl mx-auto py-1 select-none">
-      {/* Step Header */}
+      {}
       <div>
         <div className="flex items-center gap-2 text-white/60 font-mono text-xs font-semibold uppercase tracking-wider mb-1">
           <Palette className="w-4 h-4" />

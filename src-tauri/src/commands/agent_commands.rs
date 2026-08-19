@@ -16,7 +16,7 @@ pub struct AgentDiscoveryResult {
 }
 
 fn search_binary_in_paths(binary_name: &str) -> Option<PathBuf> {
-    // 1. Check standard PATH
+
     if let Ok(path_var) = env::var("PATH") {
         for dir in env::split_paths(&path_var) {
             let full_path = dir.join(binary_name);
@@ -41,7 +41,6 @@ fn search_binary_in_paths(binary_name: &str) -> Option<PathBuf> {
         }
     }
 
-    // 2. Check well-known directories on Unix/macOS
     let home = crate::utils::paths::get_home_dir();
     let candidate_dirs: Vec<PathBuf> = vec![
         PathBuf::from("/opt/homebrew/bin"),
@@ -67,7 +66,6 @@ fn search_binary_in_paths(binary_name: &str) -> Option<PathBuf> {
         }
     }
 
-    // 3. Check NVM versions directory
     if let Some(ref h) = home {
         let nvm_dir = h.join(".nvm/versions/node");
         if nvm_dir.is_dir() {
@@ -118,11 +116,7 @@ pub async fn discover_installed_agents() -> Result<Vec<AgentDiscoveryResult>, St
 
         for (id, binary_candidates, version_args) in agent_definitions {
             if let Some(path) = search_first_available_binary(&binary_candidates) {
-                // Run the version-check with a 3-second wall-clock timeout.
-                // Some CLI binaries hang indefinitely on `--version` if they
-                // try to reach a remote server; a bare `.output()` call would
-                // block this spawn_blocking thread forever, eventually starving
-                // the Tokio worker pool.
+
                 let (tx, rx) = std::sync::mpsc::channel();
                 let path_clone = path.clone();
                 let args_clone = version_args.clone();

@@ -13,7 +13,6 @@ export interface CustomizationStoreState {
   isOpen: boolean;
   activeSection: 'identity' | 'appearance' | 'terminal';
 
-  // Workspace Identity & PTY Env
   workspaceName: string;
   workspaceIcon: WorkspaceIconConfig;
   colorRingHex: string;
@@ -22,14 +21,12 @@ export interface CustomizationStoreState {
   isGitDirty: boolean;
   envVars: Record<string, string>;
 
-  // Retro WebGL CRT Shader
   retroShader: RetroShaderConfig;
 
-  // Draft Terminal & Codex 3-Role Theme Studio
   themeName: string;
   themeMode: ThemeMode;
-  fontFamily: string; // Code font
-  uiFont: string;     // UI font
+  fontFamily: string;
+  uiFont: string;
   fontSize: number;
   fontLigatures: boolean;
   lineHeight: number;
@@ -38,16 +35,14 @@ export interface CustomizationStoreState {
   cursorBlink: boolean;
   uiAccentColor: string | null;
 
-  // 3-Role independent colors & contrast
   themeBackground: string;
   themeSurface: string;
   themeAccent: string;
   themeInk: string;
-  contrast: number; // 0.8x - 1.5x
+  contrast: number;
   diffAddColor: string;
   diffRemoveColor: string;
 
-  // Actions
   openCustomizer: (section?: 'identity' | 'appearance' | 'terminal') => void;
   closeCustomizer: () => void;
   setActiveSection: (section: 'identity' | 'appearance' | 'terminal') => void;
@@ -297,8 +292,7 @@ export const useCustomizationStore = create<CustomizationStoreState>((set, get) 
           : {}),
       });
     } catch {
-      // safe fallback
+
     }
   },
 }));
-

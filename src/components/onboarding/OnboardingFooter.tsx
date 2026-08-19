@@ -25,7 +25,7 @@ export const OnboardingFooter: React.FC<OnboardingFooterProps> = ({ currentStep:
 
   return (
     <div className="flex items-center justify-between w-full max-w-4xl mx-auto py-3.5 px-6 border-t border-white/10 mt-auto font-sans select-none bg-black/20">
-      {/* Left: Back & Skip */}
+      {}
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -47,7 +47,7 @@ export const OnboardingFooter: React.FC<OnboardingFooterProps> = ({ currentStep:
         </button>
       </div>
 
-      {/* Right: Next or Launch */}
+      {}
       <div>
         {isFinalStep ? (
           <button

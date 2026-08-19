@@ -34,17 +34,9 @@ import { runMacro } from '@/lib/macros';
 import { useShallow } from 'zustand/react/shallow';
 import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setBatchInterval, setGlobalSummon, voiceSetLanguage, voiceSetModelSize, autostartSetEnabled, isTauri } from '@/lib/tauri';
 
-// Perf: the grid is the ONLY consumer of the layout tree. It subscribes to
-// `root` itself so the rest of the app shell (Header, modals, StatusBar) does
-// not re-render on every divider drag / ratio change.
 const LayoutView: React.FC = () => {
   const root = usePaneStore((s) => s.root);
-  // Remount the ENTIRE Allotment tree on every structural layout change.
-  // Allotment v1 corrupts its internal sizes when the same component instance
-  // receives a different tree shape in place (e.g. preset 6→9 deepens the
-  // nesting) — panes collapse to zero and reset() cannot recover them. A fresh
-  // mount always measures correctly, and terminals re-attach to their live PTY
-  // paneIds (the workspace-switch path), so no running shell is lost.
+
   const gridVersion = usePaneStore((s) => s.gridVersion);
   return (
     <div className="flex-1 h-full overflow-hidden relative">
@@ -54,8 +46,6 @@ const LayoutView: React.FC = () => {
   );
 };
 
-// Set when the user explicitly confirms the quit dialog: the subsequent
-// win.close() re-enters onCloseRequested, which must not ask again.
 let quitApproved = false;
 
 export const App: React.FC = () => {
@@ -129,25 +119,19 @@ export const App: React.FC = () => {
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [splashDismissed, setSplashDismissed] = useState(false);
-  // Customization audit: show/hide the splash screen at startup.
+
   const showSplash = useSettingsStore((s) => s.showSplash);
-  // Customization audit: UI zoom, animation master switch, compact chrome.
+
   const uiZoom = useSettingsStore((s) => s.uiZoom);
   const animationsEnabled = useSettingsStore((s) => s.animationsEnabled);
   const compactMode = useSettingsStore((s) => s.compactMode);
 
-  // Sync global appearance classes (animations / compact) onto <html> so every
-  // component's CSS animations + padding react to them without per-component
-  // plumbing (customization audit C14/C26).
   useEffect(() => {
     const root = document.documentElement;
     root.classList.toggle('vibegrid-no-anim', !animationsEnabled);
     root.classList.toggle('vibegrid-compact', compactMode);
   }, [animationsEnabled, compactMode]);
 
-  // Customization audit C3: follow the OS color scheme (and the Tauri window
-  // theme when available) so themeMode 'system' stays live. The settings store
-  // re-applies the chrome variables on every preference change.
   useEffect(() => {
     const apply = (prefersDark: boolean) => {
       useSettingsStore.getState().setSystemPrefersDark(prefersDark);
@@ -156,8 +140,7 @@ export const App: React.FC = () => {
     apply(mq.matches);
     const onChange = (e: MediaQueryListEvent) => apply(e.matches);
     mq.addEventListener('change', onChange);
-    // Tauri reports the window theme more reliably than the CSS media query in
-    // some webviews — adopt it when it resolves to a concrete value.
+
     let cancelled = false;
     let unlisten: (() => void) | undefined;
     if (isTauri()) {
@@ -193,22 +176,14 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Perf: these two guards read the layout tree via selectors that return a
-  // constant while no dialog is pending, so App itself does NOT re-render on
-  // every layout change (divider drags) — only while a close/quit dialog is
-  // actually open, when the live count matters.
-  // Does the specific pane being closed have a live PTY? (accurate copy for the close dialog)
   const closingPaneHasPty = usePaneStore((s) =>
     pendingClosePaneId ? getTerminalNodes(s.root).some((t) => t.id === pendingClosePaneId && Boolean(t.paneId)) : false
   );
 
-  // Load saved workspaces on app mount
   useEffect(() => {
     loadWorkspaces();
   }, [loadWorkspaces]);
 
-  // Surface non-fatal startup warnings from the Rust side (e.g. global summon
-  // shortcut failed to register because another instance/app holds it)
   useEffect(() => {
     let cancelled = false;
     let unlisten: (() => void) | undefined;
@@ -227,10 +202,6 @@ export const App: React.FC = () => {
     };
   }, [addToast]);
 
-  // Save active workspace layout on window unload — pagehide is more reliable
-  // than beforeunload in webviews (fires on teardown, Cmd+Q, tray quit), and
-  // beforeunload remains as a web-preview fallback. Both are fire-and-forget;
-  // the debounced auto-save below is the real safety net.
   useEffect(() => {
     const handlePageHide = () => {
       saveCurrentWorkspace();
@@ -246,12 +217,6 @@ export const App: React.FC = () => {
     };
   }, [saveCurrentWorkspace]);
 
-  // Reliable close-time flush (Tauri): onCloseRequested fires before the window
-  // is destroyed, unlike beforeunload which can be cut short. We preventDefault,
-  // await the save, then destroy the window ourselves so the write completes.
-  //
-  // UX audit P0 #1: if terminals are still running (and the user hasn't opted
-  // into minimize-to-tray), quitting is destructive — intercept and ask first.
   useEffect(() => {
     if (!isTauri()) return;
     let unlisten: (() => void) | undefined;
@@ -265,8 +230,7 @@ export const App: React.FC = () => {
       } finally {
         if (unlisten) unlisten();
         const win = (await import('@tauri-apps/api/window')).getCurrentWindow();
-        // Customization audit C10: either minimizeToTray OR closeToTray hides
-        // to the tray instead of quitting; the tray icon shows the window again.
+
         const { minimizeToTray, closeToTray } = useSettingsStore.getState();
         if (minimizeToTray || closeToTray) {
           await win.hide();
@@ -280,17 +244,14 @@ export const App: React.FC = () => {
       .then(({ getCurrentWindow }) =>
         getCurrentWindow().onCloseRequested(async (event) => {
           event.preventDefault();
-          // REVIEWER FIX: a stale approval from a previously rejected close
-          // must never let the NEXT close bypass the running-processes guard.
+
           if (quitApproved) {
             quitApproved = false;
             await finalizeClose();
             return;
           }
           const running = getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId).length;
-          // Customization audit L19: with quit confirmation disabled, close
-          // immediately (finalizeClose still saves + hides to tray if set).
-          // C10: hiding to the tray terminates nothing, so no confirm needed.
+
           const { minimizeToTray, closeToTray, confirmations } = useSettingsStore.getState();
           if (running > 0 && !minimizeToTray && !closeToTray && confirmations.quit === 'always') {
             useUIStore.getState().requestQuit();
@@ -307,7 +268,7 @@ export const App: React.FC = () => {
         }
       })
       .catch(() => {
-        // window API unavailable — beforeunload fallback still applies
+
       });
 
     return () => {
@@ -316,10 +277,6 @@ export const App: React.FC = () => {
     };
   }, [saveCurrentWorkspace]);
 
-  // Debounced auto-save: any layout change (split, close, resize, title, cwd)
-  // is persisted a short while later, so nothing is lost if the app crashes or
-  // is killed without a clean close. Customization audit C24: the interval is
-  // user-configurable (100–10000ms).
   useEffect(() => {
     let timer: number | undefined;
     const unsub = usePaneStore.subscribe((state, prev) => {
@@ -335,9 +292,6 @@ export const App: React.FC = () => {
     };
   }, [saveCurrentWorkspace]);
 
-  // UX audit P3 #12: when a preset grid is demoted to a custom layout by a
-  // split/close, say so — otherwise the Header highlight silently disappears.
-  // (A preset grid the user merely RESIZES keeps its preset identity now.)
   useEffect(() => {
     return usePaneStore.subscribe((state, prev) => {
       if (state.layoutMode === 'custom' && prev.layoutMode === 'preset' && prev.presetCount > 1) {
@@ -350,12 +304,6 @@ export const App: React.FC = () => {
     });
   }, [addToast]);
 
-  // Re-apply persisted backend settings on boot (gap 10/14 + audit find 1):
-  // localStorage restores the UI values, but the Rust side only learns about
-  // them through their setters — push them all once on startup. Without the
-  // batch interval the Rust batcher silently stays on its own 16 ms default
-  // after every restart even when the UI shows a different persisted value.
-  // Customization audit C28/C9: voice language/model + launch-at-login too.
   useEffect(() => {
     const { voiceSilenceTimeoutMs, voiceInputDevice, ipcBatchIntervalMs, voiceLanguage, voiceModelSize, launchAtLogin } = useSettingsStore.getState();
     voiceSetSilenceTimeout(voiceSilenceTimeoutMs).catch(() => {});
@@ -366,9 +314,6 @@ export const App: React.FC = () => {
     autostartSetEnabled(launchAtLogin).catch(() => {});
   }, []);
 
-  // Customization audit C8: apply the startup window behavior ONCE after the
-  // webview is live (start maximized / start hidden to the tray). These are
-  // startup-only — toggling them mid-session does not move the window.
   useEffect(() => {
     if (!isTauri()) return;
     const { startMaximized, startHidden } = useSettingsStore.getState();
@@ -384,9 +329,6 @@ export const App: React.FC = () => {
     })();
   }, []);
 
-  // Reassignable system-wide summon (audit): sync the persisted 'global-summon'
-  // keybinding to the Rust backend on boot, and push changes live when the
-  // user reassigns it in Settings (or resets keybindings).
   useEffect(() => {
     const current = useKeybindingsStore.getState().keybindings['global-summon']?.currentKey;
     if (current) setGlobalSummon(current).catch(() => {});
@@ -397,12 +339,9 @@ export const App: React.FC = () => {
     });
   }, []);
 
-  // Dynamic Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Re-assignable keybindings win over hardcoded shortcuts (audit find 5):
-      // these checks run FIRST so a user-reassigned combo (e.g. settings bound
-      // to Cmd+B) is never silently shadowed by a hardcoded shortcut below.
+
       if (matchesKeybinding(e, 'open-settings')) {
         e.preventDefault();
         toggleSettings();
@@ -446,31 +385,24 @@ export const App: React.FC = () => {
       if (matchesKeybinding(e, 'close-pane')) {
         e.preventDefault();
         if (focusedPaneId) {
-          // Guard: always confirm before terminating a pane (audit 7.1)
+
           useUIStore.getState().requestClosePane(focusedPaneId);
         }
         return;
       }
 
-      // Audit find 4: 'new-workspace' was advertised in Settings/Palette but had
-      // NO handler anywhere — pressing Mod+Shift+N did nothing. Now it opens the
-      // create-workspace modal.
       if (matchesKeybinding(e, 'new-workspace')) {
         e.preventDefault();
         openCreateWsModal();
         return;
       }
 
-      // UX audit P2 #10: these were hardcoded; they now live in the keybinding
-      // store so users can reassign them (and conflicts are detected).
       if (matchesKeybinding(e, 'toggle-sidebar')) {
         e.preventDefault();
         setIsSidebarOpen((prev) => !prev);
         return;
       }
 
-      // Switch Workspaces (non-destructive: workspace isolation keeps the other
-      // workspace's terminals running in the background)
       if (matchesKeybinding(e, 'switch-workspace-prev')) {
         e.preventDefault();
         const currentIndex = workspaces.findIndex((w) => w.id === activeWorkspaceId);
@@ -490,7 +422,6 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Cycle Focus
       if (matchesKeybinding(e, 'cycle-focus-next')) {
         e.preventDefault();
         navigateFocus('next');
@@ -502,7 +433,6 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Navigate Focus
       if (matchesKeybinding(e, 'focus-left')) {
         e.preventDefault();
         navigateFocus('left');
@@ -524,7 +454,6 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Font size shortcuts
       if (matchesKeybinding(e, 'font-increase')) {
         e.preventDefault();
         increaseFontSize();
@@ -541,9 +470,6 @@ export const App: React.FC = () => {
         return;
       }
 
-      // Customization audit C22: user macro keybindings (checked last, so a
-      // macro combo that collides with a built-in binding loses to the
-      // built-in — predictable and safe).
       const { macros } = useSettingsStore.getState();
       for (const macro of macros) {
         if (macro.keybinding && matchesAccel(e, macro.keybinding)) {
@@ -575,8 +501,6 @@ export const App: React.FC = () => {
     addToast,
   ]);
 
-  // Quit guard (UX audit P0 #1): the window close was intercepted because
-  // terminals are still running — ask the user before terminating them.
   const handleConfirmQuit = async () => {
     useUIStore.getState().cancelQuit();
     try {
@@ -609,7 +533,7 @@ export const App: React.FC = () => {
           <SettingsModal />
         ) : (
           <>
-            {/* Hub View — Full-Screen Pure Black Canvas with Ambient Glow */}
+            {}
             {activeViewMode === 'hub' && (
               <div
                 className="flex-1 h-full flex items-center justify-center animate-fade-in overflow-hidden"
@@ -622,22 +546,22 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {/* Grid View: Active Multi-Pane Terminal Workspace */}
+            {}
             {activeViewMode === 'grid' && (
               <div className="flex-1 h-full flex gap-0 animate-fade-in overflow-hidden">
-                {/* Main Terminal Grid Island */}
+                {}
                 <div className="flex-1 h-full overflow-hidden relative flex">
                   <LayoutView />
                 </div>
 
-                {/* Floating Diff Viewer Island */}
+                {}
                 {isDiffViewerOpen && (
                   <div className="w-[440px] max-w-[50vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
                     <ContentAwareDiffViewer onClose={() => setDiffViewerOpen(false)} />
                   </div>
                 )}
 
-                {/* Floating Agent Conversation Island */}
+                {}
                 {isChatOpen && (
                   <div className="w-[400px] max-w-[45vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
                     <AgentConversationPanel onClose={() => setChatOpen(false)} />
@@ -653,7 +577,7 @@ export const App: React.FC = () => {
       <ShortcutsModal />
       {isAboutOpen && <AboutModal onClose={() => setIsAboutOpen(false)} />}
       <NotificationToastContainer />
-      {/* Cinematic Splash Screen matching splash.html */}
+      {}
       {showSplash && !splashDismissed && !useOnboardingStore.getState().isOpen && (
         <CinematicSplashScreen onComplete={() => setSplashDismissed(true)} />
       )}
@@ -663,7 +587,7 @@ export const App: React.FC = () => {
       <AgentLauncherModal onProceedToCustomizer={() => useCustomizationStore.getState().openCustomizer()} />
       <WorkspaceCustomizerModal />
 
-      {/* Guarded: quit with running processes (UX audit P0 #1) */}
+      {}
       {pendingQuit && (
         <ConfirmModal
           title="Quit VibeGrid?"

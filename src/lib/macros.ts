@@ -4,13 +4,6 @@ import { useUIStore } from '@/store/useUIStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
 
-/**
- * Customization audit C22: user-defined macros. A macro is a named sequence of
- * actions (from this catalog) + optional pauses, runnable from the command
- * palette or via an optional keybinding. Actions execute through the same
- * guarded store paths as the UI, so destructive ones (close pane) keep their
- * confirmations.
- */
 export interface MacroAction {
   id: string;
   label: string;
@@ -140,24 +133,16 @@ export const MACRO_ACTIONS: MacroAction[] = [
   },
 ];
 
-/** Look up a catalog action by id (unknown ids are skipped at run time). */
 export function getMacroAction(id: string): MacroAction | undefined {
   return MACRO_ACTIONS.find((a) => a.id === id);
 }
 
-/** One macro runs at a time — nested/interleaved runs would fight over focus. */
 let runningMacro = false;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-/** Between-step settle so the UI (focus moves, modal opens) keeps up. */
 const SETTLE_MS = 120;
 
-/**
- * Execute a macro's steps in order. Delay steps pause; action steps with an
- * unknown id are skipped (an imported/edited macro must never crash the app).
- * Runs fire-and-forget; a toast announces the run.
- */
 export function runMacro(macro: Macro): void {
   if (runningMacro || !macro || macro.steps.length === 0) return;
   runningMacro = true;

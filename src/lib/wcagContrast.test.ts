@@ -24,17 +24,15 @@ describe('WCAG Contrast Validation Engine', () => {
   });
 
   it('evaluates WCAG rating levels accurately', () => {
-    // Pure white on black -> AAA
+
     const resAAA = evaluateWCAG('#ffffff', '#08080a');
     expect(resAAA.rating).toBe('AAA');
     expect(resAAA.isAccessible).toBe(true);
 
-    // Medium gray on dark -> AA or AA-large
     const resAA = evaluateWCAG('#abb2bf', '#282c34');
     expect(['AAA', 'AA']).toContain(resAA.rating);
     expect(resAA.isAccessible).toBe(true);
 
-    // Dark gray on black -> Fail
     const resFail = evaluateWCAG('#222222', '#000000');
     expect(resFail.rating).toBe('Fail');
     expect(resFail.isAccessible).toBe(false);

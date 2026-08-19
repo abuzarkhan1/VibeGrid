@@ -2,7 +2,6 @@ use serde_json::{json, Value};
 use std::io::{self, BufRead, Write};
 use std::time::Duration;
 
-/// Query the VibeGrid HTTP server for pane state, with automatic fallback and per-launch bearer token auth.
 fn fetch_panes_with_fallback() -> String {
     let primary_port = crate::http_server::persisted_http_port()
         .unwrap_or_else(crate::http_server::http_port);
@@ -52,10 +51,6 @@ fn fetch_panes_with_fallback() -> String {
     }
 }
 
-/// Build the JSON-RPC response (or `None` when there is no response, e.g. a
-/// notification) for one incoming line. Extracted into a pure function so the
-/// protocol logic is unit-testable without a stdio pipe (audit: Rust tests for
-/// the MCP server were missing).
 fn respond_to(line: &str) -> Option<Value> {
     let req: Value = serde_json::from_str(line).ok()?;
     let method = req.get("method").and_then(|m| m.as_str())?;
@@ -149,7 +144,7 @@ mod tests {
         assert_eq!(res["id"], 1);
         assert_eq!(res["result"]["serverInfo"]["name"], "vibegrid");
         assert_eq!(res["result"]["protocolVersion"], "2024-11-05");
-        // Audit: the version must come from the crate, not a hardcoded string.
+
         assert_eq!(res["result"]["serverInfo"]["version"], env!("CARGO_PKG_VERSION"));
     }
 

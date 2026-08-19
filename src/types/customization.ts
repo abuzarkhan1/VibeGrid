@@ -7,15 +7,14 @@ export interface WorkspaceIconConfig {
   brandId?: string;
 }
 
-
 export interface RetroShaderConfig {
   enabled: boolean;
-  curvature: number;         // 0.0 to 0.3
-  scanlineIntensity: number; // 0.0 to 1.0
-  scanlineCount: number;     // 300 to 800
-  bloomIntensity: number;    // 0.0 to 1.0
-  chromaticOffset: number;   // 0.0 to 0.015
-  vignetteDarkness: number;  // 0.0 to 1.0
+  curvature: number;
+  scanlineIntensity: number;
+  scanlineCount: number;
+  bloomIntensity: number;
+  chromaticOffset: number;
+  vignetteDarkness: number;
 }
 
 export type RetroShaderPresetName = 'default' | 'cyberpunk' | 'matrix' | 'arcade' | 'subtle' | 'off';

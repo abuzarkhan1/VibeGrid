@@ -1,25 +1,8 @@
-//! Launch-at-login (customization audit C9).
-//!
-//! Implements autostart natively on each platform with the standard OS
-//! mechanism — no extra crate, so there is nothing new to vendor or maintain:
-//!
-//! - macOS: a LaunchAgent plist in `~/Library/LaunchAgents`.
-//! - Windows: the `HKCU\...\CurrentVersion\Run` registry value via `reg.exe`.
-//! - Linux: an XDG autostart `.desktop` entry in `~/.config/autostart`.
-//!
-//! The binary path comes from `std::env::current_exe()` (the .app bundle's
-//! executable when packaged).
-
 use std::path::PathBuf;
 
 #[cfg(target_os = "macos")]
 const LABEL: &str = "com.vibegrid.VibeGrid";
 
-/// Is VibeGrid currently configured to launch at login?
-/// - macOS/Linux: the autostart file exists.
-/// - Windows: the HKCU Run registry value exists (checked via reg.exe).
-///
-/// Only used by tests to assert state after enable/disable.
 #[cfg(test)]
 pub fn is_enabled() -> bool {
     #[cfg(target_os = "macos")]
@@ -46,7 +29,6 @@ pub fn is_enabled() -> bool {
     }
 }
 
-/// Enable or disable launch-at-login. Errors surface as user-facing toasts.
 pub fn set_enabled(enabled: bool) -> Result<(), String> {
     if enabled {
         enable()
@@ -55,8 +37,6 @@ pub fn set_enabled(enabled: bool) -> Result<(), String> {
     }
 }
 
-/// The OS-specific file the autostart state lives in (macOS/Linux only — the
-/// Windows backend uses the registry).
 fn autostart_path() -> Option<PathBuf> {
     crate::utils::paths::get_autostart_path(LABEL)
 }
@@ -134,8 +114,7 @@ fn disable() -> Result<(), String> {
         ])
         .status()
         .map_err(|e| format!("Could not run reg.exe: {e}"))?;
-    // "The system cannot find the file specified" when the value never existed
-    // is fine — deleting a non-existent autostart entry is a no-op success.
+
     if status.success() {
         Ok(())
     } else {
@@ -166,8 +145,6 @@ fn disable() -> Result<(), String> {
     }
 }
 
-// Fallbacks so `set_enabled`/the tests compile on any target, even ones with
-// no autostart backend (they fail gracefully instead of panicking).
 #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
 fn enable() -> Result<(), String> {
     Err("Launch-at-login is not supported on this platform".into())
@@ -178,7 +155,6 @@ fn disable() -> Result<(), String> {
     Err("Launch-at-login is not supported on this platform".into())
 }
 
-// The command wrappers live here so the platform code stays private.
 #[tauri::command]
 pub fn autostart_set_enabled(enabled: bool) -> Result<(), String> {
     set_enabled(enabled)
@@ -188,10 +164,6 @@ pub fn autostart_set_enabled(enabled: bool) -> Result<(), String> {
 mod tests {
     use super::*;
 
-    /// The autostart backend writes real files under $HOME, so the test points
-    /// HOME at a temp dir and never touches the user's LaunchAgents/autostart
-    /// folder (same env-override pattern as the http_server tests; edition 2024
-    /// makes set_var unsafe). Windows (registry backend) is skipped entirely.
     #[test]
     fn toggling_autostart_roundtrips_on_supported_platforms() {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -209,7 +181,6 @@ mod tests {
                 Ok(())
             })();
 
-            // Restore the user's HOME and remove the temp dir.
             match prev_home {
                 Some(h) => unsafe { std::env::set_var("HOME", h) },
                 None => unsafe { std::env::remove_var("HOME") },
@@ -219,7 +190,6 @@ mod tests {
             result.expect("autostart toggle should succeed on macOS/Linux");
         }
 
-        // Unsupported platforms: the toggle must fail gracefully, not panic.
         #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
         {
             assert!(set_enabled(true).is_err());

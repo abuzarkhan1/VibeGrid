@@ -28,8 +28,6 @@ interface CommandItem {
 
 const RECENTS_KEY = 'vibegrid_palette_recents_v1';
 
-/** Live recents cap (customization audit L15) — reads the setting so a change
- *  in Settings applies immediately, no store subscription needed. */
 function maxRecents(): number {
   return useSettingsStore.getState().paletteRecentsMax;
 }
@@ -42,15 +40,11 @@ function loadRecents(): string[] {
       if (Array.isArray(parsed)) return parsed.filter((x) => typeof x === 'string').slice(0, maxRecents());
     }
   } catch (e) {
-    // ignore
+
   }
   return [];
 }
 
-/**
- * Gap 7: drop recents whose command ids no longer exist (stale across
- * versions), so the recents list never points at removed commands.
- */
 function pruneRecents(recents: string[], validIds: Set<string>): string[] {
   const pruned = recents.filter((id) => validIds.has(id));
   if (pruned.length !== recents.length) saveRecents(pruned);
@@ -61,12 +55,10 @@ function saveRecents(recents: string[]) {
   try {
     localStorage.setItem(RECENTS_KEY, JSON.stringify(recents.slice(0, maxRecents())));
   } catch (e) {
-    // ignore
+
   }
 }
 
-/** Resolve the focused pane's live PTY id from the layout tree (shared by the
- *  replay-transcript and custom-command actions). */
 function getFocusedPtyId(): string | undefined {
   const paneId = usePaneStore.getState().focusedPaneId;
   const find = (node: import('@/types/layout').PaneNode | null): string | undefined => {
@@ -84,8 +76,7 @@ export const CommandPalette: React.FC = () => {
   const { increaseFontSize, decreaseFontSize, resetFontSize, setThemeName, voiceToTerminal, setVoiceToTerminal, exportSettings, importSettings, userCommands, updateSettings } = useSettingsStore();
   const { workspaces, saveCurrentWorkspace } = useWorkspaceStore();
   const { keybindings } = useKeybindingsStore();
-  // Gap 19: last transcription, re-playable from the palette. Must be called
-  // before any early return (rules-of-hooks).
+
   const lastTranscript = useVoiceStore((s) => s.lastTranscript);
 
   const [query, setQuery] = useState('');
@@ -93,7 +84,7 @@ export const CommandPalette: React.FC = () => {
   const [showWsModal, setShowWsModal] = useState(false);
   const [showTitleModal, setShowTitleModal] = useState(false);
   const [showFolderModal, setShowFolderModal] = useState(false);
-  // Customization audit C21: custom command manager.
+
   const [showCmdModal, setShowCmdModal] = useState(false);
   const [cmdLabel, setCmdLabel] = useState('');
   const [cmdCommand, setCmdCommand] = useState('');
@@ -110,11 +101,8 @@ export const CommandPalette: React.FC = () => {
     }
   }, [isCommandPaletteOpen]);
 
-
-
   if (!isCommandPaletteOpen && !showWsModal && !showTitleModal && !showFolderModal && !showCmdModal) return null;
 
-  // Customization audit L12: 3/5/9/12 added to the equal-grid presets.
   const presets: PresetCount[] = [1, 2, 3, 4, 5, 6, 8, 9, 12, 16];
 
   const runCommand = (cmd: CommandItem) => {
@@ -125,8 +113,6 @@ export const CommandPalette: React.FC = () => {
     setCommandPaletteOpen(false);
   };
 
-  // Customization audit C21: type a user-defined command into the focused pane
-  // and press Enter. The pane must have a live PTY.
   const runUserCommand = (uc: UserCommand) => {
     const ptyId = getFocusedPtyId();
     if (!ptyId) {

@@ -211,7 +211,6 @@ interface LayoutStudioStore {
   cornerRadius: RadiusPreset;
   terminalPadding: number;
 
-  // Actions
   openStudio: (presetId?: string) => void;
   closeStudio: () => void;
   setActiveTab: (tab: 'presets' | 'custom') => void;

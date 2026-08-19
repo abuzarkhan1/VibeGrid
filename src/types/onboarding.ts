@@ -10,4 +10,3 @@ export interface PaneSpawnSpec {
   env?: Record<string, string>;
   initialCommand?: string;
 }
-

@@ -187,9 +187,6 @@ export const CODEX_PRESETS: Record<string, CodexThemeV1> = {
   },
 };
 
-/**
- * Validates and parses a JSON string into a structured CodexThemeV1 object.
- */
 export function parseCodexThemeV1(
   rawJson: string
 ): { success: true; data: CodexThemeV1 } | { success: false; error: string } {

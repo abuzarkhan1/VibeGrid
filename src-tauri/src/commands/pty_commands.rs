@@ -3,15 +3,6 @@ use std::collections::HashMap;
 use tauri::{async_runtime::spawn_blocking, State};
 use crate::AppState;
 
-/// Spawn a new PTY session. `shell` optionally overrides the default shell for
-/// this pane (audit: the per-pane shell field is now wired end-to-end).
-/// `shell_args`/`shell_env` carry the global default-shell startup config
-/// (customization audit C11) and are only supplied when no per-pane override
-/// is in play.
-///
-/// The underlying `openpty` + process spawn is blocking work — run it off the
-/// async runtime thread (audit improvement: spawn_blocking) so a slow spawn
-/// can't stall other IPC commands.
 #[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn spawn_pty(
@@ -54,8 +45,6 @@ pub struct BatchSpawnResult {
     pub error: Option<String>,
 }
 
-/// Concurrently spawn multiple PTY sessions with custom CWDs, environment
-/// variables, and optional auto-executed startup commands.
 #[tauri::command]
 pub async fn batch_spawn_panes(
     state: State<'_, AppState>,
@@ -105,8 +94,6 @@ pub async fn batch_spawn_panes(
     .map_err(|e| format!("Batch spawn task failed: {e}"))?
 }
 
-/// Write input to a pane. The writer is a blocking pipe — run the write off the
-/// async runtime thread (audit improvement) so slow/hung shells don't stall IPC.
 #[tauri::command]
 pub async fn write_to_pty(
     state: State<'_, AppState>,
@@ -119,7 +106,6 @@ pub async fn write_to_pty(
         .map_err(|e| format!("Write task failed: {e}"))?
 }
 
-/// Resize a pane. `resize` touches the PTY master synchronously — off-thread.
 #[tauri::command]
 pub async fn resize_pty(
     state: State<'_, AppState>,
@@ -133,8 +119,6 @@ pub async fn resize_pty(
         .map_err(|e| format!("Resize task failed: {e}"))?
 }
 
-/// Kill a pane and its process group. `kill_pane` waits up to 500 ms for the
-/// shell to exit — off-thread so the IPC channel stays responsive.
 #[tauri::command]
 pub async fn kill_pty(
     state: State<'_, AppState>,

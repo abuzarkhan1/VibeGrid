@@ -52,14 +52,14 @@ const SHADER_PRESETS: { id: RetroShaderPresetName; label: string }[] = [
 ];
 
 const ACCENT_SWATCHES = [
-  '#6366f1', // Indigo / VibeGrid Default
-  '#3c95f0', // Electric Azure
-  '#06b6d4', // Cyber Cyan
-  '#10b981', // Matrix Emerald
-  '#cba6f7', // Catppuccin Lavender
-  '#f59e0b', // Solar Amber
-  '#f43f5e', // Rose Neon
-  '#a855f7', // Synth Purple
+  '#6366f1',
+  '#3c95f0',
+  '#06b6d4',
+  '#10b981',
+  '#cba6f7',
+  '#f59e0b',
+  '#f43f5e',
+  '#a855f7',
 ];
 
 export const ThemeStudioSection: React.FC = () => {
@@ -114,7 +114,6 @@ export const ThemeStudioSection: React.FC = () => {
   const allThemes = getAllThemes(useSettingsStore.getState());
   const activeTerminalTheme = allThemes[themeName] || THEMES.tokyoNight;
 
-  // Live WCAG 2.1 Contrast Calculation
   const effectiveInk = themeInk || activeTerminalTheme.foreground;
   const effectiveBg = themeBackground || activeTerminalTheme.background;
   const wcagResult = evaluateWCAG(effectiveInk, effectiveBg);
@@ -151,7 +150,7 @@ export const ThemeStudioSection: React.FC = () => {
 
   return (
     <div className="space-y-8 text-white/90">
-      {/* ── Top Header & Action Cluster ─────────────────────────────────── */}
+      {}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
         <div>
           <div className="flex items-center gap-2.5">
@@ -171,7 +170,7 @@ export const ThemeStudioSection: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* WCAG Accessibility Scorecard Badge */}
+          {}
           <div
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all ${
               wcagResult.isAccessible

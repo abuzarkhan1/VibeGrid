@@ -38,7 +38,6 @@ describe('Customizer Components & ICE UI', () => {
       expect(screen.getByText('Workspace Emblem / Badge')).toBeTruthy();
       expect(screen.getByText('Color Identity Ring')).toBeTruthy();
 
-      // Click auto-detect name
       const autoBtn = screen.getByRole('button', { name: /Auto-Detect Name/i });
       fireEvent.click(autoBtn);
       expect(useCustomizationStore.getState().workspaceName).toBe('Dev');
@@ -59,7 +58,6 @@ describe('Customizer Components & ICE UI', () => {
       expect(screen.getByRole('button', { name: /Browse/i })).toBeTruthy();
       expect(screen.getByText('OPENAI_API_KEY')).toBeTruthy();
 
-      // Quick add a key
       const quickAddAnthropic = screen.getByText('+ ANTHROPIC_API_KEY');
       fireEvent.click(quickAddAnthropic);
       expect(useCustomizationStore.getState().envVars['ANTHROPIC_API_KEY']).toBeDefined();
@@ -73,7 +71,6 @@ describe('Customizer Components & ICE UI', () => {
       expect(screen.getAllByText('Tokyo Night')[0]).toBeTruthy();
       expect(screen.getAllByText('One Dark Pro')[0]).toBeTruthy();
 
-      // Switch theme
       const oneDarkBtns = screen.getAllByRole('button', { name: /One Dark Pro/i });
       fireEvent.click(oneDarkBtns[oneDarkBtns.length - 1]);
       expect(useCustomizationStore.getState().themeName).toBe('oneDarkPro');
@@ -87,7 +84,6 @@ describe('Customizer Components & ICE UI', () => {
 
       expect(screen.getByRole('dialog', { name: /VibeGrid Customization Studio/i })).toBeTruthy();
 
-      // Click Save & Apply
       const saveBtn = screen.getByRole('button', { name: /Save & Apply/i });
       fireEvent.click(saveBtn);
 

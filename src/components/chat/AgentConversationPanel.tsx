@@ -57,7 +57,7 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
 
   return (
     <div className="flex flex-col h-full w-full bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden font-sans select-none">
-      {/* Glass Header */}
+      {}
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.02]">
         <div className="flex items-center gap-2.5">
           <div className="h-2 w-2 rounded-full bg-white/80 shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
@@ -77,7 +77,7 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
         )}
       </div>
 
-      {/* Message Timeline Stream */}
+      {}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         {messages.map((msg) => (
           <ChatMessage key={msg.id} message={msg} />
@@ -85,7 +85,7 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
         <div ref={scrollEndRef} />
       </div>
 
-      {/* Glassmorphic Prompt Input Area */}
+      {}
       <div className="p-3 border-t border-white/10 bg-white/[0.02]">
         <div className="relative flex items-center rounded-xl bg-white/[0.04] border border-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/20 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]">
           <textarea

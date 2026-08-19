@@ -6,7 +6,7 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Structural chrome & backgrounds
+
         background: 'var(--color-bg, #090a0f)',
         sidebar: 'var(--color-sidebar, #0f1117)',
         surface: 'var(--color-surface, #141721)',
@@ -16,7 +16,6 @@ const config: Config = {
         'border-subtle': 'var(--color-border-subtle, rgba(255, 255, 255, 0.04))',
         foreground: 'var(--ink-primary, #F3F4F6)',
 
-        // Functional Glass Densities
         glass: {
           1: 'var(--glass-density-1, rgba(255, 255, 255, 0.03))',
           2: 'var(--glass-density-2, rgba(255, 255, 255, 0.06))',
@@ -27,7 +26,6 @@ const config: Config = {
           'border-dark': 'var(--glass-border-dark, rgba(0, 0, 0, 0.30))',
         },
 
-        // Solid Text (Ink) Tokens
         ink: {
           DEFAULT: 'var(--ink-primary, #F3F4F6)',
           primary: 'var(--ink-primary, #F3F4F6)',
@@ -37,7 +35,6 @@ const config: Config = {
         'text-secondary': 'var(--ink-secondary, #9CA3AF)',
         muted: 'var(--ink-muted, #6B7280)',
 
-        // Luminous Accent Tokens
         accent: {
           DEFAULT: 'var(--accent-primary, #8B5CF6)',
           primary: 'var(--accent-primary, #8B5CF6)',
@@ -48,7 +45,6 @@ const config: Config = {
         'accent-secondary': 'var(--color-accent-secondary, #8B5CF6)',
         'accent-glow': 'var(--accent-glow, rgba(139, 92, 246, 0.4))',
 
-        // Semantic Diff Tokens
         diff: {
           add: {
             DEFAULT: 'var(--diff-add-text, #4ADE80)',

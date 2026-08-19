@@ -52,7 +52,6 @@ describe('VibeGrid Layout Store', () => {
     const root = usePaneStore.getState().root as { shell?: string };
     expect(root.shell).toBe('/bin/fish');
 
-    // Empty clears the override.
     usePaneStore.getState().setPaneShell(rootId, '');
     const cleared = usePaneStore.getState().root as { shell?: string };
     expect(cleared.shell).toBeUndefined();
@@ -73,7 +72,7 @@ describe('VibeGrid Layout Store', () => {
     usePaneStore.getState().swapPanes(idA, idB);
 
     const root = usePaneStore.getState().root as { children: { id: string; title?: string; paneId?: string }[] };
-    expect(root.children[0].id).toBe(idA); // identity stays put
+    expect(root.children[0].id).toBe(idA);
     expect(root.children[0].title).toBe('Beta');
     expect(root.children[0].paneId).toBe('pty-b');
     expect(root.children[1].title).toBe('Alpha');
@@ -94,7 +93,7 @@ describe('VibeGrid Layout Store', () => {
     expect(usePaneStore.getState().paneCount).toBe(4);
     const terminals = getTerminalNodes(usePaneStore.getState().root);
     expect(terminals).toHaveLength(4);
-    // The original terminal survives untouched — same id AND same live paneId.
+
     const original = terminals.find((t) => t.id === rootId);
     expect(original).toBeDefined();
     expect(original?.paneId).toBe('pty-1');

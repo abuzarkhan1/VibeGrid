@@ -58,9 +58,9 @@ export const AgentCatalogCard: React.FC<AgentCatalogCardProps> = ({
       onClick={onSelect}
       className={`group relative flex flex-col justify-between text-left p-3.5 rounded-xl transition-all duration-200 outline-none select-none cursor-pointer backdrop-blur-md ${
         isSelected
-          ? // Selected State: Stronger glass with pure white border and glow
+          ?
             'bg-white/[0.06] border-2 border-white/80 ring-1 ring-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)] scale-[1.01]'
-          : // Unselected State: Subtle stealth glass
+          :
             'bg-white/[0.02] hover:bg-white/[0.04] border border-white/10 hover:border-white/30'
       }`}
     >

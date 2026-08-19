@@ -34,8 +34,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   const maxPanes = usePaneStore((s) => s.maxPanes);
   const addToast = useUIStore((s) => s.addToast);
   const requestClosePane = useUIStore((s) => s.requestClosePane);
-  
-  // Rename hook (Make sure your usePaneStore has setPaneTitle or renamePane)
+
   const setPaneTitle = usePaneStore((s) => (s as any).setPaneTitle || (s as any).renamePane);
 
   const paneIndex = usePaneStore((s) => s.getPaneIndex(nodeId));
@@ -124,7 +123,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         {/* REMOVED: macOS traffic lights */}
 
         <TerminalIcon className="w-3.5 h-3.5 text-white/60 shrink-0" />
-        
+
         {/* Editable Title Area */}
         {isEditing ? (
           <input

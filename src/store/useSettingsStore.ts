@@ -2,9 +2,6 @@ import { create } from 'zustand';
 import { setBatchInterval, voiceSetSilenceTimeout, voiceSetInputDevice, voiceSetLanguage, voiceSetModelSize, autostartSetEnabled } from '@/lib/tauri';
 import { TerminalTheme } from '@/types/terminal';
 
-// Lazy accessor for the UI store — dynamic import resolves at CALL time, so
-// there is no circular-import hazard at module load and it works in Vite and
-// Vitest alike. If the store isn't ready, the toast is dropped (non-fatal).
 const addToastLazy = (toast: { type: 'info' | 'warning' | 'error' | 'success'; title: string; description?: string }) => {
   import('./useUIStore')
     .then(({ useUIStore }) => useUIStore.getState().addToast(toast))
@@ -204,10 +201,7 @@ export const THEMES: Record<string, TerminalTheme> = {
     brightCyan: '#56d4dd',
     brightWhite: '#f0f6fc',
   },
-  // Customization audit C3: a proper light palette. Selecting it (directly or
-  // via themeMode 'light'/'system') flips the whole chrome — the Tailwind
-  // config maps every chrome color to these CSS variables, so the app shell
-  // follows automatically.
+
   vibeLight: {
     name: 'VibeLight',
     background: '#f6f8fa',
@@ -236,22 +230,14 @@ export const THEMES: Record<string, TerminalTheme> = {
 
 export type CursorStyle = 'block' | 'underline' | 'bar';
 
-/** Customization audit C3: how the UI chrome picks its color scheme. 'dark'
- *  and 'light' are explicit; 'system' follows the OS via prefers-color-scheme
- *  (and the Tauri window theme when available). The TERMINAL palette stays an
- *  independent `themeName` choice either way. */
 export type ThemeMode = 'dark' | 'light' | 'system';
 
-/** One step of a macro (customization audit C22): either a named app action
- *  from the catalog in src/lib/macros.ts, or a pause. */
 export interface MacroStep {
   type: 'action' | 'delay';
   actionId?: string;
   ms?: number;
 }
 
-/** A user-defined macro: a named sequence of actions + optional pauses, with
- *  an optional keybinding. Run from the palette or via its keybinding. */
 export interface Macro {
   id: string;
   name: string;
@@ -259,16 +245,12 @@ export interface Macro {
   steps: MacroStep[];
 }
 
-/** A user-defined palette command (customization audit C21): a label shown in
- *  the command palette plus the shell command it types into the focused pane. */
 export interface UserCommand {
   id: string;
   label: string;
   command: string;
 }
 
-/** Confirmation strictness per destructive action: 'always' asks every time,
- *  'never' performs the action immediately without a dialog. */
 export type ConfirmMode = 'always' | 'never';
 
 export interface StatusBarBadges {
@@ -281,18 +263,16 @@ export interface StatusBarBadges {
 const STORAGE_KEY = 'vibegrid_settings_v2';
 const LEGACY_STORAGE_KEY = 'vibegrid_settings_v1';
 const CURRENT_SCHEMA_VERSION = 2;
-/** Named settings profiles (customization audit S1), stored separately from
- *  the live settings so saving/loading a profile never corrupts them. */
+
 const PROFILES_KEY = 'vibegrid_settings_profiles_v1';
 
 interface AppSettings {
   fontSize: number;
   fontFamily: string;
   themeName: string;
-  /** Customization audit C3: 'dark' | 'light' | 'system' for the UI chrome. */
+
   themeMode: ThemeMode;
-  /** Settings schema version (customization audit S2) — loadSettings runs
-   *  migrateSettings() to upgrade older persisted blobs in place. */
+
   schemaVersion: number;
   scrollback: number;
   cursorBlink: boolean;
@@ -301,35 +281,32 @@ interface AppSettings {
   fontLigatures: boolean;
   lineHeight: number;
   terminalOpacity: number;
-  /** Auto-copy selection to clipboard when selecting text in a pane (audit: was MISSING). */
+
   copyOnSelect: boolean;
-  /** Close button hides to the tray instead of quitting (audit: was MISSING). */
+
   minimizeToTray: boolean;
-  /** Global default shell for new panes ('' = system default). Per-pane
-   * overrides win (UX audit: only per-pane existed before). */
+
   defaultShell: string;
   voiceToTerminal: boolean;
-  /** Auto-stop silence timeout in ms (gap 10). */
+
   voiceSilenceTimeoutMs: number;
-  /** Preferred microphone input device name ('' = system default) (gap 14). */
+
   voiceInputDevice: string;
 
-  // ── Customization audit P0: limits & caps ─────────────────────────────
-  /** Maximum number of panes allowed (was hardcoded 16). */
   maxPanes: number;
-  /** Minimum pane size in px enforced by the splitter drag. */
+
   minPaneSize: number;
-  /** Snap-to-equal on divider release (on/off). */
+
   dividerSnap: boolean;
-  /** Snap threshold: fraction of the equal split that triggers a snap. */
+
   snapEpsilon: number;
-  /** Double-click a divider to re-equalize that split. */
+
   doubleClickEqualize: boolean;
   fontSizeMin: number;
   fontSizeMax: number;
   lineHeightMin: number;
   lineHeightMax: number;
-  /** Lowest allowed terminal opacity (0.1 → truly translucent). */
+
   terminalOpacityMin: number;
   scrollbackMin: number;
   scrollbackMax: number;
@@ -338,15 +315,15 @@ interface AppSettings {
   toastMaxCount: number;
   toastDefaultDurationMs: number;
   paletteRecentsMax: number;
-  /** Debounced autosave interval in ms (App.tsx hardcoded 500). */
+
   autosaveIntervalMs: number;
-  /** Show the splash screen at startup. */
+
   showSplash: boolean;
-  /** First-run hint auto-dismiss duration in ms (0 = sticky). */
+
   hintDurationMs: number;
   workspaceNameMaxLength: number;
   paneTitleMaxLength: number;
-  /** Confirmation strictness per destructive action. */
+
   confirmations: {
     paneClose: ConfirmMode;
     quit: ConfirmMode;
@@ -354,74 +331,58 @@ interface AppSettings {
     workspaceDelete: ConfirmMode;
   };
 
-  // ── Customization audit P1: appearance ────────────────────────────────
-  /** UI chrome accent override (null = derived from terminal theme cursor). */
   uiAccentColor: string | null;
-  /** Master switch for animations; respects prefers-reduced-motion too. */
+
   animationsEnabled: boolean;
-  /** UI zoom percentage (80–150). */
+
   uiZoom: number;
   compactMode: boolean;
   hideStatusBar: boolean;
   hideHeader: boolean;
-  /** Sidebar width in px. */
+
   sidebarWidth: number;
   statusBarBadges: StatusBarBadges;
 
-  // ── Customization audit P1: terminal behavior ─────────────────────────
-  /** Right-click pastes clipboard instead of opening the context menu. */
   rightClickPaste: boolean;
-  /** Make URLs clickable; linkModifier is the required modifier key. */
+
   clickableLinks: boolean;
   linkModifier: 'click' | 'meta' | 'ctrl' | 'alt';
-  /** Play a terminal bell sound (visual fallback when unavailable). */
+
   terminalBell: boolean;
-  /** Scroll to bottom when the shell emits output. */
+
   scrollOnOutput: boolean;
-  /** Characters treated as word boundaries for double-click selection. */
+
   wordSeparators: string;
-  /** Confirm pastes that contain newlines (accidental multi-line paste guard). */
+
   pasteConfirmNewlines: boolean;
-  /** Extra padding (px) around the terminal canvas inside each pane (C6). */
+
   terminalPadding: number;
-  /** Width of the bar cursor in px (C5). */
+
   cursorWidth: number;
-  /** Global working directory for NEW panes ('' = inherit the split parent / session dir) (C7). */
+
   defaultCwd: string;
-  /** Space-separated startup arguments passed to the DEFAULT shell of every
-   *  new pane (C11). Not applied to per-pane shell overrides — those are a
-   *  different shell and the args were written for the default one. */
+
   shellArgs: string;
-  /** Newline-separated `KEY=VALUE` environment variables for new panes (C11).
-   *  Merged over the built-in TERM/COLORTERM/LANG/VIBEGRID set, which always win. */
+
   shellEnv: string;
-  /** Max concurrent WebGL contexts before panes fall back to canvas (L2). */
+
   maxWebglSlots: number;
-  /** Whisper language code for dictation ('auto' = auto-detect) (C28). */
+
   voiceLanguage: string;
-  /** Whisper model size: tiny | base | small | medium (C28). */
+
   voiceModelSize: string;
 
-  // ── Customization audit P1: custom themes (C1) ────────────────────────
-  /** User-created themes keyed by a stable id. Persisted with settings;
-   *  merged over THEMES so a custom theme name can be selected anywhere a
-   *  built-in can. */
   customThemes: Record<string, TerminalTheme>;
 
-  /** User-defined commands shown in the command palette (C21). Running one
-   *  types the command into the focused pane and presses Enter. */
   userCommands: UserCommand[];
 
-  /** User-defined macros (customization audit C22): named sequences of app
-   *  actions + delays, runnable from the palette or a keybinding. */
   macros: Macro[];
 
-  // ── Customization audit P1: startup & tray (Rust-wired) ───────────────
   launchAtLogin: boolean;
   startMaximized: boolean;
-  /** Start hidden to the system tray. */
+
   startHidden: boolean;
-  /** Closing the window hides to tray instead of quitting (separate from minimizeToTray). */
+
   closeToTray: boolean;
 }
 
@@ -508,29 +469,16 @@ const defaultSettings: AppSettings = {
   closeToTray: false,
 };
 
-/**
- * Resolve a persisted/imported theme key against the full theme universe
- * (built-ins + custom themes from the same settings blob). Unknown keys fall
- * back to the default so a hand-edited or stale settings file never leaves
- * `themeName` pointing at a palette that doesn't exist.
- */
 function resolveThemeKey(key: string, customThemes: Record<string, TerminalTheme> = {}): string {
   return key in THEMES || key in customThemes ? key : defaultSettings.themeName;
 }
 
-/** Validate that a parsed object is a usable TerminalTheme palette. */
 function isThemePalette(v: unknown): v is TerminalTheme {
   if (typeof v !== 'object' || v === null) return false;
   const t = v as Record<string, unknown>;
   return typeof t.background === 'string' && typeof t.foreground === 'string' && typeof t.cursor === 'string';
 }
 
-/**
- * Settings schema migration (customization audit S2). Upgrades an older
- * persisted blob in place before validation. v1 → v2 introduced
- * themeMode/schemaVersion; there is nothing to rewrite yet, but this is where
- * future migrations will live.
- */
 function migrateSettings(parsed: Record<string, unknown>): Record<string, unknown> {
   const version = typeof parsed.schemaVersion === 'number' ? parsed.schemaVersion : 1;
   let next = { ...parsed };
@@ -548,7 +496,7 @@ function readProfiles(): Record<string, Record<string, unknown>> {
       if (parsed && typeof parsed === 'object') return parsed;
     }
   } catch (e) {
-    // ignore corrupt profile storage
+
   }
   return {};
 }
@@ -557,14 +505,13 @@ function writeProfiles(profiles: Record<string, Record<string, unknown>>) {
   try {
     localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
   } catch (e) {
-    // ignore storage errors
+
   }
 }
 
 function loadSettings(): AppSettings {
   try {
-    // Customization audit S2: read the current schema key; fall back to the
-    // legacy v1 key (migrated in place) so upgrading users don't lose settings.
+
     let raw = localStorage.getItem(STORAGE_KEY);
     let migrated = false;
     if (!raw && localStorage.getItem(LEGACY_STORAGE_KEY)) {
@@ -573,8 +520,7 @@ function loadSettings(): AppSettings {
     }
     if (raw) {
       const parsed = migrateSettings(JSON.parse(raw));
-      // Custom themes are validated palette-by-palette so a corrupt entry can't
-      // poison the whole settings load.
+
       const customThemes: Record<string, TerminalTheme> = {};
       if (parsed.customThemes && typeof parsed.customThemes === 'object') {
         for (const [id, palette] of Object.entries(parsed.customThemes)) {
@@ -586,13 +532,11 @@ function loadSettings(): AppSettings {
         ...parsed,
         themeName: resolveThemeKey(String(parsed.themeName ?? ''), customThemes),
         customThemes,
-        // Deep-merge nested objects so a partial/older settings file can never
-        // leave confirmations / statusBarBadges partially undefined.
+
         confirmations: { ...defaultSettings.confirmations, ...(parsed.confirmations ?? {}) },
         statusBarBadges: { ...defaultSettings.statusBarBadges, ...(parsed.statusBarBadges ?? {}) },
       };
-      // Upgrade the storage in place (stamp the new key, drop the legacy one)
-      // so the next launch reads a single canonical blob.
+
       if (migrated || parsed.schemaVersion !== CURRENT_SCHEMA_VERSION) {
         persist(result);
       }
@@ -600,13 +544,13 @@ function loadSettings(): AppSettings {
         try {
           localStorage.removeItem(LEGACY_STORAGE_KEY);
         } catch (e) {
-          // ignore
+
         }
       }
       return result;
     }
   } catch (e) {
-    // ignore corrupt storage
+
   }
   return defaultSettings;
 }
@@ -615,11 +559,10 @@ function persist(settings: AppSettings) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch (e) {
-    // ignore storage errors
+
   }
 }
 
-/** Clamp a numeric field to its valid range (where one is defined). */
 function clampNumeric(key: keyof AppSettings, value: unknown): unknown {
   const n = typeof value === 'number' && Number.isFinite(value) ? value : undefined;
   if (n === undefined) return value;
@@ -651,15 +594,6 @@ function clampNumeric(key: keyof AppSettings, value: unknown): unknown {
   }
 }
 
-/**
- * Push the chrome palette into the CSS variables every component derives its
- * colors from (the Tailwind config maps each chrome color to these vars).
- * Customization audit C3: the CHROME palette is chosen by themeMode — 'light'
- * (or 'system' resolving to light) uses vibeLight regardless of the terminal
- * theme, which stays an independent `themeName` choice. The accent still
- * follows the TERMINAL theme's cursor (or an explicit override, C2), so the
- * UI accent never fights the palette you actually type into.
- */
 function applyThemeVariables(
   themeKey: string,
   accentOverride: string | null | undefined,
@@ -673,12 +607,10 @@ function applyThemeVariables(
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
 
-    // ── Background ──────────────────────────────────────────────────────────
     root.style.setProperty('--color-bg', chrome.background);
     const bgChannels = colorToRgbChannels(chrome.background);
     if (bgChannels) root.style.setProperty('--color-bg-rgb', bgChannels);
 
-    // ── Surface (panel / card backgrounds) ──────────────────────────────────
     root.style.setProperty('--color-surface', chrome.black);
     const surfaceChannels = colorToRgbChannels(chrome.black);
     if (surfaceChannels) {
@@ -686,21 +618,14 @@ function applyThemeVariables(
       root.style.setProperty('--color-surface-card-rgb', surfaceChannels);
     }
 
-    // ── Surface hover ────────────────────────────────────────────────────────
     root.style.setProperty('--color-surface-hover', chrome.brightBlack);
     const surfaceHoverChannels = colorToRgbChannels(chrome.brightBlack);
     if (surfaceHoverChannels) root.style.setProperty('--color-surface-hover-rgb', surfaceHoverChannels);
 
-    // ── Border ───────────────────────────────────────────────────────────────
-    // Store both a raw CSS value for legacy usage and an RGB triplet so the
-    // Tailwind `border` token (rgb(var(--color-border-rgb) / <alpha>)) works.
     root.style.setProperty('--color-border', light ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.08)');
-    // Border uses white-on-dark / black-on-light at low opacity — we derive
-    // the pure channel triplet from the extreme (black or white) so
-    // border/opacity modifiers produce the right colour.
+
     root.style.setProperty('--color-border-rgb', light ? '0 0 0' : '255 255 255');
 
-    // ── Accent (cursor / highlight) ──────────────────────────────────────────
     const accent = accentOverride ?? termTheme.cursor;
     root.style.setProperty('--color-accent', accent);
     const accentChannels = colorToRgbChannels(accent);
@@ -709,33 +634,22 @@ function applyThemeVariables(
       root.style.setProperty('--color-accent-rgba', accentChannels.replace(/ /g, ', '));
     }
 
-    // ── Foreground ───────────────────────────────────────────────────────────
     root.style.setProperty('--color-fg', chrome.foreground);
     const fgChannels = colorToRgbChannels(chrome.foreground);
     if (fgChannels) root.style.setProperty('--color-fg-rgb', fgChannels);
 
-    // ── Muted ────────────────────────────────────────────────────────────────
     const mutedHex = light ? '#57606a' : '#8b93a1';
     root.style.setProperty('--color-muted', mutedHex);
     const mutedChannels = colorToRgbChannels(mutedHex);
     if (mutedChannels) root.style.setProperty('--color-muted-rgb', mutedChannels);
 
-    // ── Selection ────────────────────────────────────────────────────────────
     root.style.setProperty('--color-selection', termTheme.selectionBackground);
 
-    // Light chrome remaps the white-alpha text/surface utilities via
-    // html.vibegrid-light (index.css) and flips the native color-scheme so
-    // scrollbars/inputs follow.
     root.classList.toggle('vibegrid-light', light);
     root.style.colorScheme = light ? 'light' : 'dark';
   }
 }
 
-/** Convert any CSS color (6-digit hex, rgb()/rgba(), oklch(), named colors…)
- *  into the space-separated RGB triplet form Tailwind's alpha-capable colors
- *  need (e.g. '60 149 240'). Falls back to a probe-element + getComputedStyle
- *  so custom-theme cursors in exotic formats still keep --color-accent-rgb in
- *  sync with --color-accent. Returns null when the color can't be resolved. */
 function colorToRgbChannels(color: string | null | undefined): string | null {
   if (!color) return null;
   const hex = /^#?([0-9a-f]{6})$/i.exec(color.trim());

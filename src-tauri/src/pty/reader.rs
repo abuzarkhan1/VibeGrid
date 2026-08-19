@@ -17,7 +17,7 @@ pub fn spawn_pty_reader<R: Runtime>(
     thread::spawn(move || {
         let mut buffer = [0u8; 8192];
         loop {
-            // Check backpressure flag; pause reading if buffer limit reached
+
             if bp_flag.load(Ordering::Relaxed) {
                 thread::sleep(Duration::from_millis(10));
                 continue;
@@ -25,9 +25,7 @@ pub fn spawn_pty_reader<R: Runtime>(
 
             match reader.read(&mut buffer) {
                 Ok(0) => {
-                    // EOF — process exited naturally. Remove the PaneSession so
-                    // the master PTY handle and child handle are not held as
-                    // zombies in the sessions map indefinitely.
+
                     eprintln!("[PtyReader] PTY reader EOF for pane {}", pane_id);
                     manager.remove_session(&pane_id);
                     batcher.pane_exited(&pane_id);

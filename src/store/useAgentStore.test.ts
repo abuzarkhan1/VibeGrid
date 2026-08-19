@@ -129,7 +129,7 @@ describe('useAgentStore', () => {
   });
 
   it('correctly builds CLI command strings via buildAgentCommand', () => {
-    // Claude Code with flags and prompt
+
     const claudeCmd = buildAgentCommand({
       agentId: 'claude-code',
       binaryPath: 'claude',
@@ -141,7 +141,6 @@ describe('useAgentStore', () => {
     });
     expect(claudeCmd).toBe('claude --dangerously-skip-permissions "Fix failing tests in auth.rs"');
 
-    // Aider with model and auto-commits
     const aiderCmd = buildAgentCommand({
       agentId: 'aider',
       binaryPath: 'aider',
@@ -152,7 +151,6 @@ describe('useAgentStore', () => {
     });
     expect(aiderCmd).toBe('aider --model claude-3-7-sonnet --auto-commits');
 
-    // Ollama run command
     const ollamaCmd = buildAgentCommand({
       agentId: 'ollama',
       binaryPath: 'ollama',
@@ -163,7 +161,6 @@ describe('useAgentStore', () => {
     });
     expect(ollamaCmd).toBe('ollama run deepseek-r1:32b');
 
-    // Shell returns empty string
     const shellCmd = buildAgentCommand({
       agentId: 'shell',
       binaryPath: 'zsh',

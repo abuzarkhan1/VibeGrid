@@ -1,11 +1,3 @@
-//! Native Whisper-based voice-to-terminal.
-//!
-//! Replaces the Web Speech API (which WKWebView does not provide and which
-//! crashed the webview when getUserMedia was used). Audio is captured with
-//! `cpal` on a background thread, resampled to 16 kHz mono f32, and
-//! transcribed locally with `whisper-rs` (whisper.cpp). The model is
-//! auto-downloaded on first use into the app data dir.
-
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
@@ -18,49 +10,22 @@ use whisper_rs::{
     FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperState,
 };
 
-/// Whisper expects 16 kHz mono f32 PCM.
 pub const TARGET_SAMPLE_RATE: u32 = 16_000;
 
-/// Valid Whisper model sizes (customization audit C28).
 pub const MODEL_SIZES: [&str; 4] = ["tiny", "base", "small", "medium"];
 
-/// Soft safety cap on recording length (seconds). Keeps an abandoned recording
-/// from growing memory indefinitely — audio past this point is truncated.
 const MAX_RECORD_SECS: u64 = 60;
 
-/// Scaled (x8, clamped 0..1) level above which we treat input as speech —
-/// matches the `current_level()` scaling used by the UI waveform. Roughly
-/// corresponds to a raw RMS of ~0.015 (≈ -37 dBFS).
 const LEVEL_VOICE_THRESHOLD: f32 = 0.12;
 
-/// Default continuous silence (after at least one voiced segment) before
-/// dictation auto-stops and transcribes. Configurable at runtime via
-/// `voice_set_silence_timeout` (gap 10); the default matches the frontend
-/// settings value (1600 ms).
 const SILENCE_TIMEOUT_DEFAULT_MS: u64 = 1600;
 
-/// If the user never speaks within this window, stop quietly so the mic is
-/// not left open indefinitely.
 const NO_SPEECH_TIMEOUT: Duration = Duration::from_secs(15);
 
-/// Minimum per-window RMS (0..1) that counts as "speech" when trimming
-/// boundary silence. ~ -45 dBFS: cuts mic hiss / room tone without touching
-/// quiet words.
-///
-/// NOTE: this is deliberately MORE lenient than the auto-stop watcher's voice
-/// gate (LEVEL_VOICE_THRESHOLD = 0.12 scaled ≈ 0.015 raw RMS). Trimming must
-/// preserve every syllable Whisper might transcribe, while auto-stop only needs
-/// to notice the loud parts. Don't "align" them — trimming too aggressively
-/// clips quiet speech.
 const TRIM_RMS_THRESHOLD: f32 = 0.004;
 
-/// Padding (seconds) kept around detected speech so word onsets/offsets are
-/// never clipped by the trim.
 const TRIM_PAD_SECS: f32 = 0.15;
 
-/// Lock-free live audio level shared between the cpal callback thread (writer)
-/// and the auto-stop watcher thread (reader). Atomics keep the real-time audio
-/// thread from ever blocking on a mutex.
 pub struct AudioMeter {
     rms: AtomicU32,
 }
@@ -82,26 +47,25 @@ impl AudioMeter {
 }
 
 struct ActiveRecording {
-    /// Keeping the stream alive keeps capture running.
+
     _stream: cpal::Stream,
-    /// Receiver for mono f32 chunks captured by the real-time callback without locking.
+
     receiver: Mutex<std::sync::mpsc::Receiver<Vec<f32>>>,
     sample_rate: u32,
-    /// Live RMS level for the waveform + auto-stop watcher.
+
     meter: Arc<AudioMeter>,
 }
 
-/// Managed speech state shared with Tauri commands.
 pub struct SpeechManager {
     recorder: Mutex<Option<ActiveRecording>>,
     whisper: Mutex<Option<Arc<WhisperContext>>>,
-    /// Auto-stop silence timeout in ms (gap 10) — read by the watcher thread.
+
     silence_timeout_ms: AtomicU64,
-    /// Preferred input device name ('' = system default) (gap 14).
+
     preferred_input: Mutex<Option<String>>,
-    /// Whisper transcription language ('auto' = auto-detect) (audit C28).
+
     language: Mutex<String>,
-    /// Whisper model size: tiny | base | small | medium (audit C28).
+
     model_size: Mutex<String>,
 }
 
@@ -127,9 +91,6 @@ impl SpeechManager {
         self.recorder.lock().is_some()
     }
 
-    /// Set the auto-stop silence timeout (ms), clamped to [600, 5000] — the
-    /// same range the Settings slider offers (audit find 9: Rust used to allow
-    /// [400, 10000], values the UI could never produce).
     pub fn set_silence_timeout_ms(&self, ms: u64) -> u64 {
         let clamped = ms.clamp(600, 5_000);
         self.silence_timeout_ms.store(clamped, Ordering::Relaxed);
@@ -140,7 +101,6 @@ impl SpeechManager {
         self.silence_timeout_ms.load(Ordering::Relaxed)
     }
 
-    /// Prefer a specific input device by name ('' = system default).
     pub fn set_input_device(&self, name: String) {
         *self.preferred_input.lock() = if name.is_empty() {
             None
@@ -149,7 +109,6 @@ impl SpeechManager {
         };
     }
 
-    /// Resolve the current model file path inside the app data dir.
     pub fn model_path(&self, app: &AppHandle) -> Result<PathBuf, String> {
         let dir = crate::utils::paths::get_models_dir()
             .or_else(|| app.path().app_data_dir().ok().map(|d| d.join("models")))
@@ -157,15 +116,10 @@ impl SpeechManager {
         Ok(dir.join(self.model_file_name()))
     }
 
-    /// True when the current model file already exists on disk.
     pub fn model_ready(&self, app: &AppHandle) -> bool {
         self.model_path(app).map(|p| p.exists()).unwrap_or(false)
     }
 
-    /// Set the Whisper transcription language ('auto' = auto-detect, '' same).
-    /// Changing it may swap the MODEL file used (English .en build vs the
-    /// multilingual build), so the cached Whisper context is dropped and
-    /// re-loaded on the next dictation (audit C28).
     pub fn set_language(&self, language: String) -> String {
         let lang = language.trim().to_lowercase();
         let lang = if lang.is_empty() { String::from("auto") } else { lang };
@@ -178,9 +132,6 @@ impl SpeechManager {
         lang
     }
 
-    /// Set the Whisper model size (tiny | base | small | medium; anything else
-    /// falls back to 'base'). The cached context is dropped so the next
-    /// dictation loads — and downloads, if missing — the new model file (C28).
     pub fn set_model_size(&self, size: String) -> String {
         let size = size.trim().to_lowercase();
         let size = if MODEL_SIZES.contains(&size.as_str()) {
@@ -197,9 +148,6 @@ impl SpeechManager {
         size
     }
 
-    /// The model file name for the current size/language: English uses the
-    /// `ggml-<size>.en.bin` build (smaller + faster); anything else — including
-    /// auto-detect — uses the multilingual `ggml-<size>.bin`.
     pub fn model_file_name(&self) -> String {
         let size = self.model_size.lock().clone();
         let lang = self.language.lock().clone();
@@ -210,7 +158,6 @@ impl SpeechManager {
         }
     }
 
-    /// Enumerate available input (microphone) device names for the Settings UI.
     pub fn list_input_devices() -> Vec<String> {
         let host = cpal::default_host();
         match host.input_devices() {
@@ -222,8 +169,6 @@ impl SpeechManager {
         }
     }
 
-    /// Resolve the input device to use: the preferred one if still present,
-    /// otherwise the system default.
     fn resolve_input_device(&self) -> Result<cpal::Device, String> {
         let host = cpal::default_host();
         let preferred = self.preferred_input.lock().clone();
@@ -235,15 +180,13 @@ impl SpeechManager {
                     }
                 }
             }
-            // Preferred device vanished — fall back to default silently.
+
             eprintln!("[VibeGrid] Preferred mic '{name}' not found; using default.");
         }
         host.default_input_device()
             .ok_or_else(|| "No microphone input device found. Connect a microphone or grant microphone access in System Settings → Privacy & Security → Microphone.".to_string())
     }
 
-
-    /// Start capturing microphone audio into a buffer.
     pub fn start_recording(&self) -> Result<(), String> {
         if self.is_recording() {
             return Err("Already recording".into());
@@ -317,8 +260,7 @@ impl SpeechManager {
         T: cpal::SizedSample + cpal::Sample<Float = f32>,
     {
         let data_fn = move |data: &[T], _: &cpal::InputCallbackInfo| {
-            // Downmix to mono by averaging frames across channels, tracking the
-            // live RMS for the waveform UI (lock-free atomic, audio-thread safe).
+
             let frame_count = data.len() / channels.max(1);
             let mut chunk = Vec::with_capacity(frame_count);
             let mut sum_sq: f32 = 0.0;
@@ -340,30 +282,24 @@ impl SpeechManager {
             .map_err(|e| format!("Failed to build input stream: {e}"))
     }
 
-    /// Read the current live audio level (0..1-ish RMS) for the waveform UI.
     pub fn current_level(&self) -> f32 {
         self.meter()
             .map(|m| (m.rms() * 8.0).clamp(0.0, 1.0))
             .unwrap_or(0.0)
     }
 
-    /// Access the live meter shared with the recording, if any.
     fn meter(&self) -> Option<Arc<AudioMeter>> {
         self.recorder.lock().as_ref().map(|a| a.meter.clone())
     }
 
-    /// Stop capture and discard the audio without transcribing (Esc / cancel).
     pub fn cancel_recording(&self) {
         let mut guard = self.recorder.lock();
         let _ = guard.take();
     }
 
-    /// Stop recording, resample to 16 kHz mono, trim boundary silence and
-    /// return the captured audio. Returns `None` only when there was no active
-    /// recording (e.g. already consumed by Enter/Esc) — NOT when it was silent.
     fn take_audio(&self) -> Option<Vec<f32>> {
         let recording = self.recorder.lock().take()?;
-        drop(recording._stream); // stop capture and drop stream
+        drop(recording._stream);
         let raw: Vec<f32> = {
             let guard = recording.receiver.lock();
             guard.try_iter().flatten().collect()
@@ -371,7 +307,7 @@ impl SpeechManager {
         if raw.is_empty() {
             return None;
         }
-        // Soft cap: keep at most the first MAX_RECORD_SECS of audio.
+
         let max_samples = (recording.sample_rate as usize).saturating_mul(MAX_RECORD_SECS as usize);
         let raw = if raw.len() > max_samples {
             raw[..max_samples].to_vec()
@@ -379,17 +315,14 @@ impl SpeechManager {
             raw
         };
         let mut audio = resample(&raw, recording.sample_rate, TARGET_SAMPLE_RATE);
-        // Trim boundary silence so Whisper doesn't repeat/hallucinate over the
-        // silence tail captured while waiting for auto-stop (see trim_silence).
+
         audio = trim_silence(&audio);
         Some(audio)
     }
 
-    /// Transcribe a 16 kHz mono f32 buffer. Loads the model lazily (cached).
     fn transcribe(&self, model: &std::path::Path, audio: &[f32]) -> Result<String, String> {
         if audio.is_empty() {
-            // Distinct from "No audio captured" (no recording at all): the mic
-            // captured something, but it was all silence.
+
             return Err("No speech detected".into());
         }
 
@@ -405,35 +338,29 @@ impl SpeechManager {
                 .as_ref()
                 .cloned()
                 .ok_or_else(|| "Whisper model not initialized".to_string())?
-        }; // Lock dropped immediately!
+        };
 
-        let language = self.language.lock().clone(); // Lock dropped immediately!
+        let language = self.language.lock().clone();
 
         let mut state: WhisperState = ctx
             .create_state()
             .map_err(|e| format!("Failed to create Whisper state: {e}"))?;
 
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
-        // Customization audit C28: language is user-configurable now ('auto'
-        // disables the hint so Whisper detects the language itself).
+
         if language == "auto" {
             params.set_language(None);
         } else {
             params.set_language(Some(&language));
         }
         params.set_suppress_blank(true);
-        // Anti-hallucination for short dictations:
-        // - no_context: don't condition on previous segment text (avoids
-        //   latch-on-to-last-word repetition loops).
-        // - suppress_nst: block non-speech token fallbacks ("yes", "(upbeat
-        //   music)", "lol") that whisper emits when decoding collapses.
+
         params.set_no_context(true);
         params.set_suppress_nst(true);
         params.set_print_realtime(false);
         params.set_print_progress(false);
         params.set_translate(false);
 
-        // CPU inference executes without holding any Mutex locks!
         state
             .full(params, audio)
             .map_err(|e| format!("Transcription failed: {e}"))?;
@@ -451,7 +378,6 @@ impl SpeechManager {
         Ok(out.trim().to_string())
     }
 
-    /// Convenience: stop recording and return the transcript.
     pub fn stop_and_transcribe(&self, model: &std::path::Path) -> Result<String, String> {
         match self.take_audio() {
             Some(audio) => self.transcribe(model, &audio),
@@ -459,29 +385,20 @@ impl SpeechManager {
         }
     }
 
-    /// Spawn a background watcher that (a) streams live audio levels to the UI
-    /// as `vibegrid://audio-level` events for the waveform, and (b) auto-stops
-    /// dictation after ~1.6s of silence, emitting `vibegrid://dictation-result`
-    /// with the transcript so the frontend can type it into the terminal.
-    ///
-    /// Runs off the audio thread: it only reads the lock-free `AudioMeter`, so
-    /// it can never jitter or drop mic frames.
     pub fn spawn_auto_stop_watcher(app: AppHandle, this: Arc<Self>, model: PathBuf) {
         std::thread::spawn(move || {
             let start = Instant::now();
             let mut last_emit = Instant::now();
-            // None until the user actually speaks — so a silent session does not
-            // auto-commit before they've had a chance to start talking.
+
             let mut last_voice: Option<Instant> = None;
             let mut smoothed: f32 = 0.0;
 
             while this.is_recording() {
                 std::thread::sleep(Duration::from_millis(80));
                 let raw = this.current_level();
-                // Smooth the level so the UI waveform is not jittery.
+
                 smoothed = smoothed * 0.65 + raw * 0.35;
 
-                // ~10 level events / second → smooth waveform updates.
                 if last_emit.elapsed() >= Duration::from_millis(100) {
                     last_emit = Instant::now();
                     let _ = app.emit(
@@ -494,7 +411,7 @@ impl SpeechManager {
                 if smoothed >= LEVEL_VOICE_THRESHOLD {
                     last_voice = Some(now);
                 } else if let Some(lv) = last_voice {
-                    // Continuous silence long enough after real speech → auto-commit.
+
                     let timeout = Duration::from_millis(this.silence_timeout_ms());
                     if now.duration_since(lv) >= timeout {
                         this.finish_dictation(&app, &model);
@@ -502,8 +419,6 @@ impl SpeechManager {
                     }
                 }
 
-                // Safety: never spoke within a generous window → stop quietly so
-                // the mic isn't left open.
                 if last_voice.is_none() && now.duration_since(start) >= NO_SPEECH_TIMEOUT {
                     this.finish_dictation(&app, &model);
                     break;
@@ -512,9 +427,6 @@ impl SpeechManager {
         });
     }
 
-    /// Stop and transcribe, emitting the result to the UI. If recording was
-    /// already consumed (e.g. the user pressed Enter at the same moment), stop
-    /// silently instead of surfacing a confusing error.
     fn finish_dictation(&self, app: &AppHandle, model: &std::path::Path) {
         match self.stop_and_transcribe(model) {
             Ok(text) => {
@@ -524,8 +436,7 @@ impl SpeechManager {
                 );
             }
             Err(e) => {
-                // "No audio captured" means another path (Enter/Esc/manual stop)
-                // already took the recording — that path reports its own outcome.
+
                 if e != "No audio captured" {
                     let _ = app.emit(
                         "vibegrid://dictation-error",
@@ -536,7 +447,6 @@ impl SpeechManager {
         }
     }
 
-    /// Download the current Whisper model if missing, emitting progress events.
     pub fn ensure_model(&self, app: &AppHandle) -> Result<PathBuf, String> {
         let path = self.model_path(app)?;
         if path.exists() {
@@ -546,7 +456,6 @@ impl SpeechManager {
             std::fs::create_dir_all(dir).map_err(|e| format!("Failed to create model dir: {e}"))?;
         }
 
-        // Direct download from the whisper.cpp HuggingFace repo (env-overridable).
         let model_file = self.model_file_name();
         let name = path
             .file_name()
@@ -602,15 +511,12 @@ fn download_to(
         .content_length()
         .unwrap_or(0);
 
-    // Write to a temp file first so a partial download never looks "ready".
     let tmp = path.with_extension("bin.part");
     let mut file = std::fs::File::create(&tmp).map_err(|e| format!("Write failed: {e}"))?;
     let mut downloaded: u64 = 0;
 
     use std::io::{Read, Write};
 
-    // Emit progress on a byte AND time trigger so the toast never looks frozen:
-    // every ~256 KB downloaded, or at least every 300 ms even on a slow link.
     let mut last_emit = std::time::Instant::now();
     let mut last_emit_bytes: u64 = 0;
     let mut buf = [0u8; 64 * 1024];
@@ -649,13 +555,6 @@ fn download_to(
     Ok(())
 }
 
-/// Cut leading/trailing silence from a 16 kHz mono buffer.
-///
-/// Whisper is very sensitive to silence at the boundaries: a long silent tail
-/// makes it latch onto the last spoken word and repeat it (the classic
-/// "repetition loop"), and leading silence can make the first chunk decode as
-/// a "single timestamp ending" skip. Trimming to the actual speech eliminates
-/// both failure modes, so dictation stays accurate on short commands.
 #[cfg(test)]
 mod meter_tests {
     use super::*;
@@ -671,7 +570,7 @@ mod meter_tests {
         let meter = AudioMeter::new();
         meter.set_rms(0.5);
         assert!((meter.rms() - 0.5).abs() < f32::EPSILON);
-        meter.set_rms(-0.25); // clamping is the caller's job; store what we get
+        meter.set_rms(-0.25);
         assert!((meter.rms() - -0.25).abs() < f32::EPSILON);
         meter.set_rms(0.0);
         assert_eq!(meter.rms(), 0.0);
@@ -679,9 +578,7 @@ mod meter_tests {
 
     #[test]
     fn audio_meter_is_lock_free_ordered_relaxed() {
-        // The meter must stay usable from the real-time audio thread: writes use
-        // Relaxed ordering and never take a lock. Sanity-check concurrent access
-        // from multiple threads doesn't panic or lose the value.
+
         let meter = Arc::new(AudioMeter::new());
         let mut handles = Vec::new();
         for i in 0..8 {
@@ -696,18 +593,16 @@ mod meter_tests {
         for h in handles {
             h.join().unwrap();
         }
-        // Final value is one of the written values.
+
         let v = meter.rms();
-        // The meter must never hold NaN — stored bits always decode to a real
-        // float (NaN would break every comparison downstream).
+
         assert!(!v.is_nan());
     }
 
     #[test]
     fn silence_timeout_clamps_to_supported_range() {
         let mgr = SpeechManager::new();
-        // Out-of-range values are clamped (audit: the Settings slider exposes
-        // 600–5000 ms; enforce the same bounds programmatically).
+
         let clamped = mgr.set_silence_timeout_ms(100);
         assert_eq!(clamped, 600);
         let clamped = mgr.set_silence_timeout_ms(99_999);
@@ -737,7 +632,7 @@ mod trim_tests {
 
     #[test]
     fn sub_100ms_is_empty() {
-        // 50 ms of loud audio — too short to be intelligible speech.
+
         assert!(trim_silence(&loud(TARGET_SAMPLE_RATE as usize / 20)).is_empty());
     }
 
@@ -745,14 +640,13 @@ mod trim_tests {
     fn keeps_speech_and_pads_around_it() {
         let sr = TARGET_SAMPLE_RATE as usize;
         let mut audio = Vec::new();
-        audio.extend(zeros(sr * 2)); // 2 s leading silence
-        audio.extend(loud(sr)); // 1 s speech
-        audio.extend(zeros(sr * 3)); // 3 s trailing silence
+        audio.extend(zeros(sr * 2));
+        audio.extend(loud(sr));
+        audio.extend(zeros(sr * 3));
 
         let trimmed = trim_silence(&audio);
         assert!(!trimmed.is_empty());
-        // Trimmed length: 1 s speech + 150 ms pad on each side. The trim runs on
-        // 25 ms windows, so allow one hop of slack at either end.
+
         let hop = sr / 40;
         let ideal = sr + (TRIM_PAD_SECS * sr as f32) as usize * 2;
         assert!(
@@ -762,46 +656,45 @@ mod trim_tests {
             ideal,
             hop
         );
-        // It kept the speech burst (all 0.5 samples survive).
+
         assert!(trimmed.iter().any(|&s| s > 0.4));
-        // And it cut the long silence tails.
+
         assert!(trimmed.len() < audio.len() / 2);
     }
 
     #[test]
     fn pad_clamps_at_buffer_edges() {
         let sr = TARGET_SAMPLE_RATE as usize;
-        // Speech starts at the very beginning — start pad must clamp to 0.
+
         let mut audio = loud(sr);
         audio.extend(zeros(sr));
         let trimmed = trim_silence(&audio);
         assert_eq!(trimmed.len(), sr + (TRIM_PAD_SECS * sr as f32) as usize);
-        assert_eq!(trimmed[0], 0.5); // first speech sample preserved
+        assert_eq!(trimmed[0], 0.5);
     }
 
     #[test]
     fn quiet_hiss_is_trimmed_but_loud_is_kept() {
         let sr = TARGET_SAMPLE_RATE as usize;
         let mut audio = Vec::new();
-        audio.extend(vec![0.001; sr]); // hiss-level noise — below threshold
-        audio.extend(vec![0.05; sr]); // quiet but real speech — above threshold
+        audio.extend(vec![0.001; sr]);
+        audio.extend(vec![0.05; sr]);
         audio.extend(vec![0.001; sr]);
         let trimmed = trim_silence(&audio);
         assert!(!trimmed.is_empty());
-        // The quiet-speech region survived.
+
         assert!(trimmed.iter().any(|&s| s > 0.04));
     }
 }
 
 fn trim_silence(audio: &[f32]) -> Vec<f32> {
     if audio.len() < TARGET_SAMPLE_RATE as usize / 10 {
-        return Vec::new(); // < 100 ms — nothing intelligible
+        return Vec::new();
     }
     let frame = TARGET_SAMPLE_RATE as usize;
-    let window = frame / 20; // 50 ms windows
+    let window = frame / 20;
     let hop = window / 2;
 
-    // Per-window RMS → voiced mask.
     let n_win = audio.len().div_ceil(hop);
     let mut voiced = vec![false; n_win];
     for (i, chunk) in voiced.iter_mut().enumerate() {
@@ -816,7 +709,7 @@ fn trim_silence(audio: &[f32]) -> Vec<f32> {
     }
 
     let Some(first) = voiced.iter().position(|&v| v) else {
-        return Vec::new(); // no speech at all
+        return Vec::new();
     };
     let last = voiced.iter().rposition(|&v| v).unwrap_or(first);
 
@@ -826,7 +719,6 @@ fn trim_silence(audio: &[f32]) -> Vec<f32> {
     audio[start..end].to_vec()
 }
 
-/// Linear-interpolate a mono buffer from `src_rate` to `dst_rate`.
 fn resample(src: &[f32], src_rate: u32, dst_rate: u32) -> Vec<f32> {
     if src_rate == dst_rate || src.is_empty() {
         return src.to_vec();
@@ -844,5 +736,3 @@ fn resample(src: &[f32], src_rate: u32, dst_rate: u32) -> Vec<f32> {
     }
     out
 }
-
-

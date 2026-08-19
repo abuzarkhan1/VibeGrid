@@ -1,5 +1,3 @@
-// Fuzzy subsequence scorer used by the command palette.
-// Substring matches get a big bonus; otherwise character matches in order are scored.
 export function fuzzyScore(query: string, target: string): number {
   const q = query.trim().toLowerCase();
   if (!q) return 0;
@@ -17,8 +15,6 @@ export function fuzzyScore(query: string, target: string): number {
   return qi === q.length ? score : -1;
 }
 
-// Convert a raw keyboard event into the accelerator string format used by the store
-// (e.g. "Mod+Shift+D"). Returns null for modifier-only presses.
 export function eventToAccelerator(e: KeyboardEvent): string | null {
   if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return null;
   const parts: string[] = [];
@@ -48,23 +44,14 @@ export function eventToAccelerator(e: KeyboardEvent): string | null {
   return parts.join('+');
 }
 
-// Windows shells (cmd.exe, PowerShell) use different quoting than POSIX
-// shells, and cmd.exe doesn't support bracketed paste at all — this appends
-// the platform decision so drag-dropped paths / pastes behave on Windows too
-// (audit: paths were always POSIX-quoted, breaking PowerShell/cmd insertion).
 export function isWindowsPlatform(): boolean {
   if (typeof navigator === 'undefined') return false;
-  // Word-boundary match: /win/i would match "darwin" (macOS). We want an
-  // exact Windows platform token (Win32/Win64/Windows) or a "Windows"
-  // user agent — never "darwin".
+
   const platform = navigator.platform || '';
   const ua = navigator.userAgent || '';
   return /(^|\s)win(dows|32|64|ce)?(\s|$)/i.test(platform) || /windows/i.test(ua);
 }
 
-// Shell-escape a path for insertion into a shell. POSIX: single-quote quoting
-// (' → '\''). PowerShell: single quotes are literal, escape a quote by
-// DOUBLING it (''). cmd.exe: no quoting exists — wrap in double quotes.
 export function escapeShellPath(p: string): string {
   if (isWindowsPlatform()) {
     return `'${p.replace(/'/g, "''")}'`;
@@ -72,13 +59,9 @@ export function escapeShellPath(p: string): string {
   return `'${p.replace(/'/g, `'\\''`)}'`;
 }
 
-// Wrap text in bracketed-paste markers — unless the shell is cmd.exe, which
-// does not support the bracketed paste protocol and would print the escape
-// sequences literally. PowerShell 7.4+ (Windows Terminal) supports it; raw
-// text insertion is safe there anyway.
 export function bracketedPaste(text: string): string {
   if (isWindowsPlatform()) {
-    // Assume cmd.exe on bare Windows; raw text is the safe universal form.
+
     return text;
   }
   return `\x1b[200~${text}\x1b[201~`;

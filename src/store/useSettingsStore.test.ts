@@ -6,8 +6,7 @@ vi.mock('@/lib/tauri', () => ({
   setBatchInterval: vi.fn(async (intervalMs: number) => intervalMs),
   voiceSetSilenceTimeout: vi.fn(async (ms: number) => ms),
   voiceSetInputDevice: vi.fn(async () => {}),
-  // Customization audit C28/C9: voice language/model + autostart are pushed to
-  // the Rust backend on reset/import/update — mock them like the others.
+
   voiceSetLanguage: vi.fn(async () => {}),
   voiceSetModelSize: vi.fn(async () => {}),
   autostartSetEnabled: vi.fn(async () => {}),
@@ -21,7 +20,7 @@ describe('VibeGrid Settings Store', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    // Reset to a known baseline for each test
+
     useSettingsStore.getState().resetSettings();
   });
 
@@ -65,9 +64,6 @@ describe('VibeGrid Settings Store', () => {
       expect(useSettingsStore.getState().fontSize).toBe(18);
     });
 
-    // Customization audit L4/L5/L6: the clamp bounds are now configurable
-    // settings; defaults widened (scrollback 1e6, lineHeight 0.8–2.5, opacity
-    // 0.1–1) so users can go truly translucent / very tight or tall.
     it('clamps scrollback to the default [100, 1000000] range', () => {
       useSettingsStore.getState().setScrollback(10);
       expect(useSettingsStore.getState().scrollback).toBe(100);
@@ -130,7 +126,6 @@ describe('VibeGrid Settings Store', () => {
       expect(THEMES[useSettingsStore.getState().themeName]).toBeDefined();
     });
 
-    // Customization audit L8: silence-timeout bounds widened to [200, 15000].
     it('clamps voiceSilenceTimeoutMs to the default [200, 15000] and pushes to Rust (gap 10)', () => {
       useSettingsStore.getState().setVoiceSilenceTimeoutMs(100);
       expect(useSettingsStore.getState().voiceSilenceTimeoutMs).toBe(200);
@@ -150,7 +145,7 @@ describe('VibeGrid Settings Store', () => {
       useSettingsStore.getState().setVoiceInputDevice('MacBook Pro Microphone');
       expect(useSettingsStore.getState().voiceInputDevice).toBe('MacBook Pro Microphone');
       expect(voiceSetInputDevice).toHaveBeenCalledWith('MacBook Pro Microphone');
-      // '' resets to the system default.
+
       useSettingsStore.getState().setVoiceInputDevice('');
       expect(voiceSetInputDevice).toHaveBeenLastCalledWith('');
     });
@@ -170,7 +165,6 @@ describe('VibeGrid Settings Store', () => {
       useSettingsStore.getState().setThemeName('nord');
       useSettingsStore.getState().setVoiceSilenceTimeoutMs(2000);
 
-      // Simulate app restart: clear the module registry so the store re-initializes
       vi.resetModules();
       const { useSettingsStore: FreshStore } = await import('./useSettingsStore');
       expect(FreshStore.getState().fontSize).toBe(21);
@@ -195,7 +189,7 @@ describe('VibeGrid Settings Store', () => {
       expect(useSettingsStore.getState().fontSize).toBe(24);
       expect(useSettingsStore.getState().themeName).toBe('nord');
       expect(useSettingsStore.getState().scrollback).toBe(999);
-      // Clamped after import
+
       expect(setBatchInterval).toHaveBeenCalledWith(useSettingsStore.getState().ipcBatchIntervalMs);
     });
 
@@ -248,8 +242,6 @@ describe('VibeGrid Settings Store', () => {
       expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
     });
 
-    // Customization audit S2: a legacy v1 blob is migrated in place to the v2
-    // schema (schemaVersion stamped, themeMode defaulted, canonical key used).
     it('migrates legacy v1 storage to the v2 schema on load', async () => {
       localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify({ fontSize: 19, themeName: 'nord' }));
       vi.resetModules();
@@ -258,14 +250,13 @@ describe('VibeGrid Settings Store', () => {
       expect(FreshStore.getState().themeName).toBe('nord');
       expect(FreshStore.getState().schemaVersion).toBe(2);
       expect(FreshStore.getState().themeMode).toBe('dark');
-      // The legacy key is consumed and the canonical v2 key is written.
+
       expect(localStorage.getItem(LEGACY_STORAGE_KEY)).toBeNull();
       const raw = localStorage.getItem(STORAGE_KEY);
       expect(raw).not.toBeNull();
       expect(JSON.parse(raw as string).schemaVersion).toBe(2);
     });
 
-    // Customization audit C3: themeMode defaults to dark and persists.
     it('themeMode defaults to dark and persists through updateSettings', () => {
       expect(useSettingsStore.getState().themeMode).toBe('dark');
       useSettingsStore.getState().updateSettings({ themeMode: 'light' });
@@ -275,13 +266,11 @@ describe('VibeGrid Settings Store', () => {
       expect(JSON.parse(raw as string).themeMode).toBe('light');
     });
 
-    // Customization audit S1: named settings profiles round-trip.
     it('settings profiles save / apply / delete roundtrip', () => {
       useSettingsStore.getState().setFontSize(23);
       expect(useSettingsStore.getState().saveSettingsProfile('Work')).toBe(true);
       expect(useSettingsStore.getState().listSettingsProfiles()).toContain('Work');
 
-      // Change the live settings, then apply the profile back.
       useSettingsStore.getState().setFontSize(10);
       expect(useSettingsStore.getState().loadSettingsProfile('Work')).toBe(true);
       expect(useSettingsStore.getState().fontSize).toBe(23);

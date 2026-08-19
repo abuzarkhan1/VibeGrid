@@ -3,7 +3,6 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { CinematicSplashScreen } from './CinematicSplashScreen';
 import { playConvergenceWhoosh, playCrystallineSnapLock } from '@/lib/brandSoundEngine';
 
-// Mock Web Audio API
 beforeEach(() => {
   vi.useFakeTimers();
   window.matchMedia = vi.fn().mockImplementation((query) => ({
@@ -69,7 +68,6 @@ describe('CinematicSplashScreen', () => {
 
     expect(onComplete).not.toHaveBeenCalled();
 
-    // Advance past full timeline (2000ms + 400ms fade)
     act(() => {
       vi.advanceTimersByTime(2500);
     });

@@ -11,7 +11,6 @@ interface Keybinding {
 interface KeybindingsState {
   keybindings: Record<string, Keybinding>;
 
-  // Actions
   updateKeybinding: (id: string, newKey: string) => boolean;
   resetKeybindings: () => void;
   getKeybinding: (id: string) => string;
@@ -82,9 +81,7 @@ const defaultBindings: Record<string, Keybinding> = {
     defaultKey: 'Mod+Shift+N',
     currentKey: 'Mod+Shift+N',
   },
-  // UX audit P2 #10: the previously HARDCODED shortcuts now live in the store
-  // so users can reassign them, the Shortcuts modal shows them, and the
-  // conflict detector covers them.
+
   'toggle-sidebar': {
     id: 'toggle-sidebar',
     label: 'Toggle Workspace Sidebar',
@@ -169,11 +166,7 @@ const defaultBindings: Record<string, Keybinding> = {
     defaultKey: 'Mod+0',
     currentKey: 'Mod+0',
   },
-  // Audit: the system-wide summon and the voice toggle were HARDCODED (Rust
-  // setup + isVoiceShortcut) with no way to reassign. They now live in the
-  // store: 'global-summon' is pushed to the Rust backend via set_global_summon
-  // (App.tsx syncs it on boot and on change), 'voice-toggle' is read by the
-  // voice hook instead of a fixed shortcut check.
+
   'global-summon': {
     id: 'global-summon',
     label: 'Summon VibeGrid Window (system-wide)',
@@ -200,17 +193,11 @@ function loadStoredBindings(): Record<string, Keybinding> {
       return { ...defaultBindings, ...parsed };
     }
   } catch (e) {
-    // fallback to defaults
+
   }
   return defaultBindings;
 }
 
-/**
- * Audit find 7: canonicalize an accelerator string so modifier aliases are
- * treated as equal — 'Mod+D' and 'Ctrl+D' (and 'Cmd+D') match identically at
- * runtime on most platforms, so they must conflict instead of silently
- * shadowing each other.
- */
 function normalizeAccel(key: string): string {
   return key
     .toLowerCase()
@@ -223,11 +210,6 @@ function normalizeAccel(key: string): string {
     .join('+');
 }
 
-/**
- * Match a raw accelerator string against a KeyboardEvent. Shared by the
- * built-in keybinding store AND user macro keybindings (customization audit
- * C22), so a macro combo behaves exactly like a built-in binding.
- */
 export function matchesAccel(e: KeyboardEvent, accel: string): boolean {
   if (!accel) return false;
   const parts = accel.split('+').map((s) => s.trim().toLowerCase());

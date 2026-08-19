@@ -18,7 +18,7 @@ export const ChatCodeBlock: React.FC<ChatCodeBlockProps> = ({ language, code, fi
 
   return (
     <div className="bg-black/60 my-3 rounded-xl overflow-hidden text-xs border border-white/10 backdrop-blur-md">
-      {/* Code Header Bar */}
+      {}
       <div className="flex items-center justify-between px-3.5 py-2 border-b border-white/10 bg-black/80 select-none">
         <div className="flex items-center gap-2 text-white/80 font-mono text-[11px]">
           <Terminal className="w-3.5 h-3.5 text-white/60" />
@@ -43,7 +43,7 @@ export const ChatCodeBlock: React.FC<ChatCodeBlockProps> = ({ language, code, fi
         </button>
       </div>
 
-      {/* Code Content with Solid Dark Backing */}
+      {}
       <div className="p-3.5 overflow-x-auto font-mono text-[12px] leading-relaxed text-white/90 bg-black/40 selection:bg-white/30 selection:text-black">
         <pre><code>{code}</code></pre>
       </div>

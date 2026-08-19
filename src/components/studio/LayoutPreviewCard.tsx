@@ -8,15 +8,14 @@ interface LayoutPreviewCardProps {
   onSelect: () => void;
 }
 
-// Recursive mini-tree renderer with subtle scanlines and syntax bars
 const MiniTreePreview: React.FC<{ node: PaneNode; depth?: number }> = ({ node, depth = 0 }) => {
   if (node.type === 'terminal') {
     return (
       <div className="relative flex-1 h-full w-full bg-black/60 border border-white/10 rounded-lg overflow-hidden p-1.5 flex flex-col justify-between select-none">
-        {/* Subtle Scanline Shimmer */}
+        {}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0)_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px] pointer-events-none opacity-20" />
 
-        {/* Mini Header / Prompt */}
+        {}
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-white/60" />
@@ -25,7 +24,7 @@ const MiniTreePreview: React.FC<{ node: PaneNode; depth?: number }> = ({ node, d
           <span className="text-[7px] font-mono text-white/40">zsh</span>
         </div>
 
-        {/* Mini Faux Syntax Lines */}
+        {}
         <div className="relative z-10 space-y-0.5 my-auto">
           <div className="flex items-center gap-1">
             <span className="text-[8px] font-mono text-white/80">$</span>
@@ -36,7 +35,7 @@ const MiniTreePreview: React.FC<{ node: PaneNode; depth?: number }> = ({ node, d
           <div className="h-0.5 w-10 bg-white/30 rounded-full ml-2" />
         </div>
 
-        {/* Mini Active Prompt Cursor */}
+        {}
         <div className="relative z-10 flex items-center gap-1">
           <span className="text-[7px] font-mono text-white/40">&gt;</span>
           <span className="w-1 h-2 bg-white/90 rounded-sm animate-pulse" />

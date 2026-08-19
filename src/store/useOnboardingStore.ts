@@ -24,7 +24,6 @@ interface OnboardingState {
   workspaceEnv: Record<string, string>;
   isLaunching: boolean;
 
-  // Actions
   openOnboarding: (step?: OnboardingStep) => void;
   setStep: (step: OnboardingStep) => void;
   nextStep: () => void;
@@ -40,7 +39,6 @@ interface OnboardingState {
 const initialLayout = buildAiPairTree();
 const initialTerms = getTerminalNodesFromTree(initialLayout);
 
-// Default initial agent mappings
 const defaultAssignments: Record<string, PaneAgentConfig> = {};
 if (initialTerms[0]) {
   defaultAssignments[initialTerms[0].id] = {
@@ -78,7 +76,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
   try {
     hasCompleted = !!localStorage.getItem(ONBOARDING_COMPLETED_KEY);
   } catch (e) {
-    // Ignore storage check in test or restricted environments
+
   }
 
   return {
@@ -127,7 +125,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       const terms = getTerminalNodesFromTree(newLayout);
       const updatedAssignments = { ...get().paneAgentAssignments };
 
-      // Ensure every new terminal has a default agent assignment
       terms.forEach((term, idx) => {
         if (!updatedAssignments[term.id]) {
           if (idx === 0) {
@@ -188,7 +185,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       try {
         localStorage.setItem(ONBOARDING_COMPLETED_KEY, '1');
       } catch (_e) {
-        // Ignore localStorage errors
+
       }
       set({ isOpen: false });
     },
@@ -200,7 +197,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       const terms = getTerminalNodesFromTree(state.draftLayout);
       const customStore = useCustomizationStore.getState();
 
-      // Apply appearance settings to global settings
       useSettingsStore.getState().setThemeName(customStore.themeName);
       useSettingsStore.getState().setFontFamily(customStore.fontFamily);
       useSettingsStore.getState().setFontSize(customStore.fontSize);
@@ -208,7 +204,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
       useSettingsStore.getState().setCursorStyle(customStore.cursorStyle);
       useSettingsStore.getState().setCursorBlink(customStore.cursorBlink);
 
-      // Build spawn specs for each pane
       const spawnSpecs: PaneSpawnSpec[] = terms.map((term) => {
         const assignment = state.paneAgentAssignments[term.id];
         let initialCmd: string | undefined;
@@ -229,7 +224,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
         };
       });
 
-      // Spawn PTYs in batch if running in Tauri
       const nodeToPtyMap: Record<string, string> = {};
       if (isTauri()) {
         try {
@@ -244,7 +238,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
         }
       }
 
-      // Recursive helper to attach live paneIds to the draftLayout tree
       function attachPtyIds(node: PaneNode): PaneNode {
         if (node.type === 'terminal') {
           const livePaneId = nodeToPtyMap[node.id];
@@ -264,7 +257,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
 
       const finalLayout = attachPtyIds(state.draftLayout);
 
-      // Create workspace
       const wsStore = useWorkspaceStore.getState();
       const newWsId = wsStore.createWorkspace(state.workspaceName);
       if (state.workspaceEmoji) {
@@ -274,7 +266,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
         wsStore.setWorkspaceOverrides(newWsId, { defaultCwd: state.workspaceCwd });
       }
 
-      // Set pane store layout and active workspace
       usePaneStore.setState({
         root: finalLayout,
         focusedPaneId: terms[0]?.id || null,
@@ -283,13 +274,12 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
         gridVersion: Date.now(),
       });
 
-      // Save workspace state
       wsStore.saveCurrentWorkspace();
 
       try {
         localStorage.setItem(ONBOARDING_COMPLETED_KEY, '1');
       } catch (_err) {
-        // Ignore localStorage write error
+
       }
 
       set({

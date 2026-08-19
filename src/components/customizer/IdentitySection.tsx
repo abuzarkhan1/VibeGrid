@@ -91,7 +91,7 @@ export const IdentitySection: React.FC = () => {
 
   return (
     <div className="space-y-6 text-white/90 font-sans">
-      {/* Live Badge Preview Header Card */}
+      {}
       <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div

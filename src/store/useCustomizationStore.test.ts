@@ -62,13 +62,13 @@ describe('useCustomizationStore', () => {
 
   it('validates and bounds draft typography and appearance', () => {
     const store = useCustomizationStore.getState();
-    store.setDraftFontSize(40); // clamp max to 32
+    store.setDraftFontSize(40);
     expect(useCustomizationStore.getState().fontSize).toBe(32);
 
-    store.setDraftFontSize(4); // clamp min to 8
+    store.setDraftFontSize(4);
     expect(useCustomizationStore.getState().fontSize).toBe(8);
 
-    store.setDraftOpacity(1.5); // clamp max to 1.0
+    store.setDraftOpacity(1.5);
     expect(useCustomizationStore.getState().terminalOpacity).toBe(1.0);
 
     store.setDraftCursorStyle('block');

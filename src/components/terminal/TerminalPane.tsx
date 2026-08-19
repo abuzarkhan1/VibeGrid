@@ -25,17 +25,11 @@ import { TerminalTheme } from '@/types/terminal';
 import { escapeShellPath, bracketedPaste } from '@/lib/commandUtils';
 
 interface TerminalPaneProps {
-  id: string; // Layout node ID
+  id: string;
   isFocused: boolean;
   onActivity?: () => void;
 }
 
-/**
- * Short terminal bell beep (customization audit C17). This xterm build ships
- * no bellStyle option, so the bell is handled through `onBell` + Web Audio.
- * The AudioContext is created lazily on the first bell (browsers require a
- * user gesture before autoplay, and terminals are user-focused by then).
- */
 let bellAudioCtx: AudioContext | null = null;
 function playBell() {
   try {
@@ -56,16 +50,10 @@ function playBell() {
     osc.start(now);
     osc.stop(now + 0.12);
   } catch (e) {
-    // audio unavailable — silently ignore
+
   }
 }
 
-/**
- * Length of the overlap between `snapshot` (older, already-written output) and
- * `pending` (newer, buffered live output): the longest suffix of `snapshot`
- * that is also a prefix of `pending`. Used on workspace switch-back to replay
- * buffered output without duplicating the bytes the snapshot already contains.
- */
 function overlapSuffix(snapshot: string, pending: string): number {
   const max = Math.min(snapshot.length, pending.length);
   for (let len = max; len > 0; len--) {
@@ -74,14 +62,10 @@ function overlapSuffix(snapshot: string, pending: string): number {
   return 0;
 }
 
-/** Parse the raw "shell args" setting (space-separated) into argv pieces (C11). */
 function parseShellArgs(raw: string): string[] {
   return raw.trim() ? raw.trim().split(/\s+/) : [];
 }
 
-/** Parse the raw "shell env" setting (one KEY=VALUE per line) into an env map (C11).
- *  Lines without '=' or with an empty key are skipped — a malformed line must
- *  never break pane spawning. */
 function parseShellEnv(raw: string): Record<string, string> {
   const env: Record<string, string> = {};
   for (const line of raw.split(/\r?\n/)) {
@@ -94,13 +78,6 @@ function parseShellEnv(raw: string): Record<string, string> {
   return env;
 }
 
-/**
- * Customization audit C20: copy the current selection as HTML (inline-styled
- * `<pre>`) so pasting into a rich editor keeps the terminal colors. Walks the
- * selected cells directly (xterm's selection API only exposes plain text) and
- * groups consecutive same-colored cells into spans. Falls back to a plain
- * text copy when the ClipboardItem API is unavailable.
- */
 function copySelectionAsHtml(term: Terminal, theme: TerminalTheme): boolean {
   const sel = term.getSelectionPosition();
   if (!sel) return false;
@@ -138,7 +115,7 @@ function copySelectionAsHtml(term: Terminal, theme: TerminalTheme): boolean {
         const mode = cell.getFgColorMode();
         const fg = cell.getFgColor();
         if (mode === 2) {
-          // Direct RGB: 0xRRGGBB.
+
           color = `#${((fg >> 16) & 0xff).toString(16).padStart(2, '0')}${((fg >> 8) & 0xff).toString(16).padStart(2, '0')}${(fg & 0xff).toString(16).padStart(2, '0')}`;
         } else if (mode === 1 && fg >= 0 && fg < 16) {
           color = ansi[fg] ?? '';
@@ -710,7 +687,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     if (!term) return;
 
     const theme = THEMES[effThemeName] || THEMES.vibeDark;
-    
+
     // FORCE PURE BLACK STEALTH THEME DYNAMICALLY AS WELL
     const stealthTheme = {
       ...theme,

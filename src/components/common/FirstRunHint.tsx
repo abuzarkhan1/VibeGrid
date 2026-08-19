@@ -19,7 +19,7 @@ export const FirstRunHint: React.FC = () => {
       const t = setTimeout(() => setVisible(false), hintDurationMs);
       return () => clearTimeout(t);
     } catch (e) {
-      // ignore storage errors
+
     }
   }, [hintDurationMs, isOnboardingOpen]);
 

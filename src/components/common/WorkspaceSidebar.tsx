@@ -70,7 +70,7 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
     createWorkspace(name.trim() || 'New Workspace', { activate: true });
     setShowCreateModal(false);
     addToast({ type: 'success', title: 'Workspace Created', description: `"${name}" is now active.` });
-    // Switch to hub view for the fresh workspace
+
     setActiveViewMode('hub');
   };
 
@@ -114,7 +114,6 @@ export const WorkspaceSidebar: React.FC<WorkspaceSidebarProps> = ({ isOpen, onTo
     );
   }
 
-  // --- SETTINGS SIDEBAR VIEW ---
   if (isSettingsOpen) {
     return (
       <aside

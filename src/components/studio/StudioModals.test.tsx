@@ -29,12 +29,10 @@ describe('Studio Modals & Chained Workflow', () => {
       expect(screen.getByRole('dialog', { name: /Layout Selection Studio/i })).toBeTruthy();
       expect(screen.getByText('Layout Selection Studio')).toBeTruthy();
 
-      // Select preset
       const soloCard = screen.getByText('1-Pane Solo').closest('button');
       expect(soloCard).toBeTruthy();
       if (soloCard) fireEvent.click(soloCard);
 
-      // Deploy layout
       const deployBtn = screen.getByRole('button', { name: /Deploy Layout/i });
       fireEvent.click(deployBtn);
 
@@ -68,12 +66,10 @@ describe('Studio Modals & Chained Workflow', () => {
       expect(screen.getByRole('dialog', { name: /AI Agent & CLI Launcher/i })).toBeTruthy();
       expect(screen.getByText('AI Agent & CLI Launcher')).toBeTruthy();
 
-      // Select Claude Code
       const claudeCard = screen.getByText('Claude Code').closest('div');
       expect(claudeCard).toBeTruthy();
       if (claudeCard) fireEvent.click(claudeCard);
 
-      // Click Provision Agents
       const provisionBtn = screen.getByRole('button', { name: /Provision Agents/i });
       fireEvent.click(provisionBtn);
 
@@ -110,12 +106,10 @@ describe('Studio Modals & Chained Workflow', () => {
       expect(screen.getByRole('dialog', { name: /VibeGrid Customization Studio/i })).toBeTruthy();
       expect(screen.getByText('VibeGrid Customization Studio')).toBeTruthy();
 
-      // Switch to Theme Studio tab
       const themeTab = screen.getByRole('button', { name: /Theme Studio/i });
       fireEvent.click(themeTab);
       expect(useCustomizationStore.getState().activeSection).toBe('appearance');
 
-      // Click Save & Apply
       const saveBtn = screen.getByRole('button', { name: /Save & Apply/i });
       fireEvent.click(saveBtn);
 

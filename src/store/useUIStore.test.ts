@@ -13,10 +13,7 @@ describe('useUIStore', () => {
       pendingLayoutAction: null,
       isCreateWsModalOpen: false,
     });
-    // Isolate store singletons per test: pane store clean (no paneIds →
-    // nothing running, reset to a plain preset-1 grid so the layout-guard
-    // no-op short-circuit starts from a known state), workspace store back to
-    // the single default workspace.
+
     usePaneStore.setState({
       root: { type: 'terminal', id: 'term-init', title: 'Terminal 1' } as never,
       paneCount: 1,
@@ -29,7 +26,7 @@ describe('useUIStore', () => {
         { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' }, createdAt: Date.now(), updatedAt: Date.now(), version: 1 },
       ],
       activeWorkspaceId: 'default-workspace',
-      isLoading: true, // fresh-start guard: saves skipped (no invoke needed)
+      isLoading: true,
     });
   });
 
@@ -47,9 +44,7 @@ describe('useUIStore', () => {
     });
 
     it('requestSwitchWorkspace switches immediately even with running processes (workspace isolation)', () => {
-      // Workspace isolation: switching NEVER terminates terminals, so even with
-      // a live PTY attached there is no confirmation — the switch just happens
-      // and the other workspace's processes keep running in the background.
+
       useWorkspaceStore.setState({
         workspaces: [
           { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
@@ -85,8 +80,7 @@ describe('useUIStore', () => {
     });
 
     it('requestCreateWorkspace creates immediately even with running processes (workspace isolation)', () => {
-      // A live PTY is attached to the pane — creating a workspace still switches
-      // immediately; the old workspace's processes keep running in the background.
+
       usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never });
       useUIStore.getState().requestCreateWorkspace('Fresh');
 
@@ -108,23 +102,19 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset EXPANDS immediately even with a running terminal — never kills it', () => {
-      // The exact reported bug: you're working in ONE terminal and click "2" —
-      // the current one must NOT be deleted. Expansion (1→4) is non-destructive:
-      // it applies instantly, keeps the running pane (same id, same paneId),
-      // and only adds the missing terminals. No confirmation.
+
       usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never });
       useUIStore.getState().requestSetLayoutPreset(4);
 
       expect(useUIStore.getState().pendingLayoutAction).toBeNull();
       expect(usePaneStore.getState().paneCount).toBe(4);
-      // The original running terminal survives with its live PTY.
+
       const terminals = getTerminalNodes(usePaneStore.getState().root);
       expect(terminals.some((t) => t.id === 'term-1' && t.paneId === 'pty-1')).toBe(true);
     });
 
     it('requestSetLayoutPreset SHRINK defers only when a REMOVED pane is running; confirm then closes', () => {
-      // 4-pane grid where two panes have live processes; shrink to 2. The
-      // focused pane survives; only the removed running panes need confirming.
+
       usePaneStore.setState({
         root: {
           type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
@@ -150,10 +140,9 @@ describe('useUIStore', () => {
         layoutMode: 'custom',
       });
       useUIStore.getState().requestSetLayoutPreset(2);
-      // planPresetKeep: focused term-1 + next in order term-2 survive;
-      // removed = [term-3, term-4] → only term-3 is running → closingCount 1.
+
       expect(useUIStore.getState().pendingLayoutAction).toEqual({ type: 'preset', count: 2, closingCount: 1 });
-      expect(usePaneStore.getState().paneCount).toBe(4); // unchanged until confirmed
+      expect(usePaneStore.getState().paneCount).toBe(4);
 
       useUIStore.getState().confirmPendingLayoutAction();
       expect(usePaneStore.getState().paneCount).toBe(2);
@@ -161,8 +150,7 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset SHRINK applies immediately when no removed pane is running', () => {
-      // 4-pane grid, only the focused pane is running (others idle). Shrink to
-      // 1 closes only idle terminals — no confirmation needed.
+
       usePaneStore.setState({
         root: {
           type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
@@ -192,7 +180,6 @@ describe('useUIStore', () => {
       expect(usePaneStore.getState().paneCount).toBe(1);
     });
 
-    // A proper EQUAL 4-pane preset tree (2×2, all ratios 0.5).
     const equal4Tree = () => ({
       type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
       children: [
@@ -214,8 +201,7 @@ describe('useUIStore', () => {
     } as never);
 
     it('requestSetLayoutPreset is a no-op when the requested EQUAL grid is already active (no kill, no confirm)', () => {
-      // Already on an equal 4-pane preset WITH running processes: clicking "4"
-      // again must change nothing — no confirm modal, no rebuild, no kill.
+
       usePaneStore.setState({
         root: equal4Tree(),
         paneCount: 4,
@@ -224,11 +210,9 @@ describe('useUIStore', () => {
       });
       useUIStore.getState().requestSetLayoutPreset(4);
       expect(useUIStore.getState().pendingLayoutAction).toBeNull();
-      expect(usePaneStore.getState().paneCount).toBe(4); // untouched
+      expect(usePaneStore.getState().paneCount).toBe(4);
     });
 
-    // A pristine 6-pane preset grid (2 rows × 3 columns) — the 3-column rows
-    // split at ratio 1/3, NOT 0.5, so equality must accept 1/3 too (verify fix).
     const equal6Tree = () => ({
       type: 'split', id: 's1', direction: 'vertical', ratio: 0.5,
       children: [
@@ -264,16 +248,14 @@ describe('useUIStore', () => {
     it('isEqualPresetTree recognizes a pristine 6-pane grid (1/3 row ratios) and rejects a dragged one', () => {
       const pristine = equal6Tree() as { ratio: number };
       expect(isEqualPresetTree(pristine as never, 6)).toBe(true);
-      expect(isEqualPresetTree(pristine as never, 4)).toBe(false); // wrong total count
-      // Drag the vertical split away from 0.5 → no longer equal.
+      expect(isEqualPresetTree(pristine as never, 4)).toBe(false);
+
       const dragged = { ...pristine, ratio: 0.42 } as never;
       expect(isEqualPresetTree(dragged, 6)).toBe(false);
     });
 
     it('requestSetLayoutPreset is a no-op on an already-active EQUAL 6-pane preset (1/3 ratios)', () => {
-      // Verify fix: the old check only accepted 0.5 ratios, so a pristine
-      // 6-pane grid was never "equal" and clicking "6" rebuilt it every time.
-      // Now it short-circuits — no rebuild, no confirm, panes untouched.
+
       usePaneStore.setState({
         root: equal6Tree(),
         paneCount: 6,
@@ -288,9 +270,7 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset RE-EQUALIZES a dragged preset grid (unequal ratios) without killing', () => {
-      // UX audit P3 #11: preset grids are resizable now. Clicking the same
-      // grid button on a grid the user dragged must re-equalize it
-      // non-destructively — no confirm, running terminals keep their paneIds.
+
       const dragged = equal4Tree() as {
         children: { ratio: number }[];
       };
@@ -304,29 +284,26 @@ describe('useUIStore', () => {
       useUIStore.getState().requestSetLayoutPreset(4);
       expect(useUIStore.getState().pendingLayoutAction).toBeNull();
       expect(usePaneStore.getState().paneCount).toBe(4);
-      // Re-equalized: every split ratio is 0.5 again, and the original running
-      // terminals survive (their paneIds intact).
+
       const root = usePaneStore.getState().root as { children: { ratio: number }[] };
       expect(root.children[0].ratio).toBe(0.5);
       expect(getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId)).toHaveLength(4);
     });
 
     it('requestResetLayout with a SINGLE running pane applies immediately — the focused pane survives', () => {
-      // Reset keeps the focused terminal and closes the OTHERS. With one pane
-      // there is nothing to close → applies instantly, no confirm.
+
       usePaneStore.setState({
         root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never,
         focusedPaneId: 'term-1',
       });
       useUIStore.getState().requestResetLayout();
       expect(useUIStore.getState().pendingLayoutAction).toBeNull();
-      // Pane untouched — still the single running terminal, same id/paneId
+
       expect(usePaneStore.getState().root).toMatchObject({ id: 'term-1', paneId: 'pty-1' });
     });
 
     it('requestResetLayout defers when other running panes exist; cancel clears without killing', () => {
-      // 3 panes, two running besides the focused one. Reset closes the two
-      // non-focused terminals → confirm first.
+
       usePaneStore.setState({
         root: {
           type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
@@ -351,7 +328,7 @@ describe('useUIStore', () => {
 
       useUIStore.getState().cancelPendingLayoutAction();
       expect(useUIStore.getState().pendingLayoutAction).toBeNull();
-      expect(usePaneStore.getState().paneCount).toBe(3); // untouched
+      expect(usePaneStore.getState().paneCount).toBe(3);
     });
 
     it('requestResetLayout applies immediately when nothing is running', () => {

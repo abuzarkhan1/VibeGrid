@@ -10,7 +10,7 @@ export interface ToastMessage {
   title: string;
   description?: string;
   durationMs?: number;
-  /** 0-100 progress to render a thin progress bar in the toast (e.g. model download). */
+
   progress?: number;
 }
 
@@ -25,34 +25,17 @@ interface UIState {
   activeWebglPanes: string[];
   maxWebglSlots: number;
 
-  // Guarded destructive flow: closing a pane (kills its processes) confirms
-  // first. Workspace switching/creation is NON-destructive (workspace
-  // isolation) — hidden workspaces' terminals keep running — so it needs no
-  // confirmation.
   pendingClosePaneId: string | null;
-  /**
-   * Quit-with-running-processes guard (UX audit P0 #1): the window close was
-   * intercepted because terminals are still running and the user hasn't opted
-   * into minimize-to-tray — wait for the user to confirm the quit.
-   */
+
   pendingQuit: boolean;
-  /**
-   * A layout change that CLOSES running terminals, awaiting confirmation.
-   * Expanding a preset grid (1→2→4…) is NON-destructive (existing terminals
-   * keep running, only missing panes are added) so it never confirms. Only a
-   * SHRINK (4→2→1) or reset closes panes — and only when one of the removed
-   * panes has a running process. closingCount is how many terminals will be
-   * terminated (the focused pane always survives). Null = no pending request.
-   */
+
   pendingLayoutAction:
     | { type: 'preset'; count: PresetCount; closingCount: number }
     | { type: 'reset'; closingCount: number }
     | null;
-  // Audit find 4: the 'new-workspace' keybinding needs a reachable create modal
-  // (Header/Sidebar/Settings/Palette own theirs locally).
+
   isCreateWsModalOpen: boolean;
 
-  // Actions
   toggleCommandPalette: () => void;
   setCommandPaletteOpen: (open: boolean) => void;
   toggleSettings: () => void;
@@ -71,8 +54,7 @@ interface UIState {
   cancelPendingClose: () => void;
   requestQuit: () => void;
   cancelQuit: () => void;
-  /** Guarded preset/reset: applies immediately when nothing is running, else
-   * asks for confirmation first (a grid rebuild terminates all panes). */
+
   requestSetLayoutPreset: (count: PresetCount) => void;
   requestResetLayout: () => void;
   confirmPendingLayoutAction: () => void;
@@ -81,10 +63,9 @@ interface UIState {
   requestCreateWorkspace: (name: string) => void;
   openCreateWsModal: () => void;
   closeCreateWsModal: () => void;
-  /** Unified "max panes reached" toast (audit: 3 hand-rolled copies drifted). */
+
   notifyMaxPanes: () => void;
 
-  // View state matching desktop design layout
   activeViewMode: 'hub' | 'grid';
   activeThreadTitle: string;
   setActiveViewMode: (mode: 'hub' | 'grid') => void;
@@ -100,7 +81,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   isChatOpen: false,
   toasts: [],
   activeWebglPanes: [],
-  maxWebglSlots: 12, // Max active WebGL GPU contexts allowed before canvas fallback
+  maxWebglSlots: 12,
   pendingClosePaneId: null,
   pendingQuit: false,
   pendingLayoutAction: null,
@@ -124,7 +105,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   setChatOpen: (open: boolean) => set({ isChatOpen: open }),
 
   requestClosePane: (paneId: string) => {
-    // Customization audit L19: with confirmation off, close (and kill) now.
+
     if (useSettingsStore.getState().confirmations.paneClose !== 'always') {
       usePaneStore.getState().closePane(paneId);
       return;
@@ -135,26 +116,16 @@ export const useUIStore = create<UIState>((set, get) => ({
   requestQuit: () => set({ pendingQuit: true }),
   cancelQuit: () => set({ pendingQuit: false }),
 
-  // Grid preset/reset guard. EXPANSION (count > current) is non-destructive —
-  // existing terminals keep their live paneIds and only the missing panes are
-  // added — so it always applies immediately. Only a SHRINK or reset closes
-  // panes; those confirm only when one of the REMOVED panes has a running
-  // process (the focused pane always survives the change).
   requestSetLayoutPreset: (count) => {
     const ps = usePaneStore.getState();
-    // No-op short-circuit: clicking the already-active EQUAL grid button (e.g.
-    // "4" while already on an equal 4-pane preset) changes nothing — don't
-    // rebuild. A preset grid the user dragged (unequal ratios) re-equalizes
-    // non-destructively instead (UX audit P3 #11).
+
     if (ps.layoutMode === 'preset' && ps.presetCount === count && isEqualPresetTree(ps.root, count)) return;
 
-    // Expansion: add terminals alongside the existing ones — never confirms.
     if (count > ps.paneCount) {
       usePaneStore.getState().setLayoutPreset(count);
       return;
     }
 
-    // Shrink: closes the removed panes. Confirm only if any of them is running.
     const { removed } = planPresetKeep(getTerminalNodes(ps.root), ps.focusedPaneId, count);
     const closingCount = removed.filter((t) => t.paneId).length;
     if (closingCount === 0) {
@@ -166,9 +137,7 @@ export const useUIStore = create<UIState>((set, get) => ({
 
   requestResetLayout: () => {
     const ps = usePaneStore.getState();
-    // Reset keeps the focused pane (falling back to the first terminal, exactly
-    // like the store) and closes the others. Confirm only when there is at
-    // least one other RUNNING pane to close.
+
     const terminals = getTerminalNodes(ps.root);
     const survivorId =
       terminals.find((t) => t.id === ps.focusedPaneId)?.id ?? terminals[0]?.id ?? null;
@@ -192,19 +161,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
   cancelPendingLayoutAction: () => set({ pendingLayoutAction: null }),
 
-  // Workspace isolation: switching workspaces NEVER terminates terminals — the
-  // leaving workspace's live layout (with paneIds) is captured in memory and
-  // its PTYs keep running in the background until the user switches back
-  // (re-attach) or explicitly closes/deletes. So switch immediately, no
-  // confirmation.
   requestSwitchWorkspace: (wsId: string) => {
     useWorkspaceStore.getState().switchWorkspace(wsId);
   },
 
-
-  // Workspace isolation: creating a workspace also switches to it without
-  // terminating anything. The current workspace's terminals keep running in
-  // the background.
   requestCreateWorkspace: (name: string) => {
     useWorkspaceStore.getState().createWorkspace(name);
   },
