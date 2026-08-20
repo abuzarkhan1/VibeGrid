@@ -1,70 +1,119 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=Sora:wght@400;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ================================================================
-   BASE
-   ================================================================ */
+:root {
+  /* Solid Core Color Tokens */
+  --color-obsidian-canvas: #303236;
+  --color-void: #090a0c;
+  --color-charcoal-card: #111111;
+  --color-slate-edge: #4a4b50;
+  --color-iron-veil: #6b6c6d;
+  --color-smoke: #95979e;
+  --color-ash: #a9a9aa;
+  --color-frost: #d1d1d1;
+  --color-linen: #e5e5e7;
+  --color-linen-warm: #f6f6f6;
+  --color-snow: #ffffff;
+  --color-electric-iris: #5683da;
+  --color-ember-pulse: #ff8964;
+  --color-molasses: #5a250a;
+
+  /* Typography Fonts */
+  --font-inter: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-esbuild: 'Esbuild', 'Sora', 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Typography Scales */
+  --text-caption: 11px;
+  --leading-caption: 1.38;
+  --tracking-caption: -0.1px;
+  --text-body: 14px;
+  --leading-body: 1.5;
+  --tracking-body: -0.14px;
+  --text-body-lg: 16px;
+  --leading-body-lg: 1.5;
+  --tracking-body-lg: -0.16px;
+  --text-subheading: 18px;
+  --leading-subheading: 1.5;
+  --tracking-subheading: -0.36px;
+  --text-heading: 24px;
+  --leading-heading: 1.25;
+  --tracking-heading: -0.48px;
+  --text-display-sm: 32px;
+  --leading-display-sm: 1.0;
+  --tracking-display-sm: -1.6px;
+  --text-display: 80px;
+  --leading-display: 0.9;
+  --tracking-display: -4px;
+
+  /* Radii */
+  --radius-inputs: 4px;
+  --radius-cards: 12px;
+  --radius-panels: 30px;
+  --radius-buttons: 9999px;
+  --radius-tags: 9999px;
+
+  /* Layout */
+  --page-max-width: 1200px;
+  --section-gap: 96px;
+}
+
 @layer base {
   *,
   *::before,
   *::after {
     box-sizing: border-box;
-    font-family: 'Space Grotesk', var(--font-space), system-ui, sans-serif;
   }
 
   html {
     color-scheme: dark;
     scroll-behavior: smooth;
-    background-color: #08080a;
-    color: #ffffff;
+    background-color: var(--color-void);
+    color: var(--color-snow);
+    font-family: var(--font-inter);
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
-    background: #08080a;
-    color: #ffffff;
-    font-family: 'Space Grotesk', var(--font-space), system-ui, sans-serif;
-    font-weight: 400;
-    line-height: 1.6;
+    background: var(--color-void);
+    color: var(--color-snow);
+    font-family: var(--font-inter);
+    font-size: var(--text-body);
+    line-height: var(--leading-body);
+    letter-spacing: var(--tracking-body);
     overflow-x: hidden;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  p, span, a, li, label, strong, em, small, blockquote, figcaption {
-    font-family: 'Space Grotesk', var(--font-space), system-ui, sans-serif;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', var(--font-space), system-ui, sans-serif;
-    letter-spacing: -0.04em;
-    font-weight: 800;
-  }
-
-  button, input, select, textarea {
-    font-family: 'Space Grotesk', var(--font-space), system-ui, sans-serif;
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: var(--font-esbuild);
+    font-weight: 700;
   }
 
   code, pre, kbd, samp, .font-mono {
-    font-family: 'JetBrains Mono', var(--font-mono), ui-monospace, monospace;
+    font-family: var(--font-mono);
   }
 
   ::-webkit-scrollbar-track {
-    background: #08080a;
+    background: #090a0c;
   }
   ::-webkit-scrollbar-thumb {
-    background: #3f3f46;
+    background: #4a4b50;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #52525b;
+    background: #6b6c6d;
   }
   * {
     scrollbar-width: thin;
-    scrollbar-color: #3f3f46 #08080a;
+    scrollbar-color: #4a4b50 #090a0c;
   }
 }
 
@@ -78,7 +127,7 @@
   50%       { opacity: var(--max); }
 }
 
-/* 2. Shooting Stars (flash at 2%, vanish at 9%, stay gone) */
+/* 2. Shooting Stars */
 @keyframes vg-shoot {
   0%   { opacity: 0; transform: translate(0, 0); }
   2%   { opacity: 1; }
@@ -86,69 +135,72 @@
   100% { transform: translate3d(var(--dx), var(--dy), 0); opacity: 0; }
 }
 
-/* 3. Live Map Pulse (SVG dots) */
+/* 3. Live Map Pulse */
 @keyframes vg-lm-pulse {
   0%, 100% { opacity: 0.22; }
   50%       { opacity: 0.7; }
 }
 
-/* 4. Terminal caret blink */
+/* 4. Logo Scroll */
+@keyframes logo-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-logo-scroll {
+  animation: logo-scroll 25s linear infinite;
+}
+
+/* 5. Terminal caret blink */
 @keyframes vg-caret-blink {
   0%, 49% { opacity: 1; }
   50%, 100% { opacity: 0; }
 }
 
-/* 5. Ping (dot ripple on map) */
+/* 6. Ping */
 @keyframes ping {
   75%, 100% { opacity: 0; transform: scale(2); }
 }
 
-/* 6. Scroll-reveal fade-up */
+/* 7. Scroll-reveal fade-up */
 @keyframes vg-rise {
   0%   { opacity: 0; transform: translate3d(0, var(--vg-distance, 14px), 0); }
   100% { opacity: 1; transform: none; }
 }
 
-/* 7. Scroll-reveal fade */
+/* 8. Scroll-reveal fade */
 @keyframes vg-fade {
   0%   { opacity: 0; }
   100% { opacity: 1; }
 }
 
-/* 8. Scroll-reveal pop/scale */
+/* 9. Scroll-reveal pop/scale */
 @keyframes vg-pop {
   0%   { opacity: 0; transform: scale(var(--vg-scale, 0.965)) translate3d(0, var(--vg-distance, 10px), 0); }
   100% { opacity: 1; transform: none; }
 }
 
-/* 9. Scroll-reveal slide from left */
+/* 10. Scroll-reveal slide from left */
 @keyframes vg-slide-right {
   0%   { opacity: 0; transform: translate3d(calc(-1 * var(--vg-distance, 18px)), 0, 0); }
   100% { opacity: 1; transform: none; }
 }
 
-/* 10. Scroll-reveal text blur */
+/* 11. Scroll-reveal text blur */
 @keyframes vg-text {
   0%   { opacity: 0; filter: blur(6px); transform: translateY(8px); }
   100% { opacity: 1; filter: blur(0); transform: none; }
 }
 
-/* 11. Skeleton sweep shimmer */
+/* 12. Skeleton sweep shimmer */
 @keyframes vg-skeleton-sweep {
   0%   { transform: translate(-100%); }
   100% { transform: translate(100%); }
 }
 
-/* 12. Logo scroll marquee */
+/* 13. Logo scroll marquee */
 @keyframes vg-logo-scroll {
   0%   { transform: translate(0); }
   100% { transform: translate(-50%); }
-}
-
-/* 13. Download button glow breathe */
-@keyframes vg-install-glow-breathe {
-  0%, 100% { box-shadow: 0 0 20px rgba(255,255,255,0.12), 0 0 40px rgba(255,255,255,0.04); }
-  50%       { box-shadow: 0 0 25px rgba(255,255,255,0.22), 0 0 50px rgba(255,255,255,0.08); }
 }
 
 /* 14. Terminal scan line */
@@ -167,77 +219,58 @@
 @keyframes accordion-down { from { height: 0; } to { height: var(--radix-accordion-content-height); } }
 @keyframes accordion-up   { from { height: var(--radix-accordion-content-height); } to { height: 0; } }
 
-/* 17. Bounce (scroll chevron) */
+/* 17. Bounce */
 @keyframes bounce {
   0%, 100% { animation-timing-function: cubic-bezier(0.8,0,1,1); transform: translateY(-25%); }
   50%       { animation-timing-function: cubic-bezier(0,0,0.2,1); transform: none; }
 }
 
-/* 18. Accent keyword glow */
-@keyframes vg-keyword-glow-enter {
-  0%   { text-shadow: 0 0 40px rgba(255,255,255,0.3), 0 0 80px rgba(255,255,255,0.1); }
-  40%  { text-shadow: 0 0 60px rgba(255,255,255,0.6), 0 0 120px rgba(255,255,255,0.3); }
-  100% { text-shadow: 0 0 40px rgba(255,255,255,0.3), 0 0 80px rgba(255,255,255,0.1); }
-}
-
-/* 19. Fade-in-up */
+/* 18. Fade-in-up */
 @keyframes fade-in-up {
   0%   { opacity: 0; transform: translateY(20px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* 20. Radix/Tailwind enter transition (modal/palette system) */
+/* 19. Enter transition */
 @keyframes enter {
   0% { opacity: var(--tw-enter-opacity, 1); transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0)); }
 }
 
-/* 21. Radix/Tailwind exit transition */
+/* 20. Exit transition */
 @keyframes exit {
   to { opacity: var(--tw-exit-opacity, 1); transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0)); }
 }
 
-/* 22. Scroll-reveal fall from top */
+/* 21. Scroll-reveal fall from top */
 @keyframes vg-fall {
   0%   { opacity: 0; transform: translate3d(0, calc(-1 * var(--vg-distance, 10px)), 0); }
   100% { opacity: 1; transform: none; }
 }
 
-/* 23. Scroll-reveal slide from right */
+/* 22. Scroll-reveal slide from right */
 @keyframes vg-slide-left {
   0%   { opacity: 0; transform: translate3d(var(--vg-distance, 18px), 0, 0); }
   100% { opacity: 1; transform: none; }
 }
 
-/* 24. Text glow breathe */
-@keyframes glow-pulse {
-  0%, 100% { text-shadow: 0 0 20px rgba(255,255,255,0.4), 0 0 40px rgba(255,255,255,0.2); }
-  50%      { text-shadow: 0 0 30px rgba(255,255,255,0.6), 0 0 60px rgba(255,255,255,0.3); }
-}
-
-/* 25. Staggered letter fade-in */
+/* 23. Staggered letter fade-in */
 @keyframes letter-fade-in {
   0%   { opacity: 0; transform: translateY(10px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* 26. Opacity pulse */
+/* 24. Opacity pulse */
 @keyframes pulse {
   50% { opacity: 0.5; }
 }
 
-/* 27. Gradient shine sweep (hover cards) */
-@keyframes shine {
-  0% { background-position: 200%; }
-  100% { background-position: -200%; }
-}
-
-/* 28. Terminal cursor (blink) */
+/* 25. Terminal cursor */
 @keyframes terminal-cursor {
   0%, 100% { opacity: 1; }
   50%      { opacity: 0; }
 }
 
-/* 29. AI thinking dots (bounce) */
+/* 26. AI thinking dots */
 @keyframes thinking-dot {
   0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
   40%           { opacity: 1; transform: translateY(-3px); }
@@ -270,7 +303,6 @@
   will-change: transform, opacity;
   animation: vg-shoot var(--dur) ease-out var(--delay) infinite;
 }
-/* Shooting star tail */
 .vg-shooting-star::before {
   content: '';
   position: absolute;
@@ -279,7 +311,7 @@
   width: 80px;
   height: 1px;
   transform: translateY(-50%);
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), rgba(255,255,255,0.9));
+  background: #ffffff;
   border-radius: 999px;
 }
 
@@ -339,24 +371,6 @@
   letter-spacing: 0.1em;
 }
 
-/* ---- Glow ---- */
-.vg-text-glow {
-  text-shadow: 0 0 16px rgba(255,255,255,0.4);
-}
-.vg-neon-text {
-  text-shadow: 0 0 20px rgba(255,255,255,0.4), 0 0 40px rgba(255,255,255,0.2);
-}
-.vg-glow-flare { transition: text-shadow 0.5s, filter 0.5s; }
-.vg-glow-flare:hover {
-  text-shadow: 0 0 30px rgba(255,255,255,0.9), 0 0 60px rgba(255,255,255,0.6);
-  filter: brightness(1.2);
-}
-
-/* ---- Install button glow ---- */
-.vg-install-glow {
-  animation: 3s ease-in-out infinite vg-install-glow-breathe;
-}
-
 /* ---- Scan line ---- */
 .vg-scan-line {
   animation: 8s linear infinite vg-scan-line;
@@ -389,8 +403,6 @@
 .vg-keyword-filled {
   color: #ffffff;
   -webkit-text-stroke: 1.5px #ffffff;
-  text-shadow: 0 0 40px rgba(255,255,255,0.3), 0 0 80px rgba(255,255,255,0.1);
-  animation: 0.8s ease-out vg-keyword-glow-enter;
 }
 
 /* ---- Terminal cursor ---- */
@@ -400,13 +412,11 @@
 
 /* ---- Utility ---- */
 .animate-fade-in-up  { animation: 0.6s ease-out both fade-in-up; }
-.animate-glow-pulse  { animation: 3s ease-in-out infinite glow-pulse; }
 .animate-bounce      { animation: 1s infinite bounce; }
 .animate-shimmer     { animation: 2.5s infinite shimmer; }
 .animate-spin        { animation: 1s linear infinite spin; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .animate-pulse       { animation: 2s cubic-bezier(0.4, 0, 0.6, 1) infinite pulse; }
-.animate-terminal-cursor { animation: 1s step-end infinite terminal-cursor; }
 .animate-letter-fade-in  { animation: 0.4s ease-out forwards letter-fade-in; }
 .animate-thinking-dot    { animation: 1.4s ease-in-out infinite thinking-dot; }
 
@@ -425,19 +435,6 @@
 }
 .fade-in-0 { --tw-enter-opacity: 0; }
 
-/* ---- Shine sweep on hover (cards) ---- */
-.shine-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.06) 36%, rgba(255,255,255,0.03) 50%, transparent 64%);
-  background-size: 200% 100%;
-  background-position: 200% 0;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.group:hover .shine-layer { opacity: 1; animation: 3s ease-in-out infinite shine; }
-
 /* ---- Accordion ---- */
 .animate-accordion-down { animation: accordion-down 0.2s ease-out; }
 .animate-accordion-up   { animation: accordion-up   0.2s ease-out; }
@@ -445,12 +442,11 @@
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .vg-star, .vg-shooting-star, .vg-lm-pulse, .vg-caret-blink,
-  .vg-install-glow, .animate-ping, .animate-pulse, .animate-bounce,
-  .vg-logo-scroll, .vg-scan-line, .animate-glow-pulse,
+  .animate-ping, .animate-pulse, .animate-bounce,
+  .vg-logo-scroll, .vg-scan-line,
   .animate-terminal-cursor, .animate-thinking-dot, .animate-letter-fade-in,
   .animate-in, .animate-out,
   .vg-animate { animation: none !important; }
-  .shine-layer { opacity: 0; }
   .vg-star { opacity: var(--max, 1); }
   .vg-shooting-star { opacity: 0; }
   .vg-hidden { opacity: 1 !important; }

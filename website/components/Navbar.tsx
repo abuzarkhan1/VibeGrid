@@ -8,9 +8,9 @@ export interface NavbarProps {
 }
 
 const NAV_LINKS = [
-  { label: 'Desktop', href: '/#desktop' },
-  { label: 'Workspaces', href: '/#workspaces' },
-  { label: 'Themes', href: '/#themes' },
+  { label: 'Desktop', href: '/#desktop-app-demo' },
+  { label: 'Productivity', href: '/#productivity' },
+  { label: 'Powerhouse', href: '/#powerhouse' },
   { label: 'About', href: '/about' },
 ];
 
@@ -122,7 +122,13 @@ export function Navbar({ active }: NavbarProps) {
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center">
+          <div className="hidden md:flex items-center gap-3">
+            <a
+              href="/#desktop-app-demo"
+              className="text-sm font-medium text-white/80 hover:text-white px-4 py-2 rounded-full border border-white/20 hover:border-white/40 bg-white/5 transition-all duration-200"
+            >
+              See in Action →
+            </a>
             <a
               href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
               className="text-base font-black tracking-tight px-7 py-3 rounded-full bg-white text-black hover:bg-zinc-200 transition-all duration-200 shadow-2xl shadow-white/30 active:scale-[0.98] inline-flex items-center justify-center cursor-pointer select-none border-2 border-white"
@@ -176,8 +182,15 @@ export function Navbar({ active }: NavbarProps) {
             </a>
           ))}
           <a
+            href="/#desktop-app-demo"
+            className="text-base font-medium px-8 py-3 rounded-full border border-white/20 bg-white/5 text-white hover:bg-white/10 transition-all w-full text-center"
+            onClick={() => setMenuOpen(false)}
+          >
+            See in Action →
+          </a>
+          <a
             href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
-            className="text-lg font-black tracking-tight px-8 py-4 rounded-full bg-white text-black hover:bg-zinc-200 transition-all mt-4 w-full text-center shadow-2xl active:scale-[0.98] border-2 border-white"
+            className="text-lg font-black tracking-tight px-8 py-4 rounded-full bg-white text-black hover:bg-zinc-200 transition-all mt-2 w-full text-center shadow-2xl active:scale-[0.98] border-2 border-white"
             onClick={() => setMenuOpen(false)}
           >
             Download VibeGrid (.dmg)

@@ -6,18 +6,20 @@ const instrumentSerif = { variable: 'font-serif' };
 const jetbrainsMono = { variable: 'font-mono' };
 
 export const metadata: Metadata = {
-  title: 'VibeGrid — The GPU-Accelerated Multi-Pane Terminal Workspace for Mac & Windows',
-  description: 'VibeGrid is a free, open-source GPU-accelerated multi-pane terminal workspace using Tauri 2 + Rust + React + WebGL. Orchestrate AI coding agents, terminal grids (1 to 16 panes), workspaces, and custom keybindings.',
+  title: 'VibeGrid — The Agnostic Vibe Coder & Multi-Agent Terminal Grid',
+  description: 'VibeGrid is a free, open-source GPU-accelerated workspace for orchestrating your choice of AI agents with native Rust PTY, WebGL 60 FPS rendering, and dynamic 1-16 pane layouts.',
   keywords: [
     'VibeGrid',
+    'Vibe Coding',
+    'AI Agent Orchestrator',
     'GPU-accelerated terminal',
     'multi-pane terminal workspace',
     'Tauri 2 terminal',
     'Rust PTY',
     'xterm.js WebGL',
-    'terminal grid workspace',
-    'BridgeSpace alternative',
-    'iTerm2 grid alternative',
+    'Huly design terminal',
+    'Claude Code grid',
+    'Aider pair programmer',
     'free open source terminal',
   ],
   icons: {
@@ -28,16 +30,16 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'VibeGrid — Free GPU-Accelerated Multi-Pane Terminal Workspace',
-    description: 'Free, open-source, 60 FPS GPU-accelerated terminal workspace for macOS & Windows with dynamic 1 to 16 panes.',
+    title: 'VibeGrid — The Agnostic Vibe Coder',
+    description: 'Free, local-first workspace for orchestrating your choice of AI agents with 60 FPS WebGL GPU acceleration.',
     url: 'https://vibegrid.vercel.app/',
     siteName: 'VibeGrid',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'VibeGrid — Free GPU-Accelerated Multi-Pane Terminal Workspace',
-    description: 'Free, open-source 60 FPS GPU-accelerated terminal workspace for macOS & Windows.',
+    title: 'VibeGrid — The Agnostic Vibe Coder',
+    description: 'Free, local-first workspace for orchestrating your choice of AI agents.',
   },
 };
 
@@ -49,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${spaceGrotesk.variable} ${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      className="dark overscroll-y-none"
       style={{ colorScheme: 'dark' }}
     >
       <head>
@@ -57,7 +59,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </head>
-      <body className="flex flex-col min-h-screen bg-[#08080a] font-sans text-white antialiased">
+      <body className="flex flex-col min-h-screen bg-[#090a0c] font-sans text-white antialiased selection:bg-[#5683da]/30 selection:text-white">
         {children}
       </body>
     </html>

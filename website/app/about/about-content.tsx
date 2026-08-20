@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Rocket,
   Lock,
@@ -11,15 +11,18 @@ import {
   Sparkles,
   Star,
   Globe,
+  Terminal,
+  Layers,
+  Zap,
+  ShieldCheck,
+  CheckCircle2,
+  Code2,
 } from 'lucide-react';
-import { useScrollReveal } from '../../components/useScrollReveal';
-import { StarsCanvas } from '../../components/StarsCanvas';
-import { Navbar } from '../../components/Navbar';
+import { HeroNavbar } from '../../components/HeroNavbar';
 import { SiteFooter } from '../../components/SiteFooter';
-import StaggeredText from '../../components/StaggeredText';
-import { GridRadarHero } from '../../components/GridRadarHero';
+import { AuroraBeamFX } from '../../components/AuroraBeamFX';
 
-/* ─── Timeline Principles data ─── */
+/* ─── Timeline Principles Data ─── */
 interface PrincipleItem {
   num: string;
   tag: string;
@@ -27,6 +30,7 @@ interface PrincipleItem {
   titleAccent: string;
   desc: string;
   badge: string;
+  accentColor: string;
   icon: React.ReactNode;
 }
 
@@ -36,380 +40,453 @@ const PRINCIPLE_ITEMS: PrincipleItem[] = [
     tag: 'Open Source',
     titlePrefix: 'Free ',
     titleAccent: 'Forever',
-    desc: 'No subscriptions, no trials, no paid feature walls. VibeGrid is MIT licensed and open source — free for everyone, always.',
+    desc: 'No subscriptions, no paid feature gates, and no enterprise tiers. VibeGrid is MIT licensed and open source — free for every developer, everywhere, forever.',
     badge: 'MIT License',
-    icon: <HeartHandshake size={20} className="stroke-white" />,
+    accentColor: '#5683da',
+    icon: <HeartHandshake size={20} className="text-[#5683da]" />,
   },
   {
     num: '02',
-    tag: 'Agnostic',
-    titlePrefix: 'No Walled ',
+    tag: 'Agent Agnostic',
+    titlePrefix: 'Zero Walled ',
     titleAccent: 'Gardens',
-    desc: 'Run ANY AI coding agent you choose, locally. VibeGrid is completely agnostic — your stack, your agents, your rules.',
-    badge: 'Zero Lock-In',
-    icon: <Rocket size={20} className="stroke-white" />,
+    desc: 'Run Claude Code, Codex, Antigravity, Grok, Aider, Ollama, or custom scripts side by side. VibeGrid never restricts which AI agents or models you can orchestrate.',
+    badge: 'Universal Mesh',
+    accentColor: '#ff8964',
+    icon: <Rocket size={20} className="text-[#ff8964]" />,
   },
   {
     num: '03',
-    tag: 'Security',
+    tag: 'Security & Privacy',
     titlePrefix: 'Private by ',
-    titleAccent: 'Default',
-    desc: 'Zero telemetry, zero analytics, zero accounts. A 100% local desktop process — your terminals never leave your machine.',
-    badge: '100% Local',
-    icon: <Lock size={20} className="stroke-white" />,
+    titleAccent: 'Architecture',
+    desc: 'Zero telemetry, zero remote analytics, and zero cloud accounts. A 100% air-gapped local desktop process — your terminal buffers and files never leave your machine.',
+    badge: '100% Local-First',
+    accentColor: '#5683da',
+    icon: <Lock size={20} className="text-[#5683da]" />,
   },
   {
     num: '04',
-    tag: 'Performance',
-    titlePrefix: 'Fast by ',
-    titleAccent: 'Design',
-    desc: '60 FPS WebGL rendering with a Rust PTY backend for sub-10ms keystroke latency. Tools should never slow you down.',
-    badge: '<10ms Latency',
-    icon: <Cpu size={20} className="stroke-white" />,
+    tag: 'Rust Hardware Speed',
+    titlePrefix: 'Engineered for ',
+    titleAccent: 'Raw Velocity',
+    desc: '60 FPS GPU-accelerated rendering paired with a low-overhead Rust PTY backend. Sub-10ms keystroke latency so your tools never interrupt your flow state.',
+    badge: 'Rust PTY Engine',
+    accentColor: '#ff8964',
+    icon: <Cpu size={20} className="text-[#ff8964]" />,
   },
 ];
 
-const STACK = [
-  'Tauri 2', 'Rust', 'React 18', 'TypeScript', 'xterm.js', 'WebGL', 'Zustand', 'Tailwind CSS', 'Framer Motion',
+const STACK_ITEMS = [
+  { name: 'Tauri 2.0', role: 'Native Rust Core & IPC', color: '#ff8964' },
+  { name: 'Rust & Tokio', role: 'Direct POSIX/Windows PTY', color: '#ff8964' },
+  { name: 'React 18 & TypeScript', role: 'Reactive Terminal Studio UI', color: '#5683da' },
+  { name: 'WebGL 2.0 Canvas', role: '60 FPS GPU Rendering', color: '#5683da' },
+  { name: 'xterm.js Engine', role: 'High-Throughput ANSI Parser', color: '#5683da' },
+  { name: 'Zustand 5', role: 'Atomic Grid State Manager', color: '#5683da' },
+  { name: 'Tailwind CSS', role: 'Design System & Utility Layer', color: '#5683da' },
+  { name: 'Framer Motion', role: 'Physics-Based UI Animations', color: '#ff8964' },
 ];
 
-/* ─── Stats data ─── */
 const STATS = [
-  { value: '1', label: 'Solo developer' },
-  { value: '$0', label: 'Cost to use, forever' },
-  { value: '16', label: 'Live terminal panes' },
-  { value: '100%', label: 'Free & open source' },
+  { value: '1', label: 'Solo Developer', desc: 'Crafted with obsessive care' },
+  { value: '$0', label: 'Cost to Use', desc: 'Free & MIT licensed forever' },
+  { value: '16', label: 'Concurrent Panes', desc: 'Multi-agent orchestration' },
+  { value: '0ms', label: 'Cloud Telemetry', desc: '100% local on-device runtime' },
 ];
 
 export default function AboutContent() {
-  useScrollReveal();
+  const [activeTerminalTab, setActiveTerminalTab] = useState<'philosophy' | 'stack' | 'manifesto'>('philosophy');
 
   return (
-    <div className="dark relative min-h-screen bg-[#08080a] font-sans text-white overflow-x-hidden selection:bg-white selection:text-black">
+    <div className="min-h-screen bg-[#090a0c] font-sans text-white overflow-x-hidden selection:bg-[#5683da] selection:text-white">
+      {/* Top Site-Wide Navigation */}
+      <HeroNavbar />
 
-      {/* ═══════════════════════════ NAVBAR ═══════════════════════════ */}
-      <Navbar active="about" />
+      {/* ═══════════════════════════ SECTION 1: HERO (DARK / AURORA) ═══════════════════════════ */}
+      <section className="relative min-h-screen flex flex-col justify-center items-center pt-28 pb-16 sm:pt-32 sm:pb-20 overflow-hidden">
+        <AuroraBeamFX />
 
-      {/* ═══════════════════════════ HERO ═══════════════════════════ */}
-      <section className="relative isolate overflow-hidden bg-[#08080a]">
-
-        {/* Stars canvas */}
-        <StarsCanvas />
-
-        {/* Hero Grid Radar SVG Visual */}
-        <GridRadarHero />
-
-        {/* Hero content */}
-        <div className="relative z-10 mx-auto max-w-4xl px-6 pb-24 pt-36 text-center sm:pb-28">
-
-          {/* Section label badge */}
-          <div className="vg-hidden vg-in-rise mb-8 inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-zinc-900/50 px-3.5 py-1 font-mono text-xs uppercase tracking-widest text-white">
+        <div className="relative z-10 max-w-[1200px] w-full mx-auto px-6 sm:px-8 text-center flex flex-col items-center justify-center my-auto">
+          {/* Top Pill Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#111111] border border-[#4a4b50] text-[12px] font-mono text-[#a9a9aa] mb-8">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#5683da] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#5683da]" />
             </span>
-            About the creator
+            <span>SOLO CREATOR & OPEN SOURCE</span>
           </div>
 
-          {/* Main heading */}
-          <h1 className="vg-hero-heading vg-hidden vg-in-text font-extrabold tracking-tight text-[40px] leading-[1.08] text-white sm:text-[54px] md:text-[64px] lg:text-[72px]"
-              style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
+          {/* Giant Display Headline */}
+          <h1 className="font-display font-black text-4xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight leading-[1.05] text-white max-w-4xl mx-auto">
             Hi, I&apos;m{' '}
-            <StaggeredText text="Abuzar Khan" className="vg-text-glow text-white font-extrabold tracking-tight" step={40} startDelay={420} />
+            <span className="text-[#5683da]">Abuzar</span>{' '}
+            <span className="text-[#ff8964]">Khan</span>.
           </h1>
 
-          {/* Sub text */}
-          <p className="vg-hidden vg-in-rise mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal"
-             style={{ '--vg-delay': '0.14s' } as React.CSSProperties}>
-            I build open-source tools that make developers&apos; work easier — faster, freer,
-            and a little more fun. <strong className="text-white font-extrabold">VibeGrid</strong> is my love letter
-            to everyone who codes.
+          {/* Subtitle */}
+          <p className="mt-6 sm:mt-8 max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-[#a9a9aa] leading-relaxed font-normal">
+            I build open-source developer tools that eliminate friction — making multi-agent coding{' '}
+            <strong className="text-white font-semibold">faster, local-first, and completely free</strong>.
+            VibeGrid is my craft for the developer community.
           </p>
 
-          {/* CTA buttons */}
-          <div className="vg-hidden vg-in-rise mt-10 flex flex-wrap items-center justify-center gap-3"
-               style={{ '--vg-delay': '0.2s' } as React.CSSProperties}>
-            <a href="https://github.com/abuzarkhan1" target="_blank" rel="noreferrer"
-              className="vg-install-glow group flex items-center gap-2 rounded-2xl border border-white/[0.12] bg-white text-black px-6 py-3.5 text-sm font-extrabold tracking-tight transition-all hover:bg-zinc-200 hover:shadow-[0_0_28px_rgba(255,255,255,0.2)] cursor-pointer font-sans">
-              <Github size={16} />
-              Follow on GitHub
+          {/* Pill CTA Buttons */}
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 w-full max-w-lg mx-auto">
+            <a
+              href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#5683da] text-white font-semibold text-[15px] hover:bg-[#456ec2] transition-colors active:scale-[0.98] cursor-pointer shadow-sm whitespace-nowrap"
+            >
+              <span>Download for macOS</span>
+              <ArrowRight size={16} />
             </a>
-            <a href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
-              className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-[14px] font-extrabold tracking-tight text-white/70 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white cursor-pointer font-sans">
-              Download DMG
-              <ArrowRight size={15} />
+            <a
+              href="https://github.com/abuzarkhan1"
+              target="_blank"
+              rel="noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-[#111111] border border-[#4a4b50] text-white font-medium text-[15px] hover:border-[#a9a9aa] hover:bg-[#1b1c1e] transition-colors whitespace-nowrap"
+            >
+              <Github size={17} />
+              <span>Follow on GitHub</span>
             </a>
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════ MAIN CONTENT ═══════════════════════════ */}
-      <div className="relative z-10 bg-[#08080a]">
-
-        {/* ── Mission Section ── */}
-        <section className="relative scroll-mt-24 bg-[#08080a] px-6 py-24 md:py-32 border-t border-white/[0.06]">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="vg-hidden vg-in-rise mb-12 text-center">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6 text-center">
-                The Why
-              </p>
-              <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.08]">
-                Built for one simple reason — to make{' '}
-                <span className="text-white vg-text-glow font-serif italic font-normal">developers&apos; work easier</span>
-              </h2>
-              <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal">
-                VibeGrid started as a frustration. Terminal tools were either slow, expensive, or locked
-                into walled gardens that decided which AI agents you were allowed to run. I wanted a
-                workspace that was <span className="text-white font-extrabold">fast, free, local-first, and
-                completely agnostic</span> — one grid where any developer can orchestrate any agent, without
-                permission and without lock-in. That&apos;s the whole idea.
-              </p>
-            </div>
-
-            {/* Stats strip */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              {STATS.map((s, i) => (
-                <div key={s.label}
-                     className="vg-hidden vg-in-fall group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.02] px-4 py-6 transition-all duration-500 hover:border-white/[0.16] hover:bg-white/[0.04]"
-                     style={{ '--vg-index': i, '--vg-step': '60ms' } as React.CSSProperties}>
-                  <div className="shine-layer" aria-hidden="true" />
-                  <div className="font-mono text-3xl sm:text-4xl font-bold text-white">{s.value}</div>
-                  <div className="mt-2 font-mono text-xs uppercase tracking-widest text-white/40">{s.label}</div>
-                </div>
-              ))}
-            </div>
+      {/* ═══════════════════════════ SECTION 2: LIGHT BENTO BAND (THE WHY) ═══════════════════════════ */}
+      <section className="relative bg-[#ffffff] text-[#090a0c] py-20 sm:py-28 border-y border-[#e5e5e7]">
+        <div className="max-w-[1200px] mx-auto px-6 sm:px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#5683da] block mb-3">
+              THE MISSION & THE WHY
+            </span>
+            <h2 className="font-display font-black text-3xl sm:text-5xl md:text-6xl tracking-tight leading-[1.08] text-[#090a0c]">
+              Built for one reason — to make{' '}
+              <span className="text-[#5683da]">developers&apos; work easier.</span>
+            </h2>
+            <p className="mt-5 text-base sm:text-lg text-[#4a4b50] leading-relaxed">
+              Modern AI coding tools became fragmented into locked ecosystems, cloud telemetry, and sluggish web wrappers.
+              I built VibeGrid as the antidote: a high-performance local terminal grid where you own the runtime.
+            </p>
           </div>
-        </section>
 
-        {/* ── Story + Terminal Section ── */}
-        <section className="relative scroll-mt-24 bg-[#08080a] px-6 py-24 md:py-32 border-t border-white/[0.06]">
-          <div className="mx-auto max-w-6xl">
-            <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
-              <div className="vg-hidden vg-in-rise">
-                <p className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6">
-                  The Story
-                </p>
-                <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.08]">
-                  One developer, <span className="text-white font-serif italic font-normal">one mission</span>
-                </h2>
-                <p className="mt-4 max-w-xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal">
-                  I&apos;m Abuzar Khan — a solo developer who believes the best software is the kind you
-                  can hold in your hands, inspect line by line, and improve together. VibeGrid is built
-                  the way I like to work: <span className="text-white font-extrabold">open source, MIT licensed, and
-                  free forever</span>.
-                </p>
-                <p className="mt-4 max-w-xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal">
-                  Every pane, every keybinding, every theme in this app exists for the same reason the
-                  project exists: to shave friction off a developer&apos;s day so they can focus on what
-                  actually matters — building.
-                </p>
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {['Open source', 'MIT licensed', 'No telemetry', 'No accounts'].map((t) => (
-                    <span key={t} className="rounded-full border border-white/[0.08] bg-zinc-900/50 px-3 py-1 font-mono text-xs uppercase tracking-widest text-zinc-400">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Terminal mock */}
-              <div className="vg-hidden vg-in-right" style={{ '--vg-delay': '0.08s' } as React.CSSProperties}>
-                <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-zinc-900/50 p-5 transition-all duration-300 hover:border-white/[0.16]">
-                  <div className="flex items-center gap-1.5 border-b border-white/[0.06] pb-3 mb-3">
-                    <span className="h-3 w-3 rounded-full bg-red-500/70" />
-                    <span className="h-3 w-3 rounded-full bg-yellow-500/70" />
-                    <span className="h-3 w-3 rounded-full bg-white/70" />
-                    <span className="ml-3 font-mono text-xs text-zinc-500">abuzar — zsh</span>
-                  </div>
-                  <div className="space-y-1.5 font-mono text-xs leading-relaxed">
-                    <div className="text-white/70 font-bold">~/projects/vibegrid</div>
-                    <div><span className="text-zinc-500">$</span> <span className="text-zinc-300">whoami</span></div>
-                    <div className="text-zinc-400">abuzar khan</div>
-                    <div><span className="text-zinc-500">$</span> <span className="text-zinc-300">echo $MISSION</span></div>
-                    <div className="text-white font-bold">make developers&apos; work easier</div>
-                    <div><span className="text-zinc-500">$</span> <span className="text-zinc-300">./vibegrid --philosophy</span></div>
-                    <div className="text-zinc-400">free · local-first · agent-agnostic</div>
-                    <div className="flex items-center gap-1.5 pt-1.5 text-white">
-                      <span className="animate-thinking-dot h-1.5 w-1.5 rounded-full bg-white" />
-                      <span className="animate-thinking-dot h-1.5 w-1.5 rounded-full bg-white" style={{ animationDelay: '0.2s' }} />
-                      <span className="animate-thinking-dot h-1.5 w-1.5 rounded-full bg-white" style={{ animationDelay: '0.4s' }} />
-                      <span className="ml-1 font-mono text-[10px] font-bold uppercase tracking-widest">shipping open source…</span>
-                    </div>
-                    <div className="pt-1"><span className="text-zinc-500">$</span> <span className="animate-terminal-cursor text-white">▌</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── VERTICAL TIMELINE SECTION: PRINCIPLES / WHAT I BELIEVE ── */}
-        <section className="relative overflow-hidden bg-[#08080a] py-28 sm:py-36 border-t border-white/[0.06]">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] rounded-full bg-white/[0.025] blur-[120px]"
-          />
-
-          <div className="relative z-10 max-w-6xl mx-auto px-6 sm:px-8">
-            <div className="max-w-3xl mb-20 sm:mb-28">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6">
-                What I Believe
-              </p>
-              <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.08]">
-                The principles behind{' '}
-                <br />
-                <span className="text-white vg-text-glow font-serif italic font-normal">every line of code.</span>
-              </h2>
-              <p className="mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal">
-                Four core tenets guiding VibeGrid's architecture, roadmap, and philosophy.
-              </p>
-            </div>
-
-            {/* Vertical timeline line container */}
-            <div className="relative">
+          {/* 4 Asymmetrical Bento Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {STATS.map((stat, idx) => (
               <div
-                aria-hidden="true"
-                className="absolute left-[23px] sm:left-[31px] top-8 bottom-8 w-px bg-gradient-to-b from-white/20 via-white/[0.08] to-transparent"
-              />
+                key={idx}
+                className="p-8 rounded-[12px] bg-[#f6f6f6] border border-[#e5e5e7] hover:border-[#5683da] transition-all duration-200 flex flex-col justify-between"
+              >
+                <div>
+                  <div className="font-display font-black text-4xl sm:text-5xl text-[#090a0c] tracking-tight mb-2">
+                    {stat.value}
+                  </div>
+                  <div className="font-mono text-xs font-bold uppercase tracking-wider text-[#5683da] mb-2">
+                    {stat.label}
+                  </div>
+                </div>
+                <p className="text-xs sm:text-sm text-[#6b6c6d] font-normal leading-relaxed">
+                  {stat.desc}
+                </p>
+              </div>
+            ))}
+          </div>
 
-              <div className="space-y-16 sm:space-y-24">
-                {PRINCIPLE_ITEMS.map((item) => (
-                  <article
-                    key={item.num}
-                    className="group relative grid grid-cols-[48px_1fr] sm:grid-cols-[64px_1fr] gap-6 sm:gap-10"
+          {/* Deep Focus Callout Card */}
+          <div className="mt-8 p-8 sm:p-10 rounded-[12px] bg-[#090a0c] text-white border border-[#303236] flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="max-w-2xl space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#111111] border border-[#4a4b50] text-xs font-mono text-[#5683da]">
+                <ShieldCheck size={14} />
+                <span>100% AIR-GAPPED BY DESIGN</span>
+              </div>
+              <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight">
+                No Cloud Accounts. No Telemetry. No Paywalls.
+              </h3>
+              <p className="text-sm sm:text-base text-[#a9a9aa] leading-relaxed">
+                Everything runs locally on your machine via direct Tauri Rust PTY subprocesses. Your keystrokes, environment variables, and proprietary code never touch a 3rd-party server.
+              </p>
+            </div>
+            <a
+              href="/privacy-guarantee"
+              className="px-6 py-3 rounded-full bg-[#5683da] text-white font-semibold text-sm hover:bg-[#456ec2] transition-colors whitespace-nowrap"
+            >
+              Read Privacy Guarantee →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════ SECTION 3: THE STORY & TERMINAL HUD (DARK) ═══════════════════════════ */}
+      <section className="relative py-24 sm:py-32 bg-[#090a0c] border-b border-[#4a4b50]/40">
+        <div className="max-w-[1200px] mx-auto px-6 sm:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            {/* Left Story Column */}
+            <div className="lg:col-span-6 space-y-6">
+              <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#ff8964] block">
+                THE STORY
+              </span>
+              <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-[1.08]">
+                One developer, <span className="text-[#ff8964]">one mission.</span>
+              </h2>
+              <p className="text-base sm:text-lg text-[#a9a9aa] leading-relaxed font-normal">
+                I&apos;m Abuzar Khan — a solo engineer building software you can inspect, verify, and modify freely.
+                VibeGrid was born from personal frustration with heavy terminal emulators and walled-garden agent hubs.
+              </p>
+              <p className="text-base sm:text-lg text-[#a9a9aa] leading-relaxed font-normal">
+                Every split layout, keybinding, and GPU shader was engineered to give developers an ultra-responsive, zero-latency cockpit for multi-agent vibe coding.
+              </p>
+
+              {/* Tag Badges */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                {['Open Source (MIT)', 'Zero Telemetry', 'Agent Agnostic', 'Rust PTY Engine', 'Offline Ready'].map((t) => (
+                  <span
+                    key={t}
+                    className="px-3 py-1 rounded-full bg-[#111111] border border-[#4a4b50] font-mono text-xs text-[#d1d1d1]"
                   >
-                    <div className="relative z-10">
-                      <div
-                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#08080a] border border-white/[0.12] group-hover:border-white/30 flex items-center justify-center transition-all duration-300"
-                      >
-                        <span
-                          className="text-xs sm:text-sm font-extrabold text-zinc-500 group-hover:text-white transition-colors"
-                        >
-                          {item.num}
-                        </span>
-                      </div>
-
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-0 rounded-full bg-white/[0.04] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10"
-                      />
-                    </div>
-
-                    <div className="pt-1 sm:pt-2 max-w-3xl">
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className="h-px w-6 bg-white/20 group-hover:w-10 group-hover:bg-white/50 transition-all duration-300" />
-                        <span className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-500 group-hover:text-zinc-400 transition-colors">
-                          {item.tag}
-                        </span>
-                      </div>
-
-                      <h3
-                        className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] text-white flex items-center gap-3"
-                      >
-                        <span className="inline-flex items-center justify-center p-2 rounded-xl bg-white/5 border border-white/10 shrink-0 text-white">
-                          {item.icon}
-                        </span>
-                        <span>
-                          {item.titlePrefix}
-                          <span className="text-zinc-400 font-normal">{item.titleAccent}</span>
-                        </span>
-                      </h3>
-
-                      <p className="mt-5 text-sm sm:text-base md:text-lg leading-relaxed text-zinc-400 font-normal max-w-2xl">
-                        {item.desc}
-                      </p>
-
-                      <div className="mt-7 flex items-center gap-3">
-                        <span className="inline-flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest text-zinc-500">
-                          <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 group-hover:bg-white group-hover:shadow-[0_0_8px_rgba(255,255,255,0.7)] transition-all" />
-                          {item.badge}
-                        </span>
-                      </div>
-                    </div>
-                  </article>
+                    {t}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <div className="mt-24 sm:mt-32 pt-8 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-500">
-                Four principles. No compromises.
-              </p>
-              <span className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-500">
-                100% Free & Open Source
-              </span>
-            </div>
-          </div>
-        </section>
+            {/* Right Interactive Terminal Mockup */}
+            <div className="lg:col-span-6">
+              <div className="rounded-[12px] bg-[#111111] border border-[#4a4b50] overflow-hidden shadow-2xl">
+                {/* Window Titlebar */}
+                <div className="px-4 py-3 bg-[#0e0e10] border-b border-[#4a4b50] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full bg-[#ff5f56]" />
+                    <span className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                    <span className="w-3 h-3 rounded-full bg-[#27c93f]" />
+                    <span className="ml-3 font-mono text-xs text-[#95979e]">abuzar@vibegrid-core</span>
+                  </div>
 
-        {/* ── Stack Section ── */}
-        <section className="relative scroll-mt-24 bg-[#08080a] px-6 py-24 md:py-32 border-t border-white/[0.06]">
-          <div className="mx-auto max-w-4xl">
-            <div className="vg-hidden vg-in-rise mb-12 text-center">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6 text-center">
-                The Stack
-              </p>
-              <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.08]">
-                Built with <span className="text-white font-serif italic font-normal">tools I love</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal">
-                A modern desktop terminal deserves a modern foundation — Rust where it counts, React where it shines.
-              </p>
-            </div>
+                  {/* Interactive Terminal Tabs */}
+                  <div className="flex items-center gap-1">
+                    {(['philosophy', 'stack', 'manifesto'] as const).map((tab) => (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTerminalTab(tab)}
+                        className={`px-2.5 py-1 rounded-md text-[11px] font-mono transition-colors cursor-pointer ${
+                          activeTerminalTab === tab
+                            ? 'bg-[#303236] text-white border border-[#4a4b50]'
+                            : 'text-[#6b6c6d] hover:text-[#a9a9aa]'
+                        }`}
+                      >
+                        {tab}.sh
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="vg-hidden vg-in-rise flex flex-wrap items-center justify-center gap-3">
-              {STACK.map((s, i) => (
-                <span key={s}
-                  className="vg-hidden vg-in-fall rounded-full border border-white/[0.08] bg-zinc-900/50 px-4 py-2 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 transition-all duration-300 hover:border-white/[0.16] hover:text-white"
-                  style={{ '--vg-index': i, '--vg-step': '50ms' } as React.CSSProperties}>
-                  {s}
-                </span>
-              ))}
-            </div>
-          </div>
-        </section>
+                {/* Terminal Body */}
+                <div className="p-6 font-mono text-xs leading-relaxed space-y-3 bg-[#090a0c] min-h-[300px]">
+                  <div className="text-[#6b6c6d]">~/vibegrid/creator-manifesto (main)</div>
 
-        {/* ── Connect Section ── */}
-        <section className="relative bg-[#08080a] px-6 py-24 md:py-32 border-t border-white/[0.06]">
-          <div className="mx-auto max-w-3xl">
-            <div className="vg-hidden vg-in-rise rounded-2xl border border-white/[0.08] bg-zinc-900/50 p-8 text-center sm:p-12 hover:border-white/[0.16] transition-all duration-300">
-              <p className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400 mb-6 text-center">
-                Let&apos;s connect
-              </p>
-              <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight leading-[1.08]">
-                Let&apos;s build something <span className="text-white vg-text-glow font-serif italic font-normal">together</span>
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-zinc-400 font-normal">
-                VibeGrid is open to everyone — contributors, testers, and dreamers. Found a bug, want a
-                feature, or just want to say hi? The door is open.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                <a href="https://github.com/abuzarkhan1/VibeGrid" target="_blank" rel="noreferrer"
-                  className="vg-install-glow flex items-center gap-2 rounded-2xl border border-white/[0.12] bg-white text-black px-6 py-3.5 text-sm font-extrabold tracking-tight transition-all hover:bg-zinc-200 hover:shadow-[0_0_28px_rgba(255,255,255,0.2)] cursor-pointer font-sans">
-                  <Star size={16} className="fill-black" />
-                  Star on GitHub
-                </a>
-                <a href="https://github.com/abuzarkhan1/VibeGrid/issues" target="_blank" rel="noreferrer"
-                  className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-zinc-900/50 px-6 py-3.5 text-sm font-extrabold tracking-tight text-white/70 transition-all hover:border-white/[0.16] hover:bg-zinc-800 hover:text-white cursor-pointer font-sans">
-                  <Sparkles size={15} />
-                  Open an issue
-                </a>
-                <a href="/" className="flex items-center gap-2 rounded-2xl border border-white/[0.08] bg-zinc-900/50 px-6 py-3.5 text-sm font-extrabold tracking-tight text-white/70 transition-all hover:border-white/[0.16] hover:bg-zinc-800 hover:text-white cursor-pointer font-sans">
-                  <Globe size={15} />
-                  Back to homepage
-                </a>
+                  {activeTerminalTab === 'philosophy' && (
+                    <>
+                      <div>
+                        <span className="text-[#5683da] font-bold">$</span>{' '}
+                        <span className="text-white">cat philosophy.md</span>
+                      </div>
+                      <div className="text-[#a9a9aa] pl-3 border-l border-[#5683da]/40 space-y-1">
+                        <p className="text-white font-semibold"># The VibeGrid Philosophy</p>
+                        <p>1. Tools should feel instantaneous — sub-10ms response.</p>
+                        <p>2. No developer should be forced into a single AI model.</p>
+                        <p>3. Privacy is not a feature; it is an architectural invariant.</p>
+                        <p>4. 100% Free and open source under MIT.</p>
+                      </div>
+                      <div className="pt-2">
+                        <span className="text-[#5683da] font-bold">$</span>{' '}
+                        <span className="text-[#27c93f]">echo $STATUS</span> → &quot;shipping free open source tools&quot;
+                      </div>
+                    </>
+                  )}
+
+                  {activeTerminalTab === 'stack' && (
+                    <>
+                      <div>
+                        <span className="text-[#5683da] font-bold">$</span>{' '}
+                        <span className="text-white">cargo check --release</span>
+                      </div>
+                      <div className="text-[#a9a9aa] space-y-1">
+                        <p className="text-[#27c93f]">✔ Compiling vibegrid-pty-engine v0.1.0 (Rust 2021)</p>
+                        <p className="text-[#27c93f]">✔ Compiling vibegrid-mcp-bridge v0.1.0</p>
+                        <p className="text-white font-semibold">Finished release [optimized] in 1.42s</p>
+                        <p className="text-[#6b6c6d]">PTY Latency: 0.8ms · Memory footprint: 18.4MB</p>
+                      </div>
+                    </>
+                  )}
+
+                  {activeTerminalTab === 'manifesto' && (
+                    <>
+                      <div>
+                        <span className="text-[#5683da] font-bold">$</span>{' '}
+                        <span className="text-white">./vibegrid --manifesto</span>
+                      </div>
+                      <div className="text-[#a9a9aa] space-y-1">
+                        <p className="text-white font-bold">&quot;Vibe Coding is human intent at the speed of thought.&quot;</p>
+                        <p className="text-[#a9a9aa]">Orchestrate Claude Code, Codex, Antigravity &amp; Ollama in one synchronized matrix.</p>
+                        <p className="text-[#ff8964] font-semibold">Author: Abuzar Khan (@abuzarkhan1)</p>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Blinking Cursor */}
+                  <div className="pt-3 flex items-center gap-1.5 text-[#5683da]">
+                    <span>$</span>
+                    <span className="animate-pulse inline-block w-2 h-4 bg-[#5683da]" />
+                  </div>
+                </div>
               </div>
-              <div className="mt-8 font-mono text-xs uppercase tracking-widest text-white/40">
-                <span className="text-white">$</span> abuzarkhan1 — open source, always.
-              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── Footer ── */}
-        <SiteFooter active="about" />
+      {/* ═══════════════════════════ SECTION 4: 4 CORE PRINCIPLES (VERTICAL TIMELINE) ═══════════════════════════ */}
+      <section className="relative py-24 sm:py-36 bg-[#090a0c] border-b border-[#4a4b50]/40">
+        <div className="max-w-[1200px] mx-auto px-6 sm:px-8">
+          {/* Section Header */}
+          <div className="max-w-3xl mb-20">
+            <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#5683da] block mb-3">
+              WHAT I BELIEVE
+            </span>
+            <h2 className="font-display font-black text-3xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.08]">
+              The principles behind <br />
+              <span className="text-[#5683da]">every line of code.</span>
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-[#a9a9aa] leading-relaxed">
+              Four core commitments guiding VibeGrid&apos;s architecture, roadmap, and philosophy.
+            </p>
+          </div>
 
-      </div>
+          {/* 4 Principles List */}
+          <div className="space-y-12 sm:space-y-16">
+            {PRINCIPLE_ITEMS.map((item) => (
+              <article
+                key={item.num}
+                className="group relative p-6 sm:p-8 rounded-[12px] bg-[#111111] border border-[#4a4b50] hover:border-[#5683da] transition-all duration-300 grid grid-cols-1 md:grid-cols-12 gap-6 items-start"
+              >
+                {/* Number Badge */}
+                <div className="md:col-span-2 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#090a0c] border border-[#4a4b50] group-hover:border-[#5683da] flex items-center justify-center transition-colors">
+                    <span className="font-mono text-sm font-bold text-[#5683da]">{item.num}</span>
+                  </div>
+                  <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#6b6c6d] md:hidden">
+                    {item.tag}
+                  </span>
+                </div>
+
+                {/* Content */}
+                <div className="md:col-span-7 space-y-3">
+                  <div className="hidden md:flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#6b6c6d]">
+                      {item.tag}
+                    </span>
+                  </div>
+                  <h3 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight">
+                    {item.titlePrefix}
+                    <span className="text-[#5683da]">{item.titleAccent}</span>
+                  </h3>
+                  <p className="text-sm sm:text-base text-[#a9a9aa] leading-relaxed font-normal">
+                    {item.desc}
+                  </p>
+                </div>
+
+                {/* Pill Badge */}
+                <div className="md:col-span-3 flex md:justify-end items-center">
+                  <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#090a0c] border border-[#4a4b50] font-mono text-xs text-[#ffffff]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#5683da]" />
+                    {item.badge}
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════ SECTION 5: TECH STACK ARCHITECTURE ═══════════════════════════ */}
+      <section className="relative py-20 sm:py-28 bg-[#090a0c] border-b border-[#4a4b50]/40">
+        <div className="max-w-[1200px] mx-auto px-6 sm:px-8 text-center">
+          <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#ff8964] block mb-3">
+            THE ARCHITECTURE
+          </span>
+          <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-[1.08] mb-6">
+            Built with modern, <span className="text-[#ff8964]">battle-tested tools.</span>
+          </h2>
+          <p className="max-w-2xl mx-auto text-base text-[#a9a9aa] leading-relaxed mb-12">
+            A high-performance desktop terminal demands a rock-solid foundation — Rust for kernel speed, React &amp; TypeScript for UI fluidity.
+          </p>
+
+          {/* Stack Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {STACK_ITEMS.map((item, idx) => (
+              <div
+                key={idx}
+                className="p-5 rounded-[12px] bg-[#111111] border border-[#4a4b50] hover:border-[#6b6c6d] transition-all text-left flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-mono text-xs font-bold text-white">{item.name}</span>
+                  <Code2 size={16} className="text-[#5683da]" />
+                </div>
+                <span className="text-xs text-[#a9a9aa] font-mono">{item.role}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════ SECTION 6: COMMUNITY & CONNECT CTA ═══════════════════════════ */}
+      <section className="relative py-20 sm:py-28 bg-[#090a0c]">
+        <div className="max-w-[900px] mx-auto px-6 sm:px-8 text-center">
+          <div className="p-8 sm:p-14 rounded-[12px] bg-[#111111] border border-[#4a4b50] space-y-6">
+            <span className="font-mono text-xs font-bold uppercase tracking-widest text-[#5683da]">
+              COMMUNITY &amp; OPEN SOURCE
+            </span>
+            <h2 className="font-display font-black text-3xl sm:text-5xl text-white tracking-tight leading-[1.08]">
+              Let&apos;s build the future of <br />
+              <span className="text-[#5683da]">vibe coding together.</span>
+            </h2>
+            <p className="max-w-xl mx-auto text-sm sm:text-base text-[#a9a9aa] leading-relaxed">
+              VibeGrid is open to all developers, contributors, and builders. Star the repository, report an issue, or contribute a pull request.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+              <a
+                href="https://github.com/abuzarkhan1/VibeGrid"
+                target="_blank"
+                rel="noreferrer"
+                className="px-6 py-3 rounded-full bg-[#5683da] text-white font-semibold text-sm hover:bg-[#456ec2] transition-colors inline-flex items-center gap-2"
+              >
+                <Star size={16} />
+                <span>Star on GitHub</span>
+              </a>
+              <a
+                href="https://github.com/abuzarkhan1/VibeGrid/issues"
+                target="_blank"
+                rel="noreferrer"
+                className="px-6 py-3 rounded-full bg-[#090a0c] border border-[#4a4b50] text-white font-medium text-sm hover:border-[#a9a9aa] transition-colors inline-flex items-center gap-2"
+              >
+                <Sparkles size={16} />
+                <span>Open an Issue</span>
+              </a>
+              <a
+                href="/"
+                className="px-6 py-3 rounded-full bg-[#090a0c] border border-[#4a4b50] text-[#a9a9aa] hover:text-white font-medium text-sm hover:border-[#a9a9aa] transition-colors inline-flex items-center gap-2"
+              >
+                <Globe size={16} />
+                <span>Back to Homepage</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════ FOOTER ═══════════════════════════ */}
+      <SiteFooter active="about" />
     </div>
   );
 }

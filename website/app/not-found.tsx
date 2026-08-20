@@ -1,13 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Terminal } from 'lucide-react';
-import { Navbar } from '../components/Navbar';
+import { HeroNavbar } from '../components/HeroNavbar';
 import { SiteFooter } from '../components/SiteFooter';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-[#08080a] text-white flex flex-col justify-between selection:bg-white selection:text-black">
-      <Navbar />
+    <div className="min-h-screen bg-[#090a0c] text-white flex flex-col justify-between selection:bg-[#5683da] selection:text-white">
+      <HeroNavbar />
 
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-xl mx-auto my-auto relative z-10 pt-28">
         {/* Custom Terminal Grid 404 SVG Artwork */}

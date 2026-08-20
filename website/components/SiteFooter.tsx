@@ -1,10 +1,67 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
+import { Terminal, Github, Heart } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface SiteFooterProps {
-  /** Which page is currently active (used to highlight the About link). */
+  /** Which page is currently active (used to highlight navigation links). */
   active?: 'home' | 'about';
+}
+
+const VIBEGRID_LETTERS = [
+  { char: 'V', color: '#5683da' },
+  { char: 'I', color: '#5683da' },
+  { char: 'B', color: '#5683da' },
+  { char: 'E', color: '#5683da' },
+  { char: 'G', color: '#ff8964' },
+  { char: 'R', color: '#ff8964' },
+  { char: 'I', color: '#ff8964' },
+  { char: 'D', color: '#ff8964' },
+];
+
+function AnimatedFooterWordmark() {
+  return (
+    <motion.div
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: false, amount: 0.25 }}
+      className="pt-10 pb-6 sm:pt-16 sm:pb-10 border-t border-[#4a4b50]/40 overflow-hidden text-center select-none"
+    >
+      <span className="font-display font-black text-6xl sm:text-9xl md:text-[11rem] lg:text-[14rem] tracking-tight leading-none inline-flex items-center justify-center select-none uppercase">
+        {VIBEGRID_LETTERS.map((item, index) => (
+          <motion.span
+            key={index}
+            variants={{
+              hidden: {
+                color: 'rgba(255, 255, 255, 0.08)',
+                y: 10,
+                opacity: 0.4,
+              },
+              visible: {
+                color: item.color,
+                y: 0,
+                opacity: 1,
+                transition: {
+                  duration: 0.6,
+                  delay: index * 0.12,
+                  ease: [0.22, 1, 0.36, 1],
+                },
+              },
+            }}
+            whileHover={{
+              scale: 1.08,
+              y: -8,
+              transition: { duration: 0.2 },
+            }}
+            className="inline-block transition-transform duration-200 cursor-default"
+          >
+            {item.char}
+          </motion.span>
+        ))}
+      </span>
+    </motion.div>
+  );
 }
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -16,80 +73,252 @@ function GitHubIcon({ className }: { className?: string }) {
 }
 
 export function SiteFooter({ active }: SiteFooterProps) {
-  const footerRef = useRef<HTMLElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!footerRef.current) return;
-      const rect = footerRef.current.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      setMousePos({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
   return (
-    <footer
-      ref={footerRef}
-      className="relative border-t border-white/[0.08] bg-[#08080a] pt-16 pb-12 text-white overflow-hidden select-none"
-    >
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 relative z-10">
-        {/* Giant Mouse-following Glow Brand */}
-        <div className="relative flex items-center justify-center my-8 py-10 overflow-hidden pointer-events-none min-h-[180px] sm:min-h-[240px]">
-          <div
-            className="text-6xl sm:text-9xl lg:text-[13rem] font-extrabold tracking-tighter text-transparent bg-clip-text leading-none transition-all duration-300 drop-shadow-2xl text-center"
-            style={{
-              backgroundImage: `radial-gradient(circle at ${mousePos.x}% ${mousePos.y}%, rgba(255,255,255,1) 0%, rgba(255,255,255,0.35) 55%, rgba(255,255,255,0.08) 100%)`,
-              WebkitBackgroundClip: 'text',
-              textShadow: '0 0 50px rgba(255,255,255,0.15)',
-            }}
-          >
-            VIBEGRID
+    <footer className="relative border-t border-[#4a4b50] bg-[#090a0c] pt-16 pb-12 text-[#ffffff] overflow-hidden select-none">
+      <div className="max-w-[1200px] mx-auto px-6 sm:px-8 relative z-10">
+        {/* Main Grid: Brand Column + 4 Categorized Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-10 lg:gap-8 pb-14">
+          {/* Brand Mark & Tagline (2 cols on large) */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#111111] border border-[#4a4b50] flex items-center justify-center text-[#5683da]">
+                <Terminal size={18} />
+              </div>
+              <span className="font-display font-black text-xl tracking-tight text-[#ffffff]">
+                VIBEGRID
+              </span>
+            </div>
+
+            {/* GitHub Star Counter */}
+            <div className="pt-2">
+              <a
+                href="https://github.com/abuzarkhan1/VibeGrid"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#111111] border border-[#4a4b50] text-[#e5e5e7] hover:bg-[#303236] hover:text-[#ffffff] hover:border-[#6b6c6d] text-xs font-mono transition-all cursor-pointer"
+              >
+                <GitHubIcon className="w-3.5 h-3.5 text-[#ffffff]" />
+                <span>Star on GitHub</span>
+                <span className="px-1.5 py-0.5 rounded bg-[#303236] text-[#d1d1d1] text-[10px] font-bold border border-[#4a4b50]">
+                  ★ Star
+                </span>
+              </a>
+            </div>
+          </div>
+
+          {/* Column 1: Product */}
+          <div className="space-y-3">
+            <h3 className="font-mono text-xs font-semibold uppercase tracking-widest text-[#ffffff]">
+              Product
+            </h3>
+            <ul className="space-y-2 text-xs font-mono">
+              <li>
+                <a href="/#desktop-app-demo" className="text-[#95979e] hover:text-[#ffffff] transition-colors">
+                  Agent Swarm
+                </a>
+              </li>
+              <li>
+                <a href="/#powerhouse" className="text-[#95979e] hover:text-[#ffffff] transition-colors">
+                  MetaBrain Engine
+                </a>
+              </li>
+              <li>
+                <a href="/#productivity" className="text-[#95979e] hover:text-[#ffffff] transition-colors">
+                  Light Bento
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
+                  className="text-[#5683da] hover:text-[#ffffff] transition-colors font-medium"
+                >
+                  Download for macOS
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/about"
+                  className={`transition-colors ${
+                    active === 'about' ? 'text-[#ffffff] font-bold' : 'text-[#95979e] hover:text-[#ffffff]'
+                  }`}
+                >
+                  About VibeGrid
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 2: Resources */}
+          <div className="space-y-3">
+            <h3 className="font-mono text-xs font-semibold uppercase tracking-widest text-[#ffffff]">
+              Resources
+            </h3>
+            <ul className="space-y-2 text-xs font-mono">
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid#readme"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Documentation
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid#quick-start"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Quickstart Guide
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid#agent-support"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Agent Setup
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid#architecture"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Architecture
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid/discussions"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Discussions
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Developers */}
+          <div className="space-y-3">
+            <h3 className="font-mono text-xs font-semibold uppercase tracking-widest text-[#ffffff]">
+              Developers
+            </h3>
+            <ul className="space-y-2 text-xs font-mono">
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  GitHub Repository
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid/releases"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Releases & Changelog
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid/issues"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Issue Tracker
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid/blob/main/CONTRIBUTING.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Contributing
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid#mcp-support"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  MCP Tools
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Legal */}
+          <div className="space-y-3">
+            <h3 className="font-mono text-xs font-semibold uppercase tracking-widest text-[#ffffff]">
+              Legal
+            </h3>
+            <ul className="space-y-2 text-xs font-mono">
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid/blob/main/LICENSE"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  MIT License
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/privacy"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/privacy-guarantee"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Privacy Guarantee
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abuzarkhan1/VibeGrid/security"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[#95979e] hover:text-[#ffffff] transition-colors"
+                >
+                  Security Policy
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* Clean bottom bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-8 border-t border-white/[0.08]">
-          <div className="flex items-center gap-5 flex-wrap">
-            <div className="font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
-              © 2026 Abuzar Khan · VibeGrid MIT License
-            </div>
-            <a
-              href="/about"
-              aria-current={active === 'about' ? 'page' : undefined}
-              className={`font-mono text-xs uppercase tracking-widest transition-colors ${
-                active === 'about' ? 'text-white font-bold' : 'text-zinc-400 hover:text-zinc-200'
-              }`}
-            >
-              About
-            </a>
-            <a
-              href="https://github.com/abuzarkhan1/VibeGrid/releases/download/v1/VibeGrid_0.1.0_aarch64.dmg"
-              className="font-mono text-xs uppercase tracking-widest text-zinc-400 hover:text-zinc-200 transition-colors"
-            >
-              Download (.dmg)
-            </a>
-          </div>
+        {/* Giant Animated VibeGrid Wordmark */}
+        <AnimatedFooterWordmark />
 
-          <div className="flex items-center gap-6">
-            <a
-              href="https://github.com/abuzarkhan1/VibeGrid"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-zinc-200 transition-colors flex items-center gap-2 font-extrabold text-base sm:text-lg text-white tracking-tighter"
-            >
-              <GitHubIcon className="w-4 h-4 text-white" />
-              <span>GitHub</span>
-            </a>
-          </div>
-
-          <div className="flex items-center gap-2 font-mono text-xs font-bold uppercase tracking-widest text-zinc-400">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            <span>Systems Operational</span>
+        {/* Bottom Bar: Copyright */}
+        <div className="flex items-center justify-between pt-8 border-t border-[#4a4b50] text-center sm:text-left">
+          <div className="font-mono text-[11px] sm:text-xs text-[#95979e]">
+            © 2026 Abuzar Khan · VibeGrid MIT License. All systems nominal.
           </div>
         </div>
       </div>
