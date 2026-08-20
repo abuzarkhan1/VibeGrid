@@ -831,7 +831,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
     {
       id: 'close',
       label: 'Close Pane',
-      icon: <X className="w-3.5 h-3.5 text-white/60" />,
+      icon: <X className="w-3.5 h-3.5 text-[#ff8964]" />,
       action: () => requestClosePane(id),
     },
   ];
@@ -840,11 +840,9 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
 
   return (
     <div
-      className={`relative h-full w-full bg-black p-1.5 overflow-hidden border transition-all ${
-        isFocused
-          ? 'border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.05)]'
-          : 'border-white/10'
-      } ${fontLigatures ? 'font-ligatures' : ''}`}
+      className={`relative h-full w-full bg-black p-1.5 overflow-hidden transition-all ${
+        fontLigatures ? 'font-ligatures' : ''
+      }`}
       style={{ opacity: effOpacity }}
       onContextMenu={handleContextMenu}
     >
@@ -854,38 +852,38 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
       <div ref={containerRef} className="h-full w-full overflow-hidden" />
 
       {isDragOver && (
-        <div className="pointer-events-none absolute inset-1 z-30 rounded-xl border-2 border-dashed border-white/50 bg-white/5 flex items-center justify-center animate-fade-in">
-          <span className="px-3 py-1.5 rounded-lg text-xs text-white bg-black/80 border border-white/10 shadow-xl">
+        <div className="pointer-events-none absolute inset-1 z-30 rounded-xl border-2 border-dashed border-[#5683da] bg-[#5683da]/10 flex items-center justify-center animate-fade-in">
+          <span className="px-3 py-1.5 rounded-lg text-xs text-white bg-[#111111] border border-[#4a4b50] shadow-xl">
             Release to insert path(s)
           </span>
         </div>
       )}
 
       {showShellModal && Boolean(ptyPaneIdRef.current) && (
-        <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-xl bg-black/80 backdrop-blur-xl border border-white/10 p-2.5 text-[10px] text-white/60 shadow-lg">
+        <div className="pointer-events-none absolute top-10 right-4 z-40 max-w-[220px] rounded-xl bg-[#111111] border border-[#4a4b50] p-2.5 text-[10px] text-[#a9a9aa] shadow-lg">
           This pane is already running a shell — the new shell applies to the
           next session (Relaunch after the process exits, or reopen the pane).
         </div>
       )}
 
       {hasExited && (
-        <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-black/80 backdrop-blur-xl px-3 py-1.5 text-[11px] text-white/80 shadow-lg animate-fade-in-up">
+        <div className="absolute inset-x-2 bottom-2 z-30 flex items-center justify-center gap-2 rounded-xl border border-[#4a4b50] bg-[#111111] px-3 py-1.5 text-[11px] text-white shadow-lg animate-fade-in-up">
           <span className="relative flex h-2 w-2 shrink-0">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-white/80" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff8964] opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ff8964]" />
           </span>
           <span className="truncate font-medium">Process exited</span>
           <button
             onClick={relaunch}
             title="Start a new shell in this pane"
-            className="px-2.5 py-0.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs"
+            className="px-2.5 py-0.5 rounded-md bg-[#303236] hover:bg-[#4a4b50] border border-[#4a4b50] text-white text-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             Relaunch
           </button>
           <button
             onClick={() => requestClosePane(id)}
             title="Close this terminal"
-            className="px-2.5 py-0.5 rounded-md bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs"
+            className="px-2.5 py-0.5 rounded-md bg-[#303236] hover:bg-[#4a4b50] border border-[#4a4b50] text-white text-xs transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             Close
           </button>
@@ -914,17 +912,17 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
         <>
           <div className="fixed inset-0 z-[59]" onClick={() => setShowAppearanceMenu(false)} />
           <div
-            className="fixed z-[60] w-[230px] rounded-xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl p-3 text-xs space-y-2.5 animate-fade-in font-mono"
+            className="fixed z-[60] w-[230px] rounded-xl bg-[#111111] border border-[#4a4b50] shadow-2xl p-3 text-xs space-y-2.5 animate-fade-in font-mono"
             style={{
               left: Math.max(10, Math.min(appearancePos.x, (typeof window !== 'undefined' ? window.innerWidth : 1200) - 250)),
               top: Math.max(10, Math.min(appearancePos.y, (typeof window !== 'undefined' ? window.innerHeight : 800) - 300)),
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">Pane Appearance</span>
+              <span className="text-[10px] font-bold text-[#a9a9aa] uppercase tracking-wider">Pane Appearance</span>
               <button
                 onClick={() => setShowAppearanceMenu(false)}
-                className="p-0.5 rounded hover:bg-white/10 text-white/40 hover:text-white/80"
+                className="p-0.5 rounded hover:bg-[#303236] text-[#a9a9aa] hover:text-white cursor-pointer disabled:cursor-not-allowed"
                 aria-label="Close pane appearance"
               >
                 <X className="w-3.5 h-3.5" />
@@ -932,11 +930,11 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-white/50 mb-1">Theme (this pane)</label>
+              <label className="block text-[10px] font-semibold text-[#a9a9aa] mb-1">Theme (this pane)</label>
               <select
                 value={paneAppearance?.themeName ?? ''}
                 onChange={(e) => setPaneAppearance(id, { themeName: e.target.value || undefined })}
-                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/80 focus:outline-none focus:border-white/30"
+                className="w-full px-2 py-1.5 rounded-lg bg-[#303236] border border-[#4a4b50] text-xs text-white focus:outline-none focus:border-[#5683da] cursor-pointer disabled:cursor-not-allowed"
               >
                 <option value="">— inherit workspace/global —</option>
                 {Object.entries(getAllThemes(useSettingsStore.getState())).map(([key, t]) => (
@@ -946,18 +944,18 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-white/50 mb-1">Font Size (px)</label>
+              <label className="block text-[10px] font-semibold text-[#a9a9aa] mb-1">Font Size (px)</label>
               <input
                 type="number"
                 value={paneAppearance?.fontSize ?? ''}
                 onChange={(e) => setPaneAppearance(id, { fontSize: e.target.value === '' ? undefined : Number(e.target.value) })}
                 placeholder="inherit"
-                className="w-full px-2 py-1.5 rounded-lg bg-black/40 border border-white/10 text-xs text-white/80 focus:outline-none focus:border-white/30"
+                className="w-full px-2 py-1.5 rounded-lg bg-[#303236] border border-[#4a4b50] text-xs text-white focus:outline-none focus:border-[#5683da]"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-white/50 mb-1">Opacity — {paneAppearance?.terminalOpacity !== undefined ? `${Math.round(paneAppearance.terminalOpacity * 100)}%` : 'inherit'}</label>
+              <label className="block text-[10px] font-semibold text-[#a9a9aa] mb-1">Opacity — {paneAppearance?.terminalOpacity !== undefined ? `${Math.round(paneAppearance.terminalOpacity * 100)}%` : 'inherit'}</label>
               <input
                 type="range"
                 min={0.3}
@@ -965,7 +963,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                 step={0.05}
                 value={paneAppearance?.terminalOpacity ?? 1}
                 onChange={(e) => setPaneAppearance(id, { terminalOpacity: Number(e.target.value) })}
-                className="w-full accent-white bg-black/40 h-2 rounded cursor-pointer"
+                className="w-full accent-[#5683da] bg-[#303236] h-2 rounded cursor-pointer disabled:cursor-not-allowed"
               />
             </div>
 
@@ -975,7 +973,7 @@ export const TerminalPane: React.FC<TerminalPaneProps> = ({ id, isFocused, onAct
                   clearPaneAppearance(id);
                   setShowAppearanceMenu(false);
                 }}
-                className="w-full px-2 py-1.5 rounded-lg border border-white/10 text-[10px] text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+                className="w-full px-2 py-1.5 rounded-lg border border-[#4a4b50] bg-[#303236] text-[10px] text-[#a9a9aa] hover:bg-[#4a4b50] hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
               >
                 Clear overrides (inherit workspace/global)
               </button>

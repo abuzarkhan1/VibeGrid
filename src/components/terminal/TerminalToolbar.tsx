@@ -102,27 +102,27 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   return (
     <div
       onDoubleClick={handleToggleMaximize}
-      className={`h-8 w-full px-3 flex items-center justify-between select-none cursor-pointer backdrop-blur-xl border-b font-sans transition-colors ${
+      className={`h-[38px] w-full px-3 flex items-center justify-between select-none cursor-pointer border-b font-sans transition-colors bg-[#111111] border-b-[#4a4b50] ${
         isFocused
-          ? 'text-white bg-white/[0.06] border-white/20'
-          : 'text-white/60 bg-black/40 border-white/10 hover:bg-white/[0.02]'
+          ? 'text-white'
+          : 'text-[#a9a9aa] hover:text-white'
       }`}
     >
       {/* Pane info */}
       <div className="flex items-center gap-2 min-w-0">
-        {/* Pure White Badge */}
+        {/* Electric Iris Focused Badge / Obsidian Inactive Badge */}
         <span
-          className={`flex h-4 min-w-4 shrink-0 items-center justify-center rounded-[5px] px-1 text-[10px] font-bold shadow-sm transition-colors ${
-            isFocused ? 'text-black bg-white' : 'text-white/70 bg-white/10'
+          className={`flex h-4 min-w-4 shrink-0 items-center justify-center rounded px-1.5 text-[10px] font-mono font-bold transition-colors ${
+            isFocused
+              ? 'text-white bg-[#5683da]'
+              : 'text-[#a9a9aa] bg-[#303236] border border-[#4a4b50]'
           }`}
-          title={`Pane ${badgeNumber}`}
+          title={`Pane #${badgeNumber}`}
         >
-          {badgeNumber}
+          #{badgeNumber}
         </span>
 
-        {/* REMOVED: macOS traffic lights */}
-
-        <TerminalIcon className="w-3.5 h-3.5 text-white/60 shrink-0" />
+        <TerminalIcon className={`w-3.5 h-3.5 shrink-0 ${isFocused ? 'text-[#5683da]' : 'text-[#a9a9aa]'}`} />
 
         {/* Editable Title Area */}
         {isEditing ? (
@@ -139,19 +139,19 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
               }
             }}
             autoFocus
-            className="font-sans font-semibold text-white text-xs bg-black/60 border border-white/30 rounded px-1 outline-none w-32"
+            className="font-sans font-medium text-white text-xs bg-[#303236] border border-[#5683da] rounded px-1.5 py-0.5 outline-none w-32"
           />
         ) : (
-          <div className="flex items-center gap-1.5 group cursor-text" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}>
-            <span className="font-sans font-semibold text-white/90 text-xs truncate tracking-wide">
+          <div className="flex items-center gap-1.5 group cursor-text" onClick={(e) => { e.stopPropagation(); setIsEditing(true); }} title="Click to rename pane">
+            <span className="font-sans font-medium text-white text-xs truncate tracking-tight max-w-[120px] sm:max-w-[160px]">
               {title}
             </span>
-            <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-white/40" />
+            <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-[#a9a9aa]" />
           </div>
         )}
 
         {displayCwd && (
-          <span className="font-mono text-[10px] text-white/40 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 truncate max-w-[130px]" title={displayCwd}>
+          <span className="font-mono text-[10px] text-[#a9a9aa] px-2 py-0.5 rounded-[9999px] bg-[#303236] border border-[#4a4b50] hidden sm:inline-block truncate max-w-[90px] md:max-w-[140px]" title={displayCwd}>
             {displayCwd}
           </span>
         )}
@@ -161,19 +161,19 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
             title="New output in this pane"
             aria-label="New output in this pane"
           >
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-white/80" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#ff8964] opacity-75 duration-1000" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[#ff8964] shadow-[0_0_6px_#ff8964]" />
           </span>
         )}
       </div>
 
       {/* Pane action buttons */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={handleSplitHorizontal}
           title="Split Right (Cmd/Ctrl+D)"
-          aria-label="Split right"
-          className="px-1.5 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white text-white/60 transition-colors"
+          aria-label="Split horizontally"
+          className="p-1 rounded-full bg-[#303236] border border-[#4a4b50] hover:border-[#5683da] hover:bg-[#303236] hover:text-white text-[#a9a9aa] transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Columns className="w-3.5 h-3.5" />
         </button>
@@ -181,8 +181,8 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
         <button
           onClick={handleSplitVertical}
           title="Split Down (Cmd/Ctrl+Shift+D)"
-          aria-label="Split down"
-          className="px-1.5 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white text-white/60 transition-colors"
+          aria-label="Split vertically"
+          className="p-1 rounded-full bg-[#303236] border border-[#4a4b50] hover:border-[#5683da] hover:bg-[#303236] hover:text-white text-[#a9a9aa] transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Rows className="w-3.5 h-3.5" />
         </button>
@@ -191,7 +191,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           onClick={handleToggleMaximize}
           title={isMaximized ? 'Restore Layout (Cmd/Ctrl+Shift+Enter)' : 'Maximize Pane (Cmd/Ctrl+Shift+Enter)'}
           aria-label={isMaximized ? 'Restore layout' : 'Maximize pane'}
-          className="px-1.5 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white text-white/60 transition-colors"
+          className="p-1 rounded-full bg-[#303236] border border-[#4a4b50] hover:border-[#5683da] hover:bg-[#303236] hover:text-white text-[#a9a9aa] transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed"
         >
           {isMaximized ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
         </button>
@@ -200,7 +200,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
           onClick={handleClose}
           title="Close Pane (Cmd/Ctrl+W)"
           aria-label="Close pane"
-          className="px-1.5 py-1 rounded bg-white/5 border border-white/10 hover:bg-white/20 hover:text-white text-white/60 transition-colors"
+          className="p-1 rounded-full bg-[#303236] border border-[#4a4b50] hover:bg-[#ff8964]/20 hover:text-[#ff8964] hover:border-[#ff8964]/40 text-[#a9a9aa] transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed"
         >
           <X className="w-3.5 h-3.5" />
         </button>

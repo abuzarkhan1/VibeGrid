@@ -430,6 +430,9 @@ export const usePaneStore = create<PaneState>((set, get) => ({
         presetCount: 1,
         gridVersion: get().gridVersion + 1,
       });
+      import('./useUIStore').then(({ useUIStore }) => {
+        useUIStore.getState().setActiveViewMode('hub');
+      }).catch(() => {});
       return;
     }
 

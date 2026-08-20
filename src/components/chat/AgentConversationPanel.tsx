@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, X } from 'lucide-react';
+import { Send, X, Bot } from 'lucide-react';
 import { ChatMessage, MessageItem } from './ChatMessage';
 
 interface AgentConversationPanelProps {
@@ -25,14 +25,14 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
     {
       id: '2',
       sender: 'user',
-      content: 'Refactor the overlay system with Functional Glassmorphism, 24px gaps, and high-contrast monospace code.',
+      content: 'Refactor the terminal panes, toolbar, and diff viewer with solid surfaces, zero gradients, and high-contrast code.',
       timestamp: '12:05 PM',
     },
     {
       id: '3',
       sender: 'agent',
       agentName: 'VibeGrid Supervisor',
-      content: 'Applying Functional Glassmorphism. Implementing density scale, refraction edges, and high-readability diff viewers.',
+      content: 'Applying solid dark theme. Implementing zero-gradient surfaces, crisp borders, and high-readability diff viewers.',
       timestamp: '12:05 PM',
     },
   ]);
@@ -56,13 +56,13 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden font-sans select-none">
-      {}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-white/[0.02]">
+    <div className="flex flex-col h-full w-full bg-[#111111] border-l border-[#4a4b50] overflow-hidden font-sans select-none text-white">
+      {/* Panel Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#4a4b50] bg-[#111111]">
         <div className="flex items-center gap-2.5">
-          <div className="h-2 w-2 rounded-full bg-white/80 shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
-          <span className="text-xs font-bold text-white/90 tracking-tight">Agent Conversation</span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/60 border border-white/20">
+          <div className="h-2 w-2 rounded-full bg-[#5683da]" />
+          <span className="text-xs font-bold text-white tracking-tight">Agent Conversation</span>
+          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-[9999px] bg-[#303236] text-[#5683da] border border-[#4a4b50]">
             Claude 3.7 Sonnet
           </span>
         </div>
@@ -70,24 +70,52 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
           <button
             onClick={onClose}
             aria-label="Close conversation panel"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            className="p-1 rounded-md bg-[#303236] hover:bg-[#4a4b50] border border-[#4a4b50] text-[#a9a9aa] hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-        {messages.map((msg) => (
-          <ChatMessage key={msg.id} message={msg} />
-        ))}
+      {/* Messages List */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-[#111111]">
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#a9a9aa] space-y-2">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#303236] border border-[#4a4b50] mb-1">
+              <Bot className="w-6 h-6 text-[#5683da]" />
+            </div>
+            <p className="text-sm font-semibold text-white">No active conversation</p>
+            <p className="text-xs text-[#a9a9aa] max-w-xs leading-relaxed mb-2">
+              Send an instruction to automate multi-terminal workflows or analyze grid output.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center max-w-xs pt-1">
+              {[
+                'Inspect git diff',
+                'Run multi-pane build',
+                'Analyze terminal logs',
+              ].map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => setInputText(suggestion)}
+                  className="px-2.5 py-1 text-[11px] font-mono rounded-lg bg-[#303236] hover:bg-[#4a4b50] border border-[#4a4b50] text-[#a9a9aa] hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <ChatMessage key={msg.id} message={msg} />
+          ))
+        )}
         <div ref={scrollEndRef} />
       </div>
 
-      {}
-      <div className="p-3 border-t border-white/10 bg-white/[0.02]">
-        <div className="relative flex items-center rounded-xl bg-white/[0.04] border border-white/10 focus-within:border-white/40 focus-within:ring-1 focus-within:ring-white/20 transition-all shadow-[inset_0_1px_2px_rgba(0,0,0,0.5)]">
+      {/* Input Form */}
+      <div className="p-3 border-t border-[#4a4b50] bg-[#111111]">
+        <div className="relative flex items-center rounded-xl bg-[#303236] border border-[#4a4b50] focus-within:border-[#5683da] focus-within:ring-1 focus-within:ring-[#5683da] transition-all">
           <textarea
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -98,13 +126,14 @@ export const AgentConversationPanel: React.FC<AgentConversationPanelProps> = ({ 
               }
             }}
             placeholder="Instruct agent or execute workflow..."
-            rows={1}
-            className="w-full px-3.5 py-2.5 text-xs text-white/90 placeholder:text-white/30 bg-transparent resize-none focus:outline-none max-h-28 font-sans"
+            rows={2}
+            className="w-full bg-transparent px-3.5 py-2.5 text-xs sm:text-[13px] text-white placeholder-[#a9a9aa]/50 resize-none focus:outline-none custom-scrollbar"
           />
           <button
             onClick={handleSend}
             disabled={!inputText.trim()}
-            className="mr-2 p-1.5 rounded-lg bg-white hover:bg-white/90 disabled:opacity-30 text-black transition-all shadow-sm"
+            aria-label="Send message"
+            className="absolute right-2.5 bottom-2.5 p-1.5 rounded-lg bg-[#5683da] text-white hover:bg-[#5683da]/90 transition-all disabled:opacity-30 disabled:hover:bg-[#5683da] cursor-pointer disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
           </button>

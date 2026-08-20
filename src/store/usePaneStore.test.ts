@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { usePaneStore, getTerminalNodes, planPresetKeep, equalPresetRatio, isEqualPresetTree } from './usePaneStore';
+import { useSettingsStore } from './useSettingsStore';
 import type { PaneNode } from '../types/layout';
 
 describe('VibeGrid Layout Store', () => {
   beforeEach(() => {
+    useSettingsStore.setState({ maxPanes: 16 });
     usePaneStore.getState().resetLayout();
   });
 
