@@ -1,4 +1,5 @@
 import React, { useEffect, useCallback } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useSettingsStore } from '@/store/useSettingsStore';
@@ -145,6 +146,9 @@ export const WorkspaceCustomizerModal: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, closeCustomizer, handleSaveAndApply]);
 
+  // Focus trap for modal accessibility
+  const panelRef = useFocusTrap<HTMLDivElement>(isOpen);
+
   if (!isOpen) return null;
 
   return (
@@ -152,34 +156,31 @@ export const WorkspaceCustomizerModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="customizer-modal-title"
-      className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-xl animate-fade-in select-none font-sans"
+      className="fixed inset-0 z-[90] flex items-center justify-center p-4 sm:p-6 bg-[#090a0c]/80 animate-fade-in select-none font-sans"
     >
-      {/* Main Transparent Black Glass Panel */}
-      <div className="relative w-full max-w-5xl max-h-[90vh] bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden text-white/90">
+      {/* Main Solid Charcoal Panel */}
+      <div
+        ref={panelRef}
+        className="relative w-full max-w-5xl max-h-[90vh] bg-[#111111] border border-[#4a4b50] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-white"
+      >
         {/* Top Header */}
-        <div className="px-6 py-4 border-b border-white/5 flex items-center justify-between bg-transparent">
+        <div className="px-6 py-4 border-b border-[#4a4b50] flex items-center justify-between bg-[#111111]">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-black/40 border border-white/10 text-white/80">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#090a0c] border border-[#4a4b50] text-[#5683da]">
               <Palette className="w-4 h-4" />
             </div>
             <div>
               <h2
                 id="customizer-modal-title"
-                className="font-sans font-bold text-base text-white/90 tracking-tight flex items-center gap-2"
+                className="font-sans font-bold text-base text-white tracking-tight flex items-center gap-2"
               >
-                VibeGrid Customization Studio
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/60 font-mono">
-                  vg-v1
-                </span>
+                Customization Studio
               </h2>
-              <p className="text-[11px] text-white/40 font-sans">
-                Fine-tune workspace identity, theme tokens, environments, and status telemetry
-              </p>
             </div>
           </div>
 
           {/* Section Switcher Tabs */}
-          <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
+          <div className="flex items-center gap-1 bg-[#090a0c] p-1 rounded-full border border-[#4a4b50]">
             {[
               { id: 'identity', label: 'Identity', icon: Sparkles },
               { id: 'appearance', label: 'Theme Studio', icon: Palette },
@@ -196,10 +197,10 @@ export const WorkspaceCustomizerModal: React.FC = () => {
                       tab.id as 'identity' | 'appearance' | 'terminal'
                     )
                   }
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-sans font-bold transition-all ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-sans font-medium transition-all ${
                     isActive
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/40 hover:bg-white/10 hover:text-white'
+                      ? 'bg-[#5683da] text-white shadow-sm'
+                      : 'text-[#a9a9aa] hover:bg-[#303236] hover:text-white'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -214,7 +215,7 @@ export const WorkspaceCustomizerModal: React.FC = () => {
             type="button"
             onClick={closeCustomizer}
             aria-label="Close customizer"
-            className="p-1.5 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors"
+            className="p-1.5 rounded-full hover:bg-[#303236] text-[#a9a9aa] hover:text-white transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -228,26 +229,26 @@ export const WorkspaceCustomizerModal: React.FC = () => {
         </div>
 
         {/* Action Footer */}
-        <div className="px-6 py-3.5 border-t border-white/5 bg-transparent flex items-center justify-between">
-          <span className="text-[11px] font-mono text-white/40">
-            Settings apply directly to current thread, workspace, and runtime
+        <div className="px-6 py-3.5 border-t border-[#4a4b50] bg-[#111111] flex items-center justify-between">
+          <span className="text-[11px] font-mono text-[#a9a9aa]">
+            Saved to local workspace configuration
           </span>
 
           <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={closeCustomizer}
-              className="px-4 py-2 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/10 text-xs text-white/60 hover:text-white transition-colors cursor-pointer"
+              className="h-9 flex items-center px-4 rounded-full bg-[#303236] hover:bg-[#303236]/80 border border-[#4a4b50] text-[13px] text-[#a9a9aa] hover:text-white transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={handleSaveAndApply}
-              className="flex items-center gap-2 px-5 py-2 rounded-full bg-white hover:bg-white/90 text-black text-xs font-sans font-bold shadow-sm transition-all hover:scale-[1.02] cursor-pointer"
+              className="h-9 flex items-center gap-2 px-5 rounded-full bg-[#5683da] hover:bg-[#5683da]/90 text-white text-[13px] font-sans font-medium shadow-sm transition-all cursor-pointer"
             >
-              <span>Save & Apply</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>Save</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

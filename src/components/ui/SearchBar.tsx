@@ -58,33 +58,37 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, onClose }) =>
   };
 
   return (
-    <div className="absolute top-3 right-4 z-30 flex items-center gap-1.5 p-2 rounded-2xl bg-[#181924] border border-white/10 shadow-2xl text-xs font-sans animate-fade-in select-none backdrop-blur-md">
-      <Search className="w-4 h-4 text-white/50 ml-1.5 shrink-0" />
-      <input
-        ref={inputRef}
-        type="text"
-        value={searchTerm}
-        onChange={(e) => handleSearch(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Find in terminal… (Esc to close)"
-        className="w-52 bg-transparent text-white/90 placeholder:text-white/30 focus:outline-none text-xs font-sans px-1"
-      />
+    <div className="absolute top-3 right-4 z-30 flex items-center gap-2 p-2 rounded-2xl bg-[#111111] border border-[#4a4b50] shadow-2xl text-xs font-sans animate-fade-in select-none text-white max-w-[calc(100%-1.5rem)]">
+      <div className="relative flex items-center min-w-0 flex-1">
+        <Search className="w-3.5 h-3.5 text-[#5683da] absolute left-2.5 pointer-events-none" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchTerm}
+          onChange={(e) => handleSearch(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Find in terminal… (Esc)"
+          className="w-56 min-w-0 max-w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-[#303236] border border-[#4a4b50] text-white placeholder-[#a9a9aa]/50 focus:outline-none focus:border-[#5683da] focus:ring-1 focus:ring-[#5683da] text-xs font-sans transition-colors"
+        />
+      </div>
 
-      <div className="flex items-center gap-1 border-l border-white/10 pl-1.5 ml-0.5">
+      <div className="flex items-center gap-1 border-l border-[#4a4b50] pl-2 shrink-0">
         <button
           onClick={handlePrev}
+          disabled={!searchTerm}
           title="Previous Match (Shift+Enter)"
           aria-label="Previous match"
-          className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+          className="p-1.5 rounded-full bg-[#303236] hover:bg-[#4a4b50] border border-[#4a4b50] text-[#a9a9aa] hover:text-white transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ChevronUp className="w-3.5 h-3.5" />
         </button>
 
         <button
           onClick={handleNext}
+          disabled={!searchTerm}
           title="Next Match (Enter)"
           aria-label="Next match"
-          className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-white/10 text-white/70 hover:text-white transition-colors cursor-pointer"
+          className="p-1.5 rounded-full bg-[#303236] hover:bg-[#4a4b50] border border-[#4a4b50] text-[#a9a9aa] hover:text-white transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ChevronDown className="w-3.5 h-3.5" />
         </button>
@@ -93,7 +97,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({ searchAddon, onClose }) =>
           onClick={onClose}
           title="Close Search (Escape)"
           aria-label="Close search"
-          className="p-1.5 rounded-xl bg-white/[0.04] hover:bg-rose-500/20 text-white/60 hover:text-rose-300 transition-colors cursor-pointer ml-0.5"
+          className="p-1.5 rounded-full bg-[#303236] hover:bg-[#ff8964]/20 border border-[#4a4b50] hover:border-[#ff8964]/40 text-[#a9a9aa] hover:text-[#ff8964] transition-all active:scale-95 cursor-pointer disabled:cursor-not-allowed"
         >
           <X className="w-3.5 h-3.5" />
         </button>

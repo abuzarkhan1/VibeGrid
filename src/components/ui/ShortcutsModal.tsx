@@ -36,22 +36,24 @@ export const ShortcutsModal: React.FC = () => {
       role="dialog"
       aria-modal="true"
       aria-label="Keyboard shortcuts reference"
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans"
+      className="fixed inset-0 z-50 bg-[#090a0c]/80 flex items-center justify-center p-4 animate-fade-in font-sans select-none text-white"
     >
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg bg-[#181924] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+        className="w-full max-w-lg bg-[#111111] border border-[#4a4b50] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-white/80" />
-            <h2 className="text-xs font-bold text-white/90 uppercase tracking-wider font-mono">Keyboard Shortcuts</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#4a4b50] bg-[#111111]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl bg-[#090a0c] border border-[#4a4b50] flex items-center justify-center text-[#5683da] shrink-0">
+              <BookOpen className="w-3.5 h-3.5" />
+            </div>
+            <h2 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Keyboard Shortcuts</h2>
           </div>
           <button
             onClick={() => setCheatsheetOpen(false)}
             aria-label="Close shortcuts"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+            className="p-1 rounded-full hover:bg-[#303236] text-[#a9a9aa] hover:text-white transition-all active:scale-95 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -59,26 +61,34 @@ export const ShortcutsModal: React.FC = () => {
 
         <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
           {groups.map((group) => (
-            <div key={group.title} className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
-              <h3 className="text-[10px] font-mono font-semibold text-white/40 uppercase tracking-wider">{group.title}</h3>
+            <div key={group.title} className="p-4 rounded-2xl bg-[#303236] border border-[#4a4b50] space-y-2">
+              <h3 className="text-[10px] font-mono font-semibold text-[#a9a9aa] uppercase tracking-wider">{group.title}</h3>
               <div className="space-y-1">
                 {group.ids.map((id) => {
                   const kb = keybindings[id];
                   if (!kb) return null;
                   return (
-                    <div key={id} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-xl hover:bg-white/[0.04] transition-colors">
-                      <span className="font-medium text-white/90">{kb.label}</span>
-                      <kbd className="px-2.5 py-0.5 rounded-lg bg-black/40 border border-white/10 font-mono text-white/80 text-[11px]">{kb.currentKey}</kbd>
+                    <div key={id} className="flex items-center justify-between text-xs px-2.5 py-1.5 rounded-xl hover:bg-[#090a0c] transition-colors">
+                      <span className="font-medium text-white">{kb.label}</span>
+                      <kbd className="px-2.5 py-0.5 rounded-full bg-[#090a0c] border border-[#4a4b50] font-mono text-[#5683da] text-[11px]">{kb.currentKey}</kbd>
                     </div>
                   );
                 })}
               </div>
             </div>
           ))}
+        </div>
 
-          <p className="text-[11px] text-white/60 font-sans leading-relaxed pt-3 border-t border-white/[0.06]">
-            Reassign any shortcut in <span className="text-white/90 font-medium">Settings → Keybindings</span>. Press <kbd className="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/10 text-[10px] font-mono text-white/90">Esc</kbd> to close.
-          </p>
+        <div className="flex items-center justify-between px-6 py-3.5 border-t border-[#4a4b50] bg-[#111111]">
+          <span className="text-[11px] text-[#a9a9aa] font-mono">
+            Customize in <span className="text-white">Settings → Keybindings</span>
+          </span>
+          <button
+            onClick={() => setCheatsheetOpen(false)}
+            className="h-8 flex items-center px-4 rounded-full bg-[#303236] hover:bg-[#303236] border border-[#4a4b50] hover:border-[#5683da] text-[#a9a9aa] hover:text-white text-xs font-medium transition-all active:scale-95 cursor-pointer"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

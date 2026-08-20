@@ -3,7 +3,7 @@ import { Mic, CornerDownLeft, X, Loader2, Check } from 'lucide-react';
 import { useVoiceStore } from '@/store/useVoiceStore';
 import { barHeights } from '@/lib/voice';
 
-const BAR_COUNT = 24;
+const BAR_COUNT = 20;
 
 export const VoiceIndicator: React.FC = () => {
   const isListening = useVoiceStore((s) => s.isListening);
@@ -41,60 +41,67 @@ export const VoiceIndicator: React.FC = () => {
   return (
     <div
       data-voice-indicator
-      className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-[#181924] border border-white/10 shadow-2xl animate-fade-in-up select-none font-sans backdrop-blur-md"
+      role="status"
+      aria-live="polite"
+      className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 h-11 rounded-full bg-[#111111] border border-[#4a4b50] shadow-2xl animate-fade-in-up select-none font-sans"
     >
       {phase === 'transcribing' && (
-        <>
-          <Loader2 className="w-4 h-4 text-white/80 animate-spin" />
-          <span className="text-[11px] text-white/90 whitespace-nowrap">Transcribing…</span>
-        </>
+        <div className="flex items-center gap-2.5 px-1">
+          <Loader2 className="w-4 h-4 text-[#5683da] animate-spin shrink-0" />
+          <span className="text-xs text-[#a9a9aa] font-medium whitespace-nowrap">Transcribing…</span>
+        </div>
       )}
 
       {phase === 'inserted' && (
-        <>
-          <div className="relative flex items-center justify-center">
-            <span className="absolute inline-flex h-6 w-6 rounded-full bg-emerald-400/30 animate-ping" />
-            <Check className="w-4 h-4 text-emerald-400 relative" />
+        <div className="flex items-center gap-2.5 px-1">
+          <div className="relative flex items-center justify-center shrink-0">
+            <span className="absolute inline-flex h-5 w-5 rounded-full bg-[#5683da]/25 animate-ping" />
+            <Check className="w-4 h-4 text-[#5683da] relative" />
           </div>
-          <span className="text-[11px] text-emerald-400 whitespace-nowrap max-w-[280px] truncate font-medium">
+          <span className="text-xs text-[#5683da] whitespace-nowrap max-w-[240px] truncate font-medium">
             {lastTranscript ? `Inserted: "${lastTranscript}"` : 'Inserted'}
           </span>
-        </>
+        </div>
       )}
 
       {phase === 'listening' && (
-        <>
-          <div className="relative flex items-center justify-center">
-            <span className="absolute inline-flex h-6 w-6 rounded-full bg-white/20 animate-ping" />
-            <Mic className={`w-4 h-4 text-white relative ${idle ? 'animate-pulse' : ''}`} />
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center shrink-0">
+            <span className="absolute inline-flex h-5 w-5 rounded-full bg-[#5683da]/25 animate-ping" />
+            <Mic className={`w-4 h-4 text-[#5683da] relative ${idle ? 'animate-pulse' : ''}`} />
           </div>
 
-          <div className={`flex items-end gap-[3px] h-6 ${idle ? 'opacity-70' : ''}`} aria-hidden>
+          <div className={`flex items-end gap-[2.5px] h-5 transition-opacity duration-200 ${idle ? 'opacity-50' : 'opacity-100'}`} aria-hidden>
             {heights.map((h, i) => (
               <div
                 key={i}
-                className="w-[3px] rounded-full bg-white transition-none"
+                className="w-[2.5px] rounded-full bg-[#5683da] transition-none"
                 style={{
-                  height: `${h.toFixed(1)}px`,
-                  opacity: 0.4 + 0.6 * Math.min(1, h / 26),
+                  height: `${Math.max(3, h * 0.8).toFixed(1)}px`,
+                  opacity: 0.4 + 0.6 * Math.min(1, h / 22),
                 }}
               />
             ))}
           </div>
 
-          <span className={`text-[11px] whitespace-nowrap ${idle ? 'text-white/70 animate-pulse' : 'text-white/90 font-medium'}`}>
-            {idle ? 'Listening… speak when ready' : 'Listening…'}
+          <span className={`text-xs whitespace-nowrap transition-colors ${idle ? 'text-[#a9a9aa]' : 'text-white font-medium'}`}>
+            Listening…
           </span>
 
-          <span className="flex items-center gap-1 text-[10px] text-white/40 whitespace-nowrap font-mono">
-            <CornerDownLeft className="w-3 h-3 text-white/60" />
-            <span>Insert</span>
-            <span className="mx-1 text-white/10">·</span>
-            <X className="w-3 h-3 text-white/70" />
-            <span>Cancel</span>
-          </span>
-        </>
+          <div className="flex items-center gap-1.5 pl-1 text-[10px] text-[#a9a9aa] whitespace-nowrap font-mono border-l border-[#4a4b50]/60">
+            <span className="flex items-center gap-1">
+              <CornerDownLeft className="w-3 h-3 text-[#5683da]" />
+              <span className="text-white">Insert</span>
+            </span>
+            <span className="text-[#4a4b50]">·</span>
+            <span className="flex items-center gap-1">
+              <X className="w-3 h-3 text-[#ff8964]" />
+              <span className="text-[#a9a9aa]">Cancel</span>
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );
 };
+

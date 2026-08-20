@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, FolderOpen } from 'lucide-react';
+import { X, FolderOpen, Edit3 } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { isTauri } from '@/lib/tauri';
 
@@ -68,21 +68,26 @@ export const InputModal: React.FC<InputModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans"
+      className="fixed inset-0 z-50 bg-[#090a0c]/80 flex items-center justify-center p-4 animate-fade-in font-sans select-none"
     >
       <form
         ref={panelRef}
         onSubmit={handleSubmit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-[#181924] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-md bg-[#111111] border border-[#4a4b50] rounded-2xl shadow-2xl overflow-hidden flex flex-col text-white"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
-          <h3 className="text-xs font-bold text-white/90 uppercase tracking-wider font-mono">{title}</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#4a4b50] bg-[#111111]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-xl bg-[#090a0c] border border-[#4a4b50] flex items-center justify-center text-[#5683da] shrink-0">
+              {onBrowse ? <FolderOpen className="w-3.5 h-3.5" /> : <Edit3 className="w-3.5 h-3.5" />}
+            </div>
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">{title}</h3>
+          </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close dialog"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+            className="p-1 rounded-full hover:bg-[#303236] text-[#a9a9aa] hover:text-white transition-all active:scale-95 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -90,7 +95,7 @@ export const InputModal: React.FC<InputModalProps> = ({
 
         <div className="p-6 space-y-4">
           {description && (
-            <p className="text-xs text-white/50 leading-relaxed font-sans">{description}</p>
+            <p className="text-xs text-[#a9a9aa] leading-relaxed font-sans">{description}</p>
           )}
           <div className="flex gap-2">
             <input
@@ -100,7 +105,7 @@ export const InputModal: React.FC<InputModalProps> = ({
               value={value}
               onChange={(e) => setValue(e.target.value)}
               placeholder={placeholder}
-              className="w-full h-10 px-3.5 rounded-xl bg-black/40 border border-white/10 text-[13px] text-white/90 placeholder-white/30 focus:outline-none focus:border-white/30 transition-colors font-sans"
+              className="w-full h-10 px-3.5 rounded-xl bg-[#090a0c] border border-[#4a4b50] text-[13px] text-white placeholder-[#a9a9aa]/50 focus:outline-none focus:border-[#5683da] focus:ring-1 focus:ring-[#5683da] transition-colors font-sans"
             />
             {onBrowse && (
               <button
@@ -108,13 +113,13 @@ export const InputModal: React.FC<InputModalProps> = ({
                 onClick={handleBrowse}
                 title="Browse folder"
                 aria-label="Browse folder"
-                className="h-10 px-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs text-white/70 hover:text-white transition-colors shrink-0 cursor-pointer"
+                className="h-10 px-3.5 rounded-full bg-[#303236] hover:bg-[#303236] border border-[#4a4b50] hover:border-[#5683da] text-xs text-[#a9a9aa] hover:text-white transition-all active:scale-95 shrink-0 cursor-pointer"
               >
                 <FolderOpen className="w-4 h-4" />
               </button>
             )}
           </div>
-          <div className="flex justify-between items-center text-[10px] text-white/40 font-mono">
+          <div className="flex justify-between items-center text-[10px] text-[#a9a9aa] font-mono">
             <span>Press Enter to save</span>
             <span>
               {value.length}/{maxLength}
@@ -122,18 +127,18 @@ export const InputModal: React.FC<InputModalProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-[#4a4b50] bg-[#111111]">
           <button
             type="button"
             onClick={onClose}
-            className="h-10 flex items-center px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/90 text-[13px] font-normal transition-all cursor-pointer"
+            className="h-9 flex items-center px-4 rounded-full bg-[#303236] hover:bg-[#303236] border border-[#4a4b50] hover:border-[#5683da] text-[#a9a9aa] hover:text-white text-[13px] font-medium transition-all active:scale-95 cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={!value.trim()}
-            className="h-10 flex items-center px-4 rounded-2xl bg-white text-black hover:bg-white/90 text-[13px] font-semibold shadow-sm transition-all disabled:opacity-40 cursor-pointer"
+            className="h-9 flex items-center px-5 rounded-full bg-[#5683da] hover:bg-[#5683da]/90 text-white text-[13px] font-medium shadow-sm transition-all active:scale-95 disabled:scale-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             Save
           </button>

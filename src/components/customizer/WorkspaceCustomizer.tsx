@@ -9,15 +9,15 @@ export const WorkspaceCustomizer: React.FC = () => {
     <div className="flex flex-col gap-5 w-full max-w-4xl mx-auto py-1 select-none">
       {}
       <div>
-        <div className="flex items-center gap-2 text-white/60 font-mono text-xs font-semibold uppercase tracking-wider mb-1">
-          <Palette className="w-4 h-4" />
-          <span className="px-2 py-0.5 rounded-md bg-white/10 border border-white/20 text-[11px] text-white/80 font-mono">CUSTOMIZE</span>
+        <div className="flex items-center gap-2 text-[#a9a9aa] font-mono text-xs font-semibold uppercase tracking-wider mb-1">
+          <Palette className="w-4 h-4 text-[#5683da]" />
+          <span className="px-2.5 py-0.5 rounded-full bg-[#303236] border border-[#4a4b50] text-[11px] text-[#5683da] font-mono font-medium">CUSTOMIZE</span>
         </div>
-        <h2 className="text-xl md:text-2xl font-bold text-white/90 tracking-tight font-sans">
+        <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight font-sans">
           Workspace Studio & Styling
         </h2>
-        <p className="text-xs text-white/40 mt-1 font-sans">
-          Configure workspace metadata, project root CWD, and terminal theme.
+        <p className="text-xs text-[#a9a9aa] mt-1 font-sans">
+          Configure workspace identity, directory, and theme.
         </p>
       </div>
 

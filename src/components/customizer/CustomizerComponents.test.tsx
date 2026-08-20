@@ -38,7 +38,7 @@ describe('Customizer Components & ICE UI', () => {
       expect(screen.getByText('Workspace Emblem / Badge')).toBeTruthy();
       expect(screen.getByText('Color Identity Ring')).toBeTruthy();
 
-      const autoBtn = screen.getByRole('button', { name: /Auto-Detect Name/i });
+      const autoBtn = screen.getByRole('button', { name: /Auto-Detect/i });
       fireEvent.click(autoBtn);
       expect(useCustomizationStore.getState().workspaceName).toBe('Dev');
     });
@@ -48,6 +48,22 @@ describe('Customizer Components & ICE UI', () => {
       const botBtn = screen.getByRole('button', { name: /Agent Bot/i });
       fireEvent.click(botBtn);
       expect(useCustomizationStore.getState().workspaceIcon.value).toBe('Bot');
+    });
+
+    it('renders emoji character when val is not a Lucide icon ID (EMOJI-01)', () => {
+      useCustomizationStore.setState({
+        workspaceIcon: { type: 'emoji', value: '⚡' },
+      });
+      render(<IdentitySection />);
+      expect(screen.getByText('⚡')).toBeTruthy();
+    });
+
+    it('has aria-label tags on all color rings (EMOJI-01)', () => {
+      render(<IdentitySection />);
+      expect(screen.getByRole('button', { name: 'VibeGrid Violet' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Electric Azure' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Matrix Emerald' })).toBeTruthy();
+      expect(screen.getByLabelText('Custom Hex Color')).toBeTruthy();
     });
   });
 
@@ -82,9 +98,9 @@ describe('Customizer Components & ICE UI', () => {
       useCustomizationStore.setState({ isOpen: true });
       render(<WorkspaceCustomizerModal />);
 
-      expect(screen.getByRole('dialog', { name: /VibeGrid Customization Studio/i })).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: /Customization Studio/i })).toBeTruthy();
 
-      const saveBtn = screen.getByRole('button', { name: /Save & Apply/i });
+      const saveBtn = screen.getByRole('button', { name: /Save/i });
       fireEvent.click(saveBtn);
 
       expect(useCustomizationStore.getState().isOpen).toBe(false);

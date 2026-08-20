@@ -55,35 +55,39 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans"
+      className="fixed inset-0 z-50 bg-[#090a0c]/80 flex items-center justify-center p-4 animate-fade-in font-sans select-none text-white"
     >
       <div
         ref={panelRef}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-sm bg-[#181924] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        className="w-full max-w-sm bg-[#111111] border border-[#4a4b50] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02]">
-          <div className="flex items-center gap-2 text-amber-400">
-            <AlertTriangle className="w-4 h-4" />
-            <h3 className="text-xs font-bold text-white/90 uppercase tracking-wider font-mono">{title}</h3>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#4a4b50] bg-[#111111]">
+          <div className="flex items-center gap-2.5">
+            <div className={`w-7 h-7 rounded-xl flex items-center justify-center border shrink-0 ${
+              isDanger ? 'bg-[#e06c75]/10 border-[#e06c75]/30 text-[#e06c75]' : 'bg-[#090a0c] border-[#4a4b50] text-[#ff8964]'
+            }`}>
+              <AlertTriangle className="w-3.5 h-3.5" />
+            </div>
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">{title}</h3>
           </div>
           <button
             onClick={onClose}
             aria-label="Close confirmation dialog"
-            className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors cursor-pointer"
+            className="p-1 rounded-full hover:bg-[#303236] text-[#a9a9aa] hover:text-white transition-all active:scale-95 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-6">
-          <p className="text-[13px] text-white/70 leading-relaxed">{message}</p>
+          <p className="text-[13px] text-[#a9a9aa] leading-relaxed">{message}</p>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-white/[0.06] bg-white/[0.02]">
+        <div className="flex items-center justify-end gap-2.5 px-6 py-4 border-t border-[#4a4b50] bg-[#111111]">
           <button
             onClick={onClose}
-            className="h-10 flex items-center px-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/10 text-white/90 text-[13px] font-normal transition-all cursor-pointer"
+            className="h-9 flex items-center px-4 rounded-full bg-[#303236] hover:bg-[#303236] border border-[#4a4b50] hover:border-[#5683da] text-[#a9a9aa] hover:text-white text-[13px] font-medium transition-all active:scale-95 cursor-pointer"
           >
             Cancel
           </button>
@@ -93,10 +97,10 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
               onConfirm();
               onClose();
             }}
-            className={`h-10 flex items-center px-4 rounded-2xl text-[13px] font-semibold shadow-sm transition-all cursor-pointer ${
+            className={`h-9 flex items-center px-5 rounded-full text-[13px] font-medium shadow-sm transition-all active:scale-95 cursor-pointer ${
               isDanger
-                ? 'bg-rose-500 hover:bg-rose-600 text-white'
-                : 'bg-white text-black hover:bg-white/90'
+                ? 'bg-[#e06c75] hover:bg-[#e06c75]/90 text-white'
+                : 'bg-[#5683da] hover:bg-[#5683da]/90 text-white'
             }`}
           >
             {confirmLabel}

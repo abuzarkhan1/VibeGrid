@@ -44,7 +44,11 @@ export const NotificationToastContainer: React.FC = () => {
   if (toasts.length === 0 && exiting.length === 0) return null;
 
   return (
-    <div className="fixed top-16 right-6 z-[95] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none font-sans">
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed top-14 right-6 z-[95] flex flex-col gap-2 max-w-sm w-full pointer-events-none font-sans"
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={() => handleDismiss(toast.id)} />
       ))}
@@ -69,45 +73,41 @@ const ToastItem: React.FC<{
     });
     return () => cancelAnimationFrame(raf);
   }, [exiting]);
+
   const getIcon = () => {
     switch (toast.type) {
       case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />;
+        return <AlertTriangle className="w-4 h-4 text-[#ff8964] shrink-0 mt-0.5" />;
       case 'error':
-        return <XCircle className="w-4 h-4 text-rose-400 shrink-0" />;
+        return <XCircle className="w-4 h-4 text-[#ff8964] shrink-0 mt-0.5" />;
       case 'success':
-        return <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />;
+        return <CheckCircle className="w-4 h-4 text-[#27c93f] shrink-0 mt-0.5" />;
       case 'info':
       default:
-        return <Info className="w-4 h-4 text-white/80 shrink-0" />;
+        return <Info className="w-4 h-4 text-[#5683da] shrink-0 mt-0.5" />;
     }
   };
 
   return (
     <div
-      className={`pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-[#181924] border border-white/10 text-white/90 text-xs font-medium shadow-2xl transition-all duration-200 backdrop-blur-md ${
-        fading ? 'opacity-0 scale-95' : 'opacity-100 scale-100 animate-fade-in'
+      role="status"
+      aria-live="polite"
+      className={`pointer-events-auto flex items-start gap-3 p-3.5 rounded-xl bg-[#111111] border border-[#4a4b50] text-white text-xs font-medium shadow-2xl transition-all duration-200 ${
+        fading ? 'opacity-0 translate-x-3 scale-95' : 'opacity-100 translate-x-0 scale-100 animate-fade-in'
       }`}
     >
       {getIcon()}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-white/90 leading-tight truncate">{toast.title}</span>
-          {toast.description && (
-            <span className="text-[11px] text-white/60 font-mono font-normal truncate hidden sm:inline">
-              · {toast.description}
-            </span>
-          )}
-        </div>
+        <div className="font-bold text-white leading-tight truncate">{toast.title}</div>
         {toast.description && (
-          <p className="text-[10px] text-white/60 font-mono font-normal mt-0.5 leading-tight sm:hidden">
+          <p className="text-[11px] text-[#a9a9aa] font-mono font-normal mt-1 leading-snug break-words line-clamp-3">
             {toast.description}
           </p>
         )}
         {toast.progress !== undefined && (
-          <div className="mt-2 h-1 w-full rounded-full bg-black/40 overflow-hidden border border-white/10">
+          <div className="mt-2 h-1 w-full rounded-full bg-[#090a0c] overflow-hidden border border-[#4a4b50]">
             <div
-              className="h-full rounded-full bg-white transition-[width] duration-300 ease-out"
+              className="h-full rounded-full bg-[#5683da] transition-[width] duration-300 ease-out"
               style={{ width: `${Math.min(100, Math.max(0, toast.progress))}%` }}
             />
           </div>
@@ -116,10 +116,11 @@ const ToastItem: React.FC<{
       <button
         onClick={onClose}
         aria-label="Dismiss notification"
-        className="p-1 rounded-lg hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0 cursor-pointer"
+        className="p-1 rounded-full hover:bg-[#303236] text-[#a9a9aa] hover:text-white transition-all active:scale-95 shrink-0 cursor-pointer"
       >
         <X className="w-3.5 h-3.5" />
       </button>
     </div>
   );
 };
+

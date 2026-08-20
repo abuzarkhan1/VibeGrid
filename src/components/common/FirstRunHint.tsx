@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Command, Columns, X } from 'lucide-react';
+import { Command, X } from 'lucide-react';
 import { useSettingsStore } from '@/store/useSettingsStore';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 
@@ -19,7 +19,7 @@ export const FirstRunHint: React.FC = () => {
       const t = setTimeout(() => setVisible(false), hintDurationMs);
       return () => clearTimeout(t);
     } catch (e) {
-
+      // Ignore storage errors in sandbox environments
     }
   }, [hintDurationMs, isOnboardingOpen]);
 
@@ -28,25 +28,32 @@ export const FirstRunHint: React.FC = () => {
   return (
     <div
       role="status"
-      className="fixed top-14 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-3 rounded-2xl bg-[#1A1B26] border border-white/15 shadow-2xl font-sans animate-fade-in-up select-none"
+      className="fixed top-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 rounded-full bg-[#111111] border border-[#4a4b50] shadow-2xl font-sans select-none max-w-2xl"
     >
-      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/15 border border-violet-400/30 shadow-sm">
-        <Command className="w-4 h-4 text-violet-400" />
+      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#303236] border border-[#4a4b50] shadow-sm shrink-0">
+        <Command className="w-3 h-3 text-[#5683da]" />
       </div>
-      <div className="text-xs">
-        <p className="font-bold text-white/90">Welcome to VibeGrid</p>
-        <p className="text-white/70 mt-0.5 font-sans">
-          Press <kbd className="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] font-mono text-[10px] text-white/90">Cmd/Ctrl+D</kbd> to split,{' '}
-          <span className="inline-flex items-center gap-0.5 align-middle">
-            <Columns className="w-3 h-3 text-violet-400 inline" />
-          </span>{' '}
-          <kbd className="px-1.5 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] font-mono text-[10px] text-white/90 ml-1">Cmd/Ctrl+Shift+P</kbd> for commands
-        </p>
+      <div className="flex items-center gap-2 text-xs text-[#a9a9aa] min-w-0">
+        <span className="font-semibold text-white whitespace-nowrap">Quick Start:</span>
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <kbd className="px-2 py-0.5 rounded-full bg-[#303236] border border-[#4a4b50] font-mono text-[10px] text-[#5683da]">Cmd/Ctrl+D</kbd>
+          <span className="text-[11px]">split</span>
+        </span>
+        <span className="text-[#4a4b50]">·</span>
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <kbd className="px-2 py-0.5 rounded-full bg-[#303236] border border-[#4a4b50] font-mono text-[10px] text-[#5683da]">Cmd/Ctrl+Shift+P</kbd>
+          <span className="text-[11px]">commands</span>
+        </span>
+        <span className="text-[#4a4b50]">·</span>
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <kbd className="px-2 py-0.5 rounded-full bg-[#303236] border border-[#4a4b50] font-mono text-[10px] text-[#5683da]">Cmd/Ctrl+,</kbd>
+          <span className="text-[11px]">settings</span>
+        </span>
       </div>
       <button
         onClick={() => setVisible(false)}
         aria-label="Dismiss welcome hint"
-        className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition-colors"
+        className="p-1 rounded-full hover:bg-[#303236] text-[#a9a9aa] hover:text-white transition-all duration-150 cursor-pointer shrink-0 active:scale-95 focus:outline-none focus-visible:border-[#5683da]"
       >
         <X className="w-3.5 h-3.5" />
       </button>

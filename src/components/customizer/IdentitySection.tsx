@@ -99,6 +99,9 @@ const renderVectorIcon = (val: string, className = 'w-6 h-6') => {
     case 'Coffee': return <Coffee className={className} />;
     case 'Folder': return <Folder className={className} />;
     default:
+      if (val && val.trim().length > 0) {
+        return <span className="text-xl select-none leading-none flex items-center justify-center">{val}</span>;
+      }
       return <Bot className={className} />;
   }
 };
@@ -170,35 +173,34 @@ export const IdentitySection: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-white/90 font-sans">
-      {}
-      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 backdrop-blur-md flex items-center justify-between">
+    <div className="space-y-6 text-white font-sans">
+      {/* Active Identity Preview Card */}
+      <div className="p-5 rounded-2xl bg-[#303236] border border-[#4a4b50] flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div
-            className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-black/40 border-2 transition-all duration-300 shadow-lg text-white/90"
+            className="relative flex h-14 w-14 items-center justify-center rounded-xl bg-[#090a0c] border-2 transition-all shadow-md text-white"
             style={{
               borderColor: colorRingHex,
-              boxShadow: `0 0 20px ${colorRingHex}30`,
             }}
           >
             {renderVectorIcon(effectiveWorkspaceIcon.value, 'w-6 h-6')}
             <span
-              className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-black"
+              className="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-2 border-[#111111]"
               style={{ backgroundColor: colorRingHex }}
             />
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-sans font-bold text-base text-white/90">
+              <h3 className="font-sans font-bold text-base text-white">
                 {effectiveWorkspaceName || 'Untitled Workspace'}
               </h3>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/60">
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-[#090a0c] border border-[#4a4b50] text-[#5683da] font-medium">
                 Active Identity
               </span>
             </div>
-            <p className="text-xs text-white/40 font-sans mt-0.5 flex items-center gap-1.5">
-              <Folder className="w-3 h-3 text-white/40" />
+            <p className="text-xs text-[#a9a9aa] font-sans mt-0.5 flex items-center gap-1.5">
+              <Folder className="w-3 h-3 text-[#5683da]" />
               <span className="font-mono truncate max-w-sm">
                 {effectiveCwd || 'Default Session Root'}
               </span>
@@ -209,17 +211,17 @@ export const IdentitySection: React.FC = () => {
         <button
           type="button"
           onClick={handleAutoDetectName}
-          className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-all cursor-pointer"
+          className="px-3.5 py-1.5 rounded-full bg-[#090a0c] hover:bg-[#303236] border border-[#4a4b50] flex items-center gap-1.5 text-xs font-mono text-[#a9a9aa] hover:text-white transition-colors cursor-pointer"
           title="Auto-detect workspace name from project folder"
         >
           <Wand2 className="w-3.5 h-3.5" />
-          <span>Auto-Detect Name</span>
+          <span>Auto-Detect</span>
         </button>
       </div>
 
       {/* Workspace Name Input */}
       <div>
-        <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block mb-2 font-mono">
+        <label className="text-xs font-sans font-bold text-white uppercase tracking-wider block mb-2 font-mono">
           Workspace Name
         </label>
         <div className="relative">
@@ -228,7 +230,7 @@ export const IdentitySection: React.FC = () => {
             value={effectiveWorkspaceName}
             onChange={(e) => handleNameChange(e.target.value)}
             placeholder="e.g. Fullstack AI Agent Lab"
-            className="w-full bg-black/40 border border-white/10 focus:border-white/40 rounded-xl px-4 py-2.5 text-sm text-white/80 placeholder:text-white/30 focus:outline-none transition-colors"
+            className="w-full bg-[#090a0c] border border-[#4a4b50] focus:border-[#5683da] focus:ring-1 focus:ring-[#5683da] rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder:text-[#a9a9aa]/40 focus:outline-none transition-colors"
           />
         </div>
       </div>
@@ -236,18 +238,15 @@ export const IdentitySection: React.FC = () => {
       {/* Vector Emblem Badge Picker */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block font-mono">
+          <label className="text-xs font-sans font-bold text-white uppercase tracking-wider block font-mono">
             Workspace Emblem / Badge
           </label>
-          <span className="text-[10px] font-mono text-white/40">
-            Professional vector icons rendered in sidebar & status bar
-          </span>
         </div>
 
-        <div className="space-y-4 p-4 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-md">
+        <div className="space-y-4 p-5 bg-[#303236] border border-[#4a4b50] rounded-2xl">
           {VECTOR_ICON_CATEGORIES.map((category) => (
             <div key={category.name}>
-              <div className="text-[10px] font-mono font-bold text-white/60 uppercase tracking-wider mb-2">
+              <div className="text-[10px] font-mono font-bold text-[#a9a9aa] uppercase tracking-wider mb-2">
                 {category.name}
               </div>
               <div className="grid grid-cols-6 gap-2">
@@ -263,8 +262,8 @@ export const IdentitySection: React.FC = () => {
                       aria-label={item.label}
                       className={`h-11 rounded-xl flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-white/15 border-2 border-white/80 scale-105 text-white shadow-sm'
-                          : 'bg-white/[0.02] border border-white/10 text-white/60 hover:text-white hover:bg-white/[0.06]'
+                          ? 'bg-[#090a0c] border-2 border-[#5683da] text-white shadow-sm'
+                          : 'bg-[#090a0c] border border-[#4a4b50] text-[#a9a9aa] hover:text-white hover:border-[#5683da]'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -281,42 +280,44 @@ export const IdentitySection: React.FC = () => {
       {/* Color Identity Ring Swatches */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="text-xs font-sans font-bold text-white/80 uppercase tracking-wider block font-mono">
+          <label className="text-xs font-sans font-bold text-white uppercase tracking-wider block font-mono">
             Color Identity Ring
           </label>
-          <span className="text-xs font-mono text-white/60">{colorRingHex}</span>
+          <span className="text-xs font-mono text-[#a9a9aa]">{colorRingHex}</span>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap p-3 bg-white/[0.02] border border-white/10 rounded-xl backdrop-blur-md">
+        <div className="flex items-center gap-2.5 flex-wrap p-4 bg-[#303236] border border-[#4a4b50] rounded-2xl">
           {COLOR_RINGS.map((ring) => (
             <button
               key={ring.hex}
               type="button"
               onClick={() => setColorRingHex(ring.hex)}
               title={ring.label}
-              className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center ${
+              aria-label={ring.label}
+              className={`w-8 h-8 rounded-full border-2 transition-all flex items-center justify-center cursor-pointer ${
                 colorRingHex.toLowerCase() === ring.hex.toLowerCase()
-                  ? 'scale-110 border-white shadow-[0_0_12px_rgba(255,255,255,0.5)]'
-                  : 'border-transparent hover:scale-105 opacity-80 hover:opacity-100'
+                  ? 'scale-110 border-white shadow-sm'
+                  : 'border-[#4a4b50] hover:scale-105 hover:border-white'
               }`}
               style={{ backgroundColor: ring.hex }}
             >
               {colorRingHex.toLowerCase() === ring.hex.toLowerCase() && (
-                <Check className="w-4 h-4 text-black drop-shadow" />
+                <Check className="w-4 h-4 text-black" />
               )}
             </button>
           ))}
 
           {/* Custom Color Input */}
-          <div className="flex items-center gap-1.5 pl-2 border-l border-white/10">
+          <div className="flex items-center gap-1.5 pl-2 border-l border-[#4a4b50]">
             <input
               type="color"
               value={colorRingHex.startsWith('#') ? colorRingHex : '#8B5CF6'}
               onChange={(e) => setColorRingHex(e.target.value)}
               className="w-8 h-8 rounded-full cursor-pointer bg-transparent border-0"
               title="Custom Hex Color"
+              aria-label="Custom Hex Color"
             />
-            <span className="text-[10px] font-mono text-white/60 uppercase">Custom</span>
+            <span className="text-[10px] font-mono text-[#a9a9aa] uppercase">Custom</span>
           </div>
         </div>
       </div>

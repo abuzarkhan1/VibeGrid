@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AboutModal } from './AboutModal';
 import { ShortcutsModal } from './ShortcutsModal';
 import { NotificationToastContainer } from './NotificationToast';
 import { VoiceIndicator } from './VoiceIndicator';
 import { useUIStore } from '@/store/useUIStore';
 import { useVoiceStore } from '@/store/useVoiceStore';
+import { SettingsModal } from './SettingsModal';
 
 describe('AboutModal', () => {
   it('renders modal with engine info and close action', () => {
@@ -17,6 +18,74 @@ describe('AboutModal', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Close about dialog' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('copies diagnostic info with toast feedback when clicking version badge (ABOUT-01)', async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: writeTextMock,
+      },
+    });
+
+    render(<AboutModal onClose={vi.fn()} />);
+    const versionBtn = screen.getByRole('button', { name: /Copy diagnostic info for Version/i });
+    expect(versionBtn).toBeTruthy();
+
+    fireEvent.click(versionBtn);
+    expect(writeTextMock).toHaveBeenCalled();
+
+    await waitFor(() => {
+      const toasts = useUIStore.getState().toasts;
+      expect(toasts.some((t) => t.title === 'Diagnostic info copied')).toBe(true);
+    });
+  });
+});
+
+describe('SettingsModal', () => {
+  it('renders top-right Close button and closes on click (SETTINGS-01)', () => {
+    useUIStore.setState({ isSettingsOpen: true });
+    render(<SettingsModal />);
+    const closeBtn = screen.getByRole('button', { name: 'Close Settings' });
+    expect(closeBtn).toBeTruthy();
+
+    fireEvent.click(closeBtn);
+    expect(useUIStore.getState().isSettingsOpen).toBe(false);
+  });
+
+  it('supports inline workspace renaming in Workspaces tab (RENAME-01)', async () => {
+    const { useWorkspaceStore } = await import('@/store/useWorkspaceStore');
+    useWorkspaceStore.setState({
+      workspaces: [
+        {
+          id: 'ws-test-settings',
+          name: 'Settings Project',
+          layout: { id: 'pane-1', type: 'terminal', title: 'Terminal' } as any,
+          version: 1,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        },
+      ],
+      activeWorkspaceId: 'ws-test-settings',
+      isLoading: false,
+    });
+    useUIStore.setState({ isSettingsOpen: true, activeSettingsTab: 'workspaces' });
+
+    render(<SettingsModal />);
+
+    const renameBtn = screen.getByRole('button', { name: /Rename workspace Settings Project/i });
+    fireEvent.click(renameBtn);
+
+    const input = screen.getByPlaceholderText('Workspace name') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
+    expect(input.value).toBe('Settings Project');
+    expect(input.maxLength).toBe(32);
+
+    fireEvent.change(input, { target: { value: 'Updated Project Name' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(useWorkspaceStore.getState().workspaces[0].name).toBe('Updated Project Name');
+    expect(screen.queryByPlaceholderText('Workspace name')).not.toBeInTheDocument();
   });
 });
 
