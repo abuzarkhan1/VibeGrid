@@ -98,15 +98,15 @@ describe('useAgentStore', () => {
 
     const a0 = state.paneAssignments['pane-1'];
     expect(a0.agentId).toBe('claude-code');
-    expect(a0.name).toBe('Claude Code (Architect)');
+    expect(a0.name).toBe('Architect');
 
     const a1 = state.paneAssignments['pane-2'];
     expect(a1.agentId).toBe('aider');
-    expect(a1.name).toBe('Aider (Refactorer)');
+    expect(a1.name).toBe('Refactorer');
 
     const a2 = state.paneAssignments['pane-3'];
     expect(a2.agentId).toBe('ollama');
-    expect(a2.model).toBe('deepseek-r1:32b');
+    expect(a2.model).toBe('deepseek-r1');
 
     const a3 = state.paneAssignments['pane-4'];
     expect(a3.agentId).toBe('shell');

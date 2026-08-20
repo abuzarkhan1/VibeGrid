@@ -3,7 +3,7 @@ import { DiscoveredAgent, HeterogeneousRolePod } from '@/types/agent';
 export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   {
     id: 'claude-code',
-    name: 'Claude Code',
+    name: 'Claude',
     category: 'coding-agent',
     description: 'Anthropic agentic CLI with deep codebase reasoning and autonomous edits',
     iconName: 'Bot',
@@ -16,7 +16,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'codex',
-    name: 'OpenAI Codex',
+    name: 'Codex',
     category: 'coding-agent',
     description: 'OpenAI coding agent with o3-mini and gpt-4o automated task loops',
     iconName: 'Sparkles',
@@ -29,7 +29,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'antigravity',
-    name: 'Antigravity / Integrity',
+    name: 'Antigravity',
     category: 'orchestrator',
     description: 'Google DeepMind multi-agent coding framework & skill runner',
     iconName: 'Zap',
@@ -42,7 +42,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'grok',
-    name: 'Grok CLI',
+    name: 'Grok',
     category: 'coding-agent',
     description: 'xAI real-time web-connected coding agent with fast token generation',
     iconName: 'Globe',
@@ -55,7 +55,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'kimi',
-    name: 'Kimi CLI',
+    name: 'Kimi',
     category: 'coding-agent',
     description: 'Moonshot AI 2M token context repository analyzer for monolith codebases',
     iconName: 'FileText',
@@ -68,7 +68,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'qwen',
-    name: 'Qwen Coder CLI',
+    name: 'Qwen',
     category: 'coding-agent',
     description: 'Alibaba Cloud Qwen 2.5 Coder supporting 92+ programming languages',
     iconName: 'Code',
@@ -81,7 +81,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'aider',
-    name: 'Aider Pair Programmer',
+    name: 'Aider',
     category: 'coding-agent',
     description: 'Git-aware terminal pair programmer with automatic commits and repo maps',
     iconName: 'Terminal',
@@ -107,7 +107,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'ollama',
-    name: 'Ollama (Local LLM)',
+    name: 'Ollama',
     category: 'local-llm',
     description: 'Air-gapped local model runner for DeepSeek-R1, Qwen, and Llama',
     iconName: 'Server',
@@ -120,7 +120,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'deepseek',
-    name: 'DeepSeek CLI',
+    name: 'DeepSeek',
     category: 'coding-agent',
     description: 'DeepSeek reasoning & code intelligence CLI with deep chain-of-thought analysis',
     iconName: 'Bot',
@@ -133,7 +133,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'gemini',
-    name: 'Gemini CLI',
+    name: 'Gemini',
     category: 'coding-agent',
     description: 'Google Gemini 2.5 Pro multimodal developer assistant with 1M+ context window',
     iconName: 'Zap',
@@ -159,7 +159,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'cline',
-    name: 'Cline CLI',
+    name: 'Cline',
     category: 'coding-agent',
     description: 'Autonomous coding agent CLI with tool calling and human-in-the-loop approvals',
     iconName: 'Bot',
@@ -172,7 +172,7 @@ export const BUILTIN_AGENTS: DiscoveredAgent[] = [
   },
   {
     id: 'shell',
-    name: 'Native Shell (Zsh/Bash)',
+    name: 'Terminal',
     category: 'shell',
     description: 'Standard OS shell terminal with environment variables and PTY control',
     iconName: 'Terminal',
@@ -240,36 +240,36 @@ export function buildAgentCommand(config: import('@/types/agent').PaneAgentConfi
 export const HETEROGENEOUS_ROLE_PODS: HeterogeneousRolePod[] = [
   {
     id: 'feature-team-4',
-    name: 'Autonomous Feature Pod (4-Pane Quad)',
-    description: '1 Architect + 1 Refactorer + 1 Local Explainer + 1 Dev Server',
+    name: 'Feature Pod',
+    description: 'Architect, Refactorer, Local Model, and Dev Server',
     paneCount: 4,
     assignments: [
-      { paneIndex: 0, title: 'Claude Code (Architect)', agentId: 'claude-code', model: 'claude-3-7-sonnet', initialPrompt: 'Analyze project structure and prepare implementation plan.' },
-      { paneIndex: 1, title: 'Aider (Refactorer)', agentId: 'aider', model: 'claude-3-7-sonnet', cliArgs: ['--auto-commits'] },
-      { paneIndex: 2, title: 'Ollama (DeepSeek R1)', agentId: 'ollama', model: 'deepseek-r1:32b' },
+      { paneIndex: 0, title: 'Architect', agentId: 'claude-code', model: 'claude-3-7-sonnet', initialPrompt: 'Analyze project structure and prepare implementation plan.' },
+      { paneIndex: 1, title: 'Refactorer', agentId: 'aider', model: 'claude-3-7-sonnet', cliArgs: ['--auto-commits'] },
+      { paneIndex: 2, title: 'Local Explainer', agentId: 'ollama', model: 'deepseek-r1' },
       { paneIndex: 3, title: 'Dev Server', agentId: 'shell' },
     ],
   },
   {
     id: 'pair-coder-3',
-    name: 'AI Pair Programmer (3-Pane)',
-    description: '1 Main Orchestrator + 1 Test Runner + 1 Log Watcher',
+    name: 'Pair Programmer',
+    description: 'Architect, Pair Programmer, and Test Watcher',
     paneCount: 3,
     assignments: [
-      { paneIndex: 0, title: 'Claude Architect', agentId: 'claude-code', model: 'claude-3-7-sonnet', cliArgs: ['--dangerously-skip-permissions'] },
-      { paneIndex: 1, title: 'Aider Pair', agentId: 'aider', model: 'claude-3-7-sonnet', cliArgs: ['--auto-commits'] },
+      { paneIndex: 0, title: 'Architect', agentId: 'claude-code', model: 'claude-3-7-sonnet', cliArgs: ['--dangerously-skip-permissions'] },
+      { paneIndex: 1, title: 'Pair Programmer', agentId: 'aider', model: 'claude-3-7-sonnet', cliArgs: ['--auto-commits'] },
       { paneIndex: 2, title: 'Test Watcher', agentId: 'shell' },
     ],
   },
   {
     id: 'privacy-local-4',
-    name: 'Air-Gapped Privacy Swarm (4-Pane Local)',
-    description: '4 Local Ollama instances running DeepSeek and Qwen Coder',
+    name: 'Local Swarm',
+    description: 'DeepSeek, Qwen Coder, Llama, and Local Terminal',
     paneCount: 4,
     assignments: [
-      { paneIndex: 0, title: 'DeepSeek R1', agentId: 'ollama', model: 'deepseek-r1:32b' },
+      { paneIndex: 0, title: 'DeepSeek', agentId: 'ollama', model: 'deepseek-r1:32b' },
       { paneIndex: 1, title: 'Qwen Coder', agentId: 'ollama', model: 'qwen2.5-coder:32b' },
-      { paneIndex: 2, title: 'Llama 3.3', agentId: 'ollama', model: 'llama3.3:70b' },
+      { paneIndex: 2, title: 'Llama', agentId: 'ollama', model: 'llama3.3:70b' },
       { paneIndex: 3, title: 'Local Terminal', agentId: 'shell' },
     ],
   },
