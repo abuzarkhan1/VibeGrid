@@ -97,10 +97,10 @@ export const GridTemplatePicker: React.FC = () => {
             key={opt.id}
             type="button"
             onClick={() => setPresetSelected(opt.id)}
-            className={`group relative flex flex-col p-2.5 rounded-xl border text-left transition-all duration-150 select-none ${
+className={`group relative flex flex-col p-2.5 rounded-xl border text-left transition-all duration-150 select-none cursor-pointer ${
               isSelected
-                ? 'bg-[#1A1B26] !border-violet-400 ring-1 ring-accent-primary/60 shadow-none scale-[1.01]'
-                : 'bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/[0.14] border border-white/[0.06]'
+                ? 'bg-[var(--color-bg)] !border-violet-400 ring-1 ring-[rgba(var(--color-accent-rgb)/0.6)] shadow-none scale-[1.01]'
+                : 'bg-[rgba(var(--color-surface-rgb)/0.03)] hover:bg-[rgba(var(--color-surface-rgb)/0.06)] hover:border-[rgba(var(--color-fg-rgb)/0.35)] border border-[rgba(var(--color-border-rgb)/0.6)]'
             }`}
           >
             {/* Visual Blueprint Wireframe */}

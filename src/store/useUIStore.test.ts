@@ -23,7 +23,14 @@ describe('useUIStore', () => {
     });
     useWorkspaceStore.setState({
       workspaces: [
-        { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' }, createdAt: Date.now(), updatedAt: Date.now(), version: 1 },
+        {
+          id: 'default-workspace',
+          name: 'Default Workspace',
+          layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' },
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          version: 1,
+        },
       ],
       activeWorkspaceId: 'default-workspace',
       isLoading: true,
@@ -44,16 +51,31 @@ describe('useUIStore', () => {
     });
 
     it('requestSwitchWorkspace switches immediately even with running processes (workspace isolation)', () => {
-
       useWorkspaceStore.setState({
         workspaces: [
-          { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
-          { id: 'ws-2', name: 'Second', layout: { type: 'terminal', id: 'term-2', title: 'Terminal 2' }, createdAt: 1, updatedAt: 1, version: 1 },
+          {
+            id: 'default-workspace',
+            name: 'Default Workspace',
+            layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' },
+            createdAt: 1,
+            updatedAt: 1,
+            version: 1,
+          },
+          {
+            id: 'ws-2',
+            name: 'Second',
+            layout: { type: 'terminal', id: 'term-2', title: 'Terminal 2' },
+            createdAt: 1,
+            updatedAt: 1,
+            version: 1,
+          },
         ],
         activeWorkspaceId: 'default-workspace',
         isLoading: false,
       });
-      usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never });
+      usePaneStore.setState({
+        root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never,
+      });
       useUIStore.getState().requestSwitchWorkspace('ws-2');
 
       expect(useWorkspaceStore.getState().activeWorkspaceId).toBe('ws-2');
@@ -62,8 +84,22 @@ describe('useUIStore', () => {
     it('requestSwitchWorkspace switches immediately when nothing is running', () => {
       useWorkspaceStore.setState({
         workspaces: [
-          { id: 'default-workspace', name: 'Default Workspace', layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' }, createdAt: 1, updatedAt: 1, version: 1 },
-          { id: 'ws-2', name: 'Second', layout: { type: 'terminal', id: 'term-2', title: 'Terminal 2' }, createdAt: 1, updatedAt: 1, version: 1 },
+          {
+            id: 'default-workspace',
+            name: 'Default Workspace',
+            layout: { type: 'terminal', id: 'term-init', title: 'Terminal 1' },
+            createdAt: 1,
+            updatedAt: 1,
+            version: 1,
+          },
+          {
+            id: 'ws-2',
+            name: 'Second',
+            layout: { type: 'terminal', id: 'term-2', title: 'Terminal 2' },
+            createdAt: 1,
+            updatedAt: 1,
+            version: 1,
+          },
         ],
         activeWorkspaceId: 'default-workspace',
         isLoading: false,
@@ -80,8 +116,9 @@ describe('useUIStore', () => {
     });
 
     it('requestCreateWorkspace creates immediately even with running processes (workspace isolation)', () => {
-
-      usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never });
+      usePaneStore.setState({
+        root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never,
+      });
       useUIStore.getState().requestCreateWorkspace('Fresh');
 
       expect(useWorkspaceStore.getState().workspaces.some((w) => w.name === 'Fresh')).toBe(true);
@@ -102,8 +139,9 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset EXPANDS immediately even with a running terminal — never kills it', () => {
-
-      usePaneStore.setState({ root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never });
+      usePaneStore.setState({
+        root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never,
+      });
       useUIStore.getState().requestSetLayoutPreset(4);
 
       expect(useUIStore.getState().pendingLayoutAction).toBeNull();
@@ -114,20 +152,28 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset SHRINK defers only when a REMOVED pane is running; confirm then closes', () => {
-
       usePaneStore.setState({
         root: {
-          type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
+          type: 'split',
+          id: 's1',
+          direction: 'horizontal',
+          ratio: 0.5,
           children: [
             {
-              type: 'split', id: 's2', direction: 'vertical', ratio: 0.5,
+              type: 'split',
+              id: 's2',
+              direction: 'vertical',
+              ratio: 0.5,
               children: [
                 { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' },
                 { type: 'terminal', id: 'term-2', title: 'T2', paneId: 'pty-2' },
               ],
             },
             {
-              type: 'split', id: 's3', direction: 'vertical', ratio: 0.5,
+              type: 'split',
+              id: 's3',
+              direction: 'vertical',
+              ratio: 0.5,
               children: [
                 { type: 'terminal', id: 'term-3', title: 'T3', paneId: 'pty-3' },
                 { type: 'terminal', id: 'term-4', title: 'T4' },
@@ -141,7 +187,11 @@ describe('useUIStore', () => {
       });
       useUIStore.getState().requestSetLayoutPreset(2);
 
-      expect(useUIStore.getState().pendingLayoutAction).toEqual({ type: 'preset', count: 2, closingCount: 1 });
+      expect(useUIStore.getState().pendingLayoutAction).toEqual({
+        type: 'preset',
+        count: 2,
+        closingCount: 1,
+      });
       expect(usePaneStore.getState().paneCount).toBe(4);
 
       useUIStore.getState().confirmPendingLayoutAction();
@@ -150,20 +200,28 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset SHRINK applies immediately when no removed pane is running', () => {
-
       usePaneStore.setState({
         root: {
-          type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
+          type: 'split',
+          id: 's1',
+          direction: 'horizontal',
+          ratio: 0.5,
           children: [
             {
-              type: 'split', id: 's2', direction: 'vertical', ratio: 0.5,
+              type: 'split',
+              id: 's2',
+              direction: 'vertical',
+              ratio: 0.5,
               children: [
                 { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' },
                 { type: 'terminal', id: 'term-2', title: 'T2' },
               ],
             },
             {
-              type: 'split', id: 's3', direction: 'vertical', ratio: 0.5,
+              type: 'split',
+              id: 's3',
+              direction: 'vertical',
+              ratio: 0.5,
               children: [
                 { type: 'terminal', id: 'term-3', title: 'T3' },
                 { type: 'terminal', id: 'term-4', title: 'T4' },
@@ -180,28 +238,37 @@ describe('useUIStore', () => {
       expect(usePaneStore.getState().paneCount).toBe(1);
     });
 
-    const equal4Tree = () => ({
-      type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
-      children: [
-        {
-          type: 'split', id: 's2', direction: 'vertical', ratio: 0.5,
-          children: [
-            { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' },
-            { type: 'terminal', id: 'term-2', title: 'T2', paneId: 'pty-2' },
-          ],
-        },
-        {
-          type: 'split', id: 's3', direction: 'vertical', ratio: 0.5,
-          children: [
-            { type: 'terminal', id: 'term-3', title: 'T3', paneId: 'pty-3' },
-            { type: 'terminal', id: 'term-4', title: 'T4', paneId: 'pty-4' },
-          ],
-        },
-      ],
-    } as never);
+    const equal4Tree = () =>
+      ({
+        type: 'split',
+        id: 's1',
+        direction: 'horizontal',
+        ratio: 0.5,
+        children: [
+          {
+            type: 'split',
+            id: 's2',
+            direction: 'vertical',
+            ratio: 0.5,
+            children: [
+              { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' },
+              { type: 'terminal', id: 'term-2', title: 'T2', paneId: 'pty-2' },
+            ],
+          },
+          {
+            type: 'split',
+            id: 's3',
+            direction: 'vertical',
+            ratio: 0.5,
+            children: [
+              { type: 'terminal', id: 'term-3', title: 'T3', paneId: 'pty-3' },
+              { type: 'terminal', id: 'term-4', title: 'T4', paneId: 'pty-4' },
+            ],
+          },
+        ],
+      }) as never;
 
     it('requestSetLayoutPreset is a no-op when the requested EQUAL grid is already active (no kill, no confirm)', () => {
-
       usePaneStore.setState({
         root: equal4Tree(),
         paneCount: 4,
@@ -213,37 +280,53 @@ describe('useUIStore', () => {
       expect(usePaneStore.getState().paneCount).toBe(4);
     });
 
-    const equal6Tree = () => ({
-      type: 'split', id: 's1', direction: 'vertical', ratio: 0.5,
-      children: [
-        {
-          type: 'split', id: 's2', direction: 'horizontal', ratio: 1 / 3,
-          children: [
-            { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' },
-            {
-              type: 'split', id: 's3', direction: 'horizontal', ratio: 0.5,
-              children: [
-                { type: 'terminal', id: 'term-2', title: 'T2', paneId: 'pty-2' },
-                { type: 'terminal', id: 'term-3', title: 'T3', paneId: 'pty-3' },
-              ],
-            },
-          ],
-        },
-        {
-          type: 'split', id: 's4', direction: 'horizontal', ratio: 1 / 3,
-          children: [
-            { type: 'terminal', id: 'term-4', title: 'T4', paneId: 'pty-4' },
-            {
-              type: 'split', id: 's5', direction: 'horizontal', ratio: 0.5,
-              children: [
-                { type: 'terminal', id: 'term-5', title: 'T5', paneId: 'pty-5' },
-                { type: 'terminal', id: 'term-6', title: 'T6', paneId: 'pty-6' },
-              ],
-            },
-          ],
-        },
-      ],
-    } as never);
+    const equal6Tree = () =>
+      ({
+        type: 'split',
+        id: 's1',
+        direction: 'vertical',
+        ratio: 0.5,
+        children: [
+          {
+            type: 'split',
+            id: 's2',
+            direction: 'horizontal',
+            ratio: 1 / 3,
+            children: [
+              { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' },
+              {
+                type: 'split',
+                id: 's3',
+                direction: 'horizontal',
+                ratio: 0.5,
+                children: [
+                  { type: 'terminal', id: 'term-2', title: 'T2', paneId: 'pty-2' },
+                  { type: 'terminal', id: 'term-3', title: 'T3', paneId: 'pty-3' },
+                ],
+              },
+            ],
+          },
+          {
+            type: 'split',
+            id: 's4',
+            direction: 'horizontal',
+            ratio: 1 / 3,
+            children: [
+              { type: 'terminal', id: 'term-4', title: 'T4', paneId: 'pty-4' },
+              {
+                type: 'split',
+                id: 's5',
+                direction: 'horizontal',
+                ratio: 0.5,
+                children: [
+                  { type: 'terminal', id: 'term-5', title: 'T5', paneId: 'pty-5' },
+                  { type: 'terminal', id: 'term-6', title: 'T6', paneId: 'pty-6' },
+                ],
+              },
+            ],
+          },
+        ],
+      }) as never;
 
     it('isEqualPresetTree recognizes a pristine 6-pane grid (1/3 row ratios) and rejects a dragged one', () => {
       const pristine = equal6Tree() as { ratio: number };
@@ -255,7 +338,6 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset is a no-op on an already-active EQUAL 6-pane preset (1/3 ratios)', () => {
-
       usePaneStore.setState({
         root: equal6Tree(),
         paneCount: 6,
@@ -270,7 +352,6 @@ describe('useUIStore', () => {
     });
 
     it('requestSetLayoutPreset RE-EQUALIZES a dragged preset grid (unequal ratios) without killing', () => {
-
       const dragged = equal4Tree() as {
         children: { ratio: number }[];
       };
@@ -287,11 +368,12 @@ describe('useUIStore', () => {
 
       const root = usePaneStore.getState().root as { children: { ratio: number }[] };
       expect(root.children[0].ratio).toBe(0.5);
-      expect(getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId)).toHaveLength(4);
+      expect(getTerminalNodes(usePaneStore.getState().root).filter((t) => t.paneId)).toHaveLength(
+        4
+      );
     });
 
     it('requestResetLayout with a SINGLE running pane applies immediately — the focused pane survives', () => {
-
       usePaneStore.setState({
         root: { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' } as never,
         focusedPaneId: 'term-1',
@@ -303,14 +385,19 @@ describe('useUIStore', () => {
     });
 
     it('requestResetLayout defers when other running panes exist; cancel clears without killing', () => {
-
       usePaneStore.setState({
         root: {
-          type: 'split', id: 's1', direction: 'horizontal', ratio: 0.5,
+          type: 'split',
+          id: 's1',
+          direction: 'horizontal',
+          ratio: 0.5,
           children: [
             { type: 'terminal', id: 'term-1', title: 'T1', paneId: 'pty-1' },
             {
-              type: 'split', id: 's2', direction: 'vertical', ratio: 0.5,
+              type: 'split',
+              id: 's2',
+              direction: 'vertical',
+              ratio: 0.5,
               children: [
                 { type: 'terminal', id: 'term-2', title: 'T2', paneId: 'pty-2' },
                 { type: 'terminal', id: 'term-3', title: 'T3', paneId: 'pty-3' },
@@ -372,25 +459,44 @@ describe('useUIStore', () => {
     });
 
     it('dedupes identical toasts by title+description (UX audit P3 #15)', () => {
-      useUIStore.getState().addToast({ type: 'warning', title: 'No speech detected', description: 'Try speaking louder.' });
-      useUIStore.getState().addToast({ type: 'warning', title: 'No speech detected', description: 'Try speaking louder.' });
+      useUIStore
+        .getState()
+        .addToast({
+          type: 'warning',
+          title: 'No speech detected',
+          description: 'Try speaking louder.',
+        });
+      useUIStore
+        .getState()
+        .addToast({
+          type: 'warning',
+          title: 'No speech detected',
+          description: 'Try speaking louder.',
+        });
       expect(useUIStore.getState().toasts).toHaveLength(1);
       // A DIFFERENT toast still stacks.
       useUIStore.getState().addToast({ type: 'error', title: 'Dictation failed' });
       expect(useUIStore.getState().toasts).toHaveLength(2);
     });
 
-    it('auto-removes toasts after durationMs', () => {
+    it('auto-removes toasts after durationMs via the leaving exit contract', () => {
       useUIStore.getState().addToast({ type: 'warning', title: 'Hi', durationMs: 100 });
       expect(useUIStore.getState().toasts).toHaveLength(1);
       vi.advanceTimersByTime(150);
+      expect(useUIStore.getState().toasts).toHaveLength(1);
+      expect(useUIStore.getState().toasts[0].leaving).toBe(true);
+      vi.advanceTimersByTime(250);
       expect(useUIStore.getState().toasts).toHaveLength(0);
     });
 
-    it('removeToast removes by id', () => {
+    it('removeToast marks leaving first, then removes after the exit animation window', () => {
       useUIStore.getState().addToast({ type: 'info', title: 'A' });
       const id = useUIStore.getState().toasts[0].id;
       useUIStore.getState().removeToast(id);
+      expect(useUIStore.getState().toasts).toHaveLength(1);
+      expect(useUIStore.getState().toasts[0].leaving).toBe(true);
+      expect(useUIStore.getState().toasts[0].id).toBe(id);
+      vi.advanceTimersByTime(250);
       expect(useUIStore.getState().toasts).toHaveLength(0);
     });
   });

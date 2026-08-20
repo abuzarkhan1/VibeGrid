@@ -35,7 +35,7 @@ export const TerminalToolbar: React.FC<TerminalToolbarProps> = ({
   const addToast = useUIStore((s) => s.addToast);
   const requestClosePane = useUIStore((s) => s.requestClosePane);
 
-  const setPaneTitle = usePaneStore((s) => (s as any).setPaneTitle || (s as any).renamePane);
+  const setPaneTitle = usePaneStore((s) => s.setPaneTitle);
 
   const paneIndex = usePaneStore((s) => s.getPaneIndex(nodeId));
   const badgeNumber = Math.max(paneIndex + 1, 1);

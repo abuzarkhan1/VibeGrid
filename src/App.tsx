@@ -9,7 +9,6 @@ import { NotificationToastContainer } from '@/components/ui/NotificationToast';
 import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { InputModal } from '@/components/ui/InputModal';
 import { CinematicSplashScreen } from '@/components/splash/CinematicSplashScreen';
-import { FirstRunHint } from '@/components/common/FirstRunHint';
 import { VoiceIndicator } from '@/components/ui/VoiceIndicator';
 import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { LayoutStudioModal } from '@/components/studio/LayoutStudioModal';
@@ -26,7 +25,6 @@ import { useSettingsStore } from '@/store/useSettingsStore';
 import { useWorkspaceStore } from '@/store/useWorkspaceStore';
 import { useAgentStore } from '@/store/useAgentStore';
 import { useCustomizationStore } from '@/store/useCustomizationStore';
-import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { useLayoutStudioStore } from '@/store/useLayoutStudioStore';
 import { useKeybindingsStore, matchesAccel } from '@/store/useKeybindingsStore';
 
@@ -630,17 +628,14 @@ export const App: React.FC = () => {
       <ShortcutsModal />
       {isAboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
       <NotificationToastContainer />
-      {}
-      {showSplash && !splashDismissed && !useOnboardingStore.getState().isOpen && (
+      {showSplash && !splashDismissed && (
         <CinematicSplashScreen onComplete={() => setSplashDismissed(true)} />
       )}
-      <FirstRunHint />
       <OnboardingWizard />
       <LayoutStudioModal onProceedToAgents={() => useAgentStore.getState().openLauncher()} />
       <AgentLauncherModal onProceedToCustomizer={() => useCustomizationStore.getState().openCustomizer()} />
       <WorkspaceCustomizerModal />
 
-      {}
       {pendingQuit && (
         <ConfirmModal
           title="Quit VibeGrid?"

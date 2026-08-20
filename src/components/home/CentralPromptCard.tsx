@@ -59,7 +59,7 @@ export const CentralPromptCard: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full h-full px-6 select-none font-sans animate-fade-in">
+    <div className="flex flex-col items-center justify-center w-full min-h-full px-6 select-none font-sans">
 
       {/* Main Pure Black Transparent Glass Container (max-w-4xl) */}
       <div className="relative w-full max-w-4xl p-10 sm:p-12 rounded-3xl border border-white/[0.08] bg-black/60 backdrop-blur-2xl shadow-[0_16px_48px_rgba(0,0,0,0.9)] overflow-hidden">
@@ -79,11 +79,11 @@ export const CentralPromptCard: React.FC = () => {
                 <div className="text-base font-semibold text-white/90 tracking-wide">{activeWs?.name || 'VibeGrid'}</div>
                 <div className="flex items-center gap-2 mt-1">
                   <Circle className="w-2 h-2 fill-white/70 text-white/70 animate-pulse" />
-                  <div className="text-xs text-white/40 font-mono">Ready to launch workspace</div>
+                  <div className="text-xs text-white/70 font-mono">Ready to launch workspace</div>
                 </div>
               </div>
             </div>
-            <div className="text-xs font-mono text-white/30 uppercase tracking-widest hidden sm:block">
+            <div className="text-xs font-mono text-white/70 uppercase tracking-widest hidden sm:block">
               Workspace Hub
             </div>
           </div>
@@ -91,10 +91,10 @@ export const CentralPromptCard: React.FC = () => {
           {/* Layout Preset Grid */}
           <div>
             <div className="flex items-center justify-between mb-5 px-1">
-              <div className="text-xs font-mono text-white/40 uppercase tracking-widest">
+              <div className="text-xs font-mono text-white/70 uppercase tracking-widest">
                 Select Layout Matrix
               </div>
-              <div className="text-xs font-mono text-white/25 uppercase">
+              <div className="text-xs font-mono text-white/70 uppercase">
                 {LAYOUT_PRESETS.length} Presets Available
               </div>
             </div>
@@ -112,7 +112,7 @@ export const CentralPromptCard: React.FC = () => {
                     <span className="text-sm text-white/80 font-medium group-hover:text-white transition-colors">
                       {preset.label}
                     </span>
-                    <span className="text-xs font-mono text-white/30 group-hover:text-white/70 transition-colors">
+                    <span className="text-xs font-mono text-white/70 group-hover:text-white/90 transition-colors">
                       {preset.tag}
                     </span>
                   </div>

@@ -3,6 +3,7 @@ import { usePaneStore, getTerminalNodes, planPresetKeep, isEqualPresetTree } fro
 import { PresetCount } from '@/types/layout';
 import { useWorkspaceStore } from './useWorkspaceStore';
 import { useSettingsStore } from './useSettingsStore';
+import { subscribeToasts } from '@/lib/toastBus';
 
 export interface ToastMessage {
   id: string;
@@ -12,13 +13,23 @@ export interface ToastMessage {
   durationMs?: number;
 
   progress?: number;
+
+  leaving?: boolean;
 }
 
 interface UIState {
   isCommandPaletteOpen: boolean;
   isSettingsOpen: boolean;
   isAboutOpen: boolean;
-  activeSettingsTab: 'font' | 'theme' | 'terminal' | 'workspaces' | 'limits' | 'appearance' | 'keyboard' | 'profiles';
+  activeSettingsTab:
+    | 'font'
+    | 'theme'
+    | 'terminal'
+    | 'workspaces'
+    | 'limits'
+    | 'appearance'
+    | 'keyboard'
+    | 'profiles';
   isCheatsheetOpen: boolean;
   isDiffViewerOpen: boolean;
   isChatOpen: boolean;
@@ -42,7 +53,17 @@ interface UIState {
   toggleSettings: () => void;
   setAboutOpen: (open: boolean) => void;
   toggleAbout: () => void;
-  setActiveSettingsTab: (tab: 'font' | 'theme' | 'terminal' | 'workspaces' | 'limits' | 'appearance' | 'keyboard' | 'profiles') => void;
+  setActiveSettingsTab: (
+    tab:
+      | 'font'
+      | 'theme'
+      | 'terminal'
+      | 'workspaces'
+      | 'limits'
+      | 'appearance'
+      | 'keyboard'
+      | 'profiles'
+  ) => void;
   setCheatsheetOpen: (open: boolean) => void;
   toggleDiffViewer: () => void;
   setDiffViewerOpen: (open: boolean) => void;
@@ -63,7 +84,10 @@ interface UIState {
   confirmPendingLayoutAction: () => void;
   cancelPendingLayoutAction: () => void;
   requestSwitchWorkspace: (wsId: string) => void;
-  requestCreateWorkspace: (name: string, opts?: { activate?: boolean; defaultCwd?: string }) => void;
+  requestCreateWorkspace: (
+    name: string,
+    opts?: { activate?: boolean; defaultCwd?: string }
+  ) => void;
   openCreateWsModal: () => void;
   closeCreateWsModal: () => void;
 
@@ -95,10 +119,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   activeThreadTitle: 'VibeGrid',
 
   setActiveViewMode: (mode: 'hub' | 'grid') => set({ activeViewMode: mode }),
-
   setActiveThreadTitle: (title: string) => set({ activeThreadTitle: title }),
 
-  toggleCommandPalette: () => set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
+  toggleCommandPalette: () =>
+    set((state) => ({ isCommandPaletteOpen: !state.isCommandPaletteOpen })),
   setCommandPaletteOpen: (open: boolean) => set({ isCommandPaletteOpen: open }),
   toggleSettings: () => set((state) => ({ isSettingsOpen: !state.isSettingsOpen })),
   setAboutOpen: (open: boolean) => set({ isAboutOpen: open }),
@@ -111,7 +135,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   setChatOpen: (open: boolean) => set({ isChatOpen: open }),
 
   requestClosePane: (paneId: string) => {
-
     if (useSettingsStore.getState().confirmations.paneClose !== 'always') {
       usePaneStore.getState().closePane(paneId);
       return;
@@ -125,7 +148,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   requestSetLayoutPreset: (count) => {
     const ps = usePaneStore.getState();
 
-    if (ps.layoutMode === 'preset' && ps.presetCount === count && isEqualPresetTree(ps.root, count)) return;
+    if (ps.layoutMode === 'preset' && ps.presetCount === count && isEqualPresetTree(ps.root, count))
+      return;
 
     if (count > ps.paneCount) {
       usePaneStore.getState().setLayoutPreset(count);
@@ -208,7 +232,10 @@ export const useUIStore = create<UIState>((set, get) => ({
       if (dup) {
         return { toasts: state.toasts.map((t) => (t.id === dup.id ? newToast : t)) };
       }
-      const base = state.toasts.length >= MAX_TOASTS ? state.toasts.slice(state.toasts.length - MAX_TOASTS + 1) : state.toasts;
+      const base =
+        state.toasts.length >= MAX_TOASTS
+          ? state.toasts.slice(state.toasts.length - MAX_TOASTS + 1)
+          : state.toasts;
       return { toasts: [...base, newToast] };
     });
 
@@ -216,7 +243,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     const needsTimer = !dup || (dup && (toast.durationMs ?? -1) > 0 && (dup.durationMs ?? 0) === 0);
     if (duration > 0 && needsTimer) {
       setTimeout(() => {
-        set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+        useUIStore.getState().removeToast(id);
       }, duration);
     }
     return id;
@@ -227,7 +254,14 @@ export const useUIStore = create<UIState>((set, get) => ({
       toasts: state.toasts.map((t) => (t.id === id ? { ...t, ...patch } : t)),
     })),
 
-  removeToast: (id: string) => set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+  removeToast: (id: string) => {
+    set((state) => ({
+      toasts: state.toasts.map((t) => (t.id === id ? { ...t, leaving: true } : t)),
+    }));
+    setTimeout(() => {
+      set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
+    }, 200);
+  },
 
   acquireWebglSlot: (paneId: string) => {
     const { activeWebglPanes } = get();
@@ -249,3 +283,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     }));
   },
 }));
+
+subscribeToasts((toast) => {
+  useUIStore.getState().addToast(toast);
+});
