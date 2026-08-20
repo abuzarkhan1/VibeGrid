@@ -17,13 +17,13 @@ export const InteractiveGridCanvas: React.FC<InteractiveGridCanvasProps> = ({ no
   const getAgentIcon = (agentId?: string) => {
     switch (agentId) {
       case 'claude-code':
-        return <Sparkles className="w-3.5 h-3.5 text-violet-400" />;
+        return <Sparkles className="w-3.5 h-3.5 text-[#5683da]" />;
       case 'aider':
-        return <Bot className="w-3.5 h-3.5 text-emerald-400" />;
+        return <Bot className="w-3.5 h-3.5 text-[#27c93f]" />;
       case 'ollama':
-        return <Cpu className="w-3.5 h-3.5 text-sky-400" />;
+        return <Cpu className="w-3.5 h-3.5 text-[#5683da]" />;
       default:
-        return <Terminal className="w-3.5 h-3.5 text-white/70" />;
+        return <Terminal className="w-3.5 h-3.5 text-[#a9a9aa]" />;
     }
   };
 
@@ -38,19 +38,19 @@ export const InteractiveGridCanvas: React.FC<InteractiveGridCanvasProps> = ({ no
       const isAgent = config && config.agentId !== 'shell';
 
       return (
-        <div className="relative flex-1 h-full w-full p-2.5 flex flex-col justify-between rounded-lg bg-white/[0.03] hover:border-violet-400/50 hover:bg-white/[0.06] border border-white/[0.06] transition-all overflow-hidden select-none min-w-0 min-h-0">
+        <div className="relative flex-1 h-full w-full p-2.5 flex flex-col justify-between rounded-lg bg-[#303236] hover:border-[#5683da] border border-[#4a4b50] transition-all overflow-hidden select-none min-w-0 min-h-0">
           {/* Header pill */}
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.07] rounded-md !px-2 !py-0.5 text-xs text-white/90 border-white/10">
+            <div className="flex items-center gap-1.5 bg-[#111111] border border-[#4a4b50] rounded-full px-2.5 py-0.5 text-xs text-white">
               {getAgentIcon(config?.agentId)}
-              <span className="font-medium text-white/90 truncate max-w-[120px]">{name}</span>
+              <span className="font-medium text-white truncate max-w-[120px]">{name}</span>
             </div>
             {isAgent && config?.model ? (
-              <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs !px-1.5 !py-0.5 text-[9px] font-mono !bg-accent/20 !text-violet-400 !border-violet-400/30">
+              <span className="px-2 py-0.5 rounded-full bg-[#111111] border border-[#5683da] text-[9px] font-mono text-[#5683da]">
                 {config.model}
               </span>
             ) : (
-              <span className="px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.07] text-xs !px-1.5 !py-0.5 text-[9px] font-mono text-white/70 border-white/10">
+              <span className="px-2 py-0.5 rounded-full bg-[#111111] border border-[#4a4b50] text-[9px] font-mono text-[#a9a9aa]">
                 #{currentPaneNumber}
               </span>
             )}
@@ -58,20 +58,20 @@ export const InteractiveGridCanvas: React.FC<InteractiveGridCanvasProps> = ({ no
 
           {/* Center Pane Role Blueprint Tag */}
           <div className="my-auto flex flex-col items-center justify-center gap-1 text-center py-2 min-w-0">
-            <span className="font-mono text-xs font-semibold text-white/90 truncate">
+            <span className="font-mono text-xs font-semibold text-white truncate">
               {currentPaneNumber === 1 ? 'Primary Terminal' : `Worker Pane ${currentPaneNumber}`}
             </span>
-            <span className="text-[10px] font-mono text-white/40 truncate">
+            <span className="text-[10px] font-mono text-[#a9a9aa] truncate">
               {isAgent ? config.name : 'Interactive Shell (zsh/bash)'}
             </span>
           </div>
 
           {/* Bottom status */}
-          <div className="flex items-center justify-between text-[10px] text-white/40 font-mono border-t border-white/10 pt-1.5">
+          <div className="flex items-center justify-between text-[10px] text-[#a9a9aa] font-mono border-t border-[#4a4b50] pt-1.5">
             <span>READY</span>
             <span className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <span className="text-emerald-400 font-medium">Active</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#27c93f]" />
+              <span className="text-[#27c93f] font-medium">Active</span>
             </span>
           </div>
         </div>
@@ -85,7 +85,7 @@ export const InteractiveGridCanvas: React.FC<InteractiveGridCanvasProps> = ({ no
       <div
         className={`flex-1 h-full w-full flex ${
           isHorizontal ? 'flex-row' : 'flex-col'
-        } gap-1.5 p-1 bg-white/[0.02] rounded-lg border border-white/10`}
+        } gap-1.5 p-1 bg-[#111111] rounded-lg border border-[#4a4b50]`}
       >
         <div
           style={{ flex: current.ratio }}
@@ -98,7 +98,7 @@ export const InteractiveGridCanvas: React.FC<InteractiveGridCanvasProps> = ({ no
         <div
           className={`flex items-center justify-center select-none ${
             isHorizontal ? 'w-1 flex-col' : 'h-1 flex-row'
-          } rounded bg-white/10`}
+          } rounded bg-[#4a4b50]`}
         />
 
         <div
@@ -112,7 +112,7 @@ export const InteractiveGridCanvas: React.FC<InteractiveGridCanvasProps> = ({ no
   };
 
   return (
-    <div className="w-full h-[260px] p-2 rounded-xl bg-[#1A1B26] border border-white/[0.06] flex items-center justify-center">
+    <div className="w-full h-[260px] p-2 rounded-2xl bg-[#111111] border border-[#4a4b50] flex items-center justify-center">
       {renderNode(node)}
     </div>
   );

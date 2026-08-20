@@ -123,4 +123,27 @@ describe('useLayoutStudioStore', () => {
     const layout = store.buildActiveLayout();
     expect(countTerminals(layout)).toBe(16);
   });
+
+  it('respects customRatioValue for custom 1x2 and 2x1 matrices in buildActiveLayout', () => {
+    const store = useLayoutStudioStore.getState();
+    store.setCustomGrid(1, 2);
+    store.setRatioMode('hero-sidebar', 0.7);
+    const hLayout = store.buildActiveLayout();
+    expect(hLayout.type).toBe('split');
+    if (hLayout.type === 'split') {
+      expect(hLayout.direction).toBe('horizontal');
+      expect(hLayout.ratio).toBe(0.7);
+    }
+    expect(countTerminals(hLayout)).toBe(2);
+
+    store.setCustomGrid(2, 1);
+    store.setRatioMode('golden', 0.618);
+    const vLayout = store.buildActiveLayout();
+    expect(vLayout.type).toBe('split');
+    if (vLayout.type === 'split') {
+      expect(vLayout.direction).toBe('vertical');
+      expect(vLayout.ratio).toBeCloseTo(0.618, 3);
+    }
+    expect(countTerminals(vLayout)).toBe(2);
+  });
 });

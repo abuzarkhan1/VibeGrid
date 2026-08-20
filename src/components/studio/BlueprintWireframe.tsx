@@ -28,17 +28,17 @@ export const BlueprintWireframe: React.FC<BlueprintWireframeProps> = ({
   className = '',
 }) => {
   const paneBorder = isSelected
-    ? 'border-violet-400 bg-violet-500/20 shadow-none'
-    : 'border-white/10 bg-white/[0.04] group-hover:border-white/20 group-hover:bg-white/[0.08]';
+    ? 'border-[#5683da] bg-[#5683da]/20 shadow-none'
+    : 'border-[#4a4b50] bg-[#090a0c] group-hover:border-[#5683da]';
 
   const masterPaneBorder = isSelected
-    ? 'border-violet-400 bg-violet-500/30 shadow-none'
-    : 'border-white/15 bg-white/[0.06] group-hover:border-white/25 group-hover:bg-white/[0.1]';
+    ? 'border-[#5683da] bg-[#5683da]/30 shadow-none'
+    : 'border-[#4a4b50] bg-[#090a0c] group-hover:border-[#5683da]';
 
   return (
     <div
-      className={`w-full h-16 rounded-xl bg-black/20 p-1.5 border transition-all duration-150 flex items-center justify-center overflow-hidden select-none ${
-        isSelected ? 'border-violet-400/60 shadow-none' : 'border-white/10'
+      className={`w-full h-16 rounded-xl bg-[#111111] p-1.5 border transition-all duration-150 flex items-center justify-center overflow-hidden select-none ${
+        isSelected ? 'border-[#5683da]' : 'border-[#4a4b50]'
       } ${className}`}
     >
       {/* 1. Solo (1x1) */}

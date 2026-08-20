@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { LayoutStudioModal } from './LayoutStudioModal';
+import { LayoutStudio } from './LayoutStudio';
+import { CustomGridBuilder } from './CustomGridBuilder';
+import { GridTemplatePicker } from './GridTemplatePicker';
 import { AgentLauncherModal } from '../agent/AgentLauncherModal';
 import { WorkspaceCustomizerModal } from '../customizer/WorkspaceCustomizerModal';
 import { useLayoutStudioStore } from '@/store/useLayoutStudioStore';
@@ -26,10 +29,10 @@ describe('Studio Modals & Chained Workflow', () => {
       useLayoutStudioStore.setState({ isOpen: true });
       render(<LayoutStudioModal />);
 
-      expect(screen.getByRole('dialog', { name: /Layout Selection Studio/i })).toBeTruthy();
-      expect(screen.getByText('Layout Selection Studio')).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: /Layout Studio/i })).toBeTruthy();
+      expect(screen.getByText('Layout Studio')).toBeTruthy();
 
-      const soloCard = screen.getByText('1-Pane Solo').closest('button');
+      const soloCard = screen.getByText('Solo').closest('button');
       expect(soloCard).toBeTruthy();
       if (soloCard) fireEvent.click(soloCard);
 
@@ -51,6 +54,67 @@ describe('Studio Modals & Chained Workflow', () => {
       expect(useLayoutStudioStore.getState().isOpen).toBe(false);
       expect(useAgentStore.getState().isOpen).toBe(true);
     });
+
+    it('sets --sash-size to 0px when gutterWidth is 0 (GUTTER-01)', () => {
+      useLayoutStudioStore.setState({ isOpen: true, gutterWidth: 0 });
+      render(<LayoutStudioModal />);
+
+      const deployBtn = screen.getByRole('button', { name: /Deploy Layout/i });
+      fireEvent.click(deployBtn);
+
+      expect(document.documentElement.style.getPropertyValue('--sash-size')).toBe('0px');
+    });
+  });
+
+  describe('CustomGridBuilder', () => {
+    it('formats raw enum ratioMode into human-readable titles (TXT-02)', () => {
+      act(() => {
+        useLayoutStudioStore.setState({ ratioMode: 'hero-sidebar', customRatioValue: 0.7 });
+      });
+      const { rerender } = render(<CustomGridBuilder />);
+
+      expect(screen.getByText(/Hero Sidebar/i)).toBeTruthy();
+
+      act(() => {
+        useLayoutStudioStore.setState({ ratioMode: 'golden', customRatioValue: 0.618 });
+      });
+      rerender(<CustomGridBuilder />);
+      expect(screen.getByText(/Golden Ratio/i)).toBeTruthy();
+
+      act(() => {
+        useLayoutStudioStore.setState({ ratioMode: 'tri-split', customRatioValue: 0.25 });
+      });
+      rerender(<CustomGridBuilder />);
+      expect(screen.getByText(/Tri-Split/i)).toBeTruthy();
+    });
+
+    it('resets isMouseDown on global window mouseup (DRAG-01)', () => {
+      render(<CustomGridBuilder />);
+      const cell1 = screen.getByRole('button', { name: '1x1' });
+      fireEvent.mouseDown(cell1);
+      fireEvent.mouseUp(window);
+      const cell8 = screen.getByRole('button', { name: '8x8' });
+      fireEvent.mouseEnter(cell8);
+      expect(useLayoutStudioStore.getState().customRows).toBe(2);
+      expect(useLayoutStudioStore.getState().customCols).toBe(2);
+    });
+  });
+
+  describe('LayoutStudio', () => {
+    it('displays Live Layout Preview label (TXT-01)', () => {
+      render(<LayoutStudio />);
+      expect(screen.getByText('Live Layout Preview')).toBeTruthy();
+      expect(screen.queryByText('Live Grid Topology')).toBeNull();
+    });
+  });
+
+  describe('GridTemplatePicker', () => {
+    it('does not render floating POPULAR / SWARM / FLEET badges', () => {
+      render(<GridTemplatePicker />);
+      expect(screen.queryByText('POPULAR')).toBeNull();
+      expect(screen.queryByText('SWARM')).toBeNull();
+      expect(screen.queryByText('FLEET')).toBeNull();
+    });
   });
 
   describe('AgentLauncherModal', () => {
@@ -63,14 +127,14 @@ describe('Studio Modals & Chained Workflow', () => {
       useAgentStore.setState({ isOpen: true });
       render(<AgentLauncherModal />);
 
-      expect(screen.getByRole('dialog', { name: /AI Agent & CLI Launcher/i })).toBeTruthy();
-      expect(screen.getByText('AI Agent & CLI Launcher')).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: /Agent Launcher/i })).toBeTruthy();
+      expect(screen.getByText('Agent Launcher')).toBeTruthy();
 
-      const claudeCard = screen.getByText('Claude Code').closest('div');
+      const claudeCard = screen.getByText('Claude').closest('div');
       expect(claudeCard).toBeTruthy();
       if (claudeCard) fireEvent.click(claudeCard);
 
-      const provisionBtn = screen.getByRole('button', { name: /Provision Agents/i });
+      const provisionBtn = screen.getByRole('button', { name: /Deploy Agents/i });
       fireEvent.click(provisionBtn);
 
       await waitFor(() => {
@@ -83,7 +147,7 @@ describe('Studio Modals & Chained Workflow', () => {
       const onProceed = () => useCustomizationStore.getState().openCustomizer();
       render(<AgentLauncherModal onProceedToCustomizer={onProceed} />);
 
-      const provisionBtn = screen.getByRole('button', { name: /Provision Agents/i });
+      const provisionBtn = screen.getByRole('button', { name: /Deploy Agents/i });
       fireEvent.click(provisionBtn);
 
       await waitFor(() => {
@@ -103,14 +167,14 @@ describe('Studio Modals & Chained Workflow', () => {
       useCustomizationStore.setState({ isOpen: true });
       render(<WorkspaceCustomizerModal />);
 
-      expect(screen.getByRole('dialog', { name: /VibeGrid Customization Studio/i })).toBeTruthy();
-      expect(screen.getByText('VibeGrid Customization Studio')).toBeTruthy();
+      expect(screen.getByRole('dialog', { name: /Customization Studio/i })).toBeTruthy();
+      expect(screen.getByText('Customization Studio')).toBeTruthy();
 
       const themeTab = screen.getByRole('button', { name: /Theme Studio/i });
       fireEvent.click(themeTab);
       expect(useCustomizationStore.getState().activeSection).toBe('appearance');
 
-      const saveBtn = screen.getByRole('button', { name: /Save & Apply/i });
+      const saveBtn = screen.getByRole('button', { name: /Save/i });
       fireEvent.click(saveBtn);
 
       expect(useCustomizationStore.getState().isOpen).toBe(false);

@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLayoutStudioStore } from '@/store/useLayoutStudioStore';
 import { RatioPreset, GutterPreset, RadiusPreset } from '@/types/layoutStudio';
 import { Grid } from 'lucide-react';
 
 const MAX_MATRIX_DIM = 8;
+
+const RATIO_LABELS: Record<RatioPreset, string> = {
+  equal: 'Equal',
+  golden: 'Golden Ratio',
+  'hero-sidebar': 'Hero Sidebar',
+  'tri-split': 'Tri-Split',
+  custom: 'Custom',
+};
 
 export const CustomGridBuilder: React.FC = () => {
   const {
@@ -24,6 +32,15 @@ export const CustomGridBuilder: React.FC = () => {
   const [hoverDim, setHoverDim] = useState<{ r: number; c: number } | null>(null);
   const [isMouseDown, setIsMouseDown] = useState(false);
 
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      setIsMouseDown(false);
+    };
+
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+    return () => window.removeEventListener('mouseup', handleGlobalMouseUp);
+  }, []);
+
   const activeR = hoverDim ? hoverDim.r : customRows;
   const activeC = hoverDim ? hoverDim.c : customCols;
 
@@ -41,26 +58,31 @@ export const CustomGridBuilder: React.FC = () => {
 
   return (
     <div
-      className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-white/[0.02] border border-white/10 p-6 rounded-xl select-none backdrop-blur-md"
+      className="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#111111] border border-[#4a4b50] p-6 rounded-2xl select-none font-sans"
       onMouseUp={() => setIsMouseDown(false)}
     >
-      {}
-      <div className="lg:col-span-5 flex flex-col items-center justify-center p-4 bg-black/40 border border-white/10 rounded-xl backdrop-blur-md">
+      {/* Left: Visual Grid Matrix Builder */}
+      <div className="lg:col-span-5 flex flex-col items-center justify-center p-5 bg-[#303236] border border-[#4a4b50] rounded-2xl">
         <div className="flex items-center justify-between w-full mb-4">
           <div className="flex items-center gap-2">
-            <Grid className="w-4 h-4 text-white/60" />
-            <span className="font-sans font-semibold text-xs text-white/80 uppercase tracking-wider">
-              Visual Grid Matrix
+            <Grid className="w-4 h-4 text-[#5683da]" />
+            <span className="font-sans font-semibold text-xs text-white uppercase tracking-wider">
+              Matrix
             </span>
           </div>
-          <span className="px-2.5 py-1 rounded-md bg-white/5 border border-white/10 text-xs font-mono font-medium text-white/80">
-            {activeR} × {activeC} ({activeR * activeC} {activeR * activeC === 1 ? 'Pane' : 'Panes'})
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#090a0c] border border-[#4a4b50] text-xs font-mono font-medium text-[#a9a9aa]">
+              Rows <span className="text-[#5683da] font-semibold">{activeR}</span>
+            </span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#090a0c] border border-[#4a4b50] text-xs font-mono font-medium text-[#a9a9aa]">
+              Cols <span className="text-[#5683da] font-semibold">{activeC}</span>
+            </span>
+          </div>
         </div>
 
         {/* Interactive hover matrix */}
         <div
-          className="grid gap-1.5 p-3 bg-[rgba(var(--color-bg-rgb)/0.6)] border border-[var(--color-border)] rounded-xl select-none"
+          className="grid gap-1.5 p-3 bg-[#111111] border border-[#4a4b50] rounded-xl select-none"
           style={{ gridTemplateColumns: `repeat(${MAX_MATRIX_DIM}, minmax(0, 1fr))` }}
           onMouseLeave={() => {
             setHoverDim(null);
@@ -78,18 +100,18 @@ export const CustomGridBuilder: React.FC = () => {
                 <button
                   key={`${r}-${c}`}
                   type="button"
-                  aria-label={`Select ${r} rows by ${c} columns`}
+                  aria-label={`${r}x${c}`}
                   onMouseEnter={() => handleCellHover(r, c)}
                   onClick={() => handleCellClick(r, c)}
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg transition-all duration-150 flex items-center justify-center cursor-pointer ${
                     isCellActive
-                      ? 'bg-[rgba(var(--color-fg-rgb)/0.2)] text-[var(--color-fg)] border border-[rgba(var(--color-fg-rgb)/0.5)] scale-95 shadow-none'
-                      : 'bg-[rgba(var(--color-surface-rgb)/0.02)] border border-[var(--color-border)] hover:bg-[rgba(var(--color-surface-rgb)/0.04)] hover:border-[rgba(var(--color-fg-rgb)/0.2)]'
+                      ? 'bg-[#5683da] text-white border border-[#5683da] ring-1 ring-[#5683da]'
+                      : 'bg-[#303236] border border-[#4a4b50] hover:border-[#5683da]'
                   }`}
                 >
                   <span
                     className={`text-[8px] font-mono ${
-                      isCellActive ? 'text-[var(--color-fg)] font-bold' : 'text-[rgba(var(--color-fg-rgb)/0.3)]'
+                      isCellActive ? 'text-white font-bold' : 'text-[#a9a9aa]'
                     }`}
                   >
                     {r}×{c}
@@ -99,41 +121,34 @@ export const CustomGridBuilder: React.FC = () => {
             })
           )}
         </div>
-
-        <p className="mt-3 text-[11px] font-mono text-[rgba(var(--color-fg-rgb)/0.4)] text-center">
-          Hover / Drag across matrix to size • Click to confirm grid
-          {MAX_MATRIX_DIM < 8 && (
-            <span className="block mt-0.5 text-[rgba(var(--color-fg-rgb)/0.3)]">
-              Matrix capped at {MAX_MATRIX_DIM}×{MAX_MATRIX_DIM} ({MAX_MATRIX_DIM * MAX_MATRIX_DIM} panes) by your maxPanes limit.
-            </span>
-          )}
-        </p>
       </div>
 
       {/* Right: Fine-Tuning Knobs (7 cols) */}
-      <div className="lg:col-span-7 flex flex-col justify-between space-y-5 p-4 bg-black/40 border border-white/10 rounded-xl font-sans backdrop-blur-md">
-        {/* 1. Split Ratio Profile */}
+      <div className="lg:col-span-7 flex flex-col justify-between space-y-5 p-5 bg-[#303236] border border-[#4a4b50] rounded-2xl font-sans">
+        {/* 1. Split */}
         <div>
-          <div className="flex items-center justify-between text-xs font-sans font-semibold text-white/60 uppercase tracking-wider mb-2 font-mono">
-            <span>Split Ratio Architecture</span>
-            <span className="text-white/80 font-mono lowercase">
-              {ratioMode} ({(customRatioValue * 100).toFixed(1)}% / {((1 - customRatioValue) * 100).toFixed(1)}%)
+          <div className="flex items-center justify-between text-xs font-semibold text-[#a9a9aa] uppercase tracking-wider mb-2 font-mono">
+            <span>Split</span>
+            <span className="px-2.5 py-0.5 rounded-full bg-[#090a0c] border border-[#4a4b50] text-[10px] font-mono text-[#5683da] font-medium">
+              {RATIO_LABELS[ratioMode] || ratioMode} ({(customRatioValue * 100).toFixed(0)}/
+              {((1 - customRatioValue) * 100).toFixed(0)})
             </span>
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { id: 'equal', label: 'Equal (50/50)', val: 0.5 },
-              { id: 'golden', label: 'Golden (61.8/38.2)', val: 0.618 },
-              { id: 'hero-sidebar', label: 'Hero (70/30)', val: 0.7 },
-              { id: 'tri-split', label: 'Tri (25/50/25)', val: 0.25 },
+              { id: 'equal', label: '50/50', val: 0.5 },
+              { id: 'golden', label: '62/38', val: 0.618 },
+              { id: 'hero-sidebar', label: '70/30', val: 0.7 },
+              { id: 'tri-split', label: 'Tri', val: 0.25 },
             ].map((rm) => (
               <button
                 key={rm.id}
+                type="button"
                 onClick={() => setRatioMode(rm.id as RatioPreset, rm.val)}
-                className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium border transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-medium border transition-colors cursor-pointer text-center ${
                   ratioMode === rm.id
-                    ? 'bg-white/10 text-white border-white/30'
-                    : 'bg-white/[0.02] text-white/40 hover:bg-white/[0.04] hover:text-white border-white/10 hover:border-white/20'
+                    ? 'bg-[#5683da] text-white border-[#5683da]'
+                    : 'bg-[#090a0c] text-[#a9a9aa] hover:text-white border-[#4a4b50] hover:border-[#5683da]'
                 }`}
               >
                 {rm.label}
@@ -150,30 +165,31 @@ export const CustomGridBuilder: React.FC = () => {
               step="0.01"
               value={customRatioValue}
               onChange={(e) => setRatioMode('custom', parseFloat(e.target.value))}
-              className="flex-1 accent-white h-1.5 bg-black/40 border border-white/10 rounded-lg cursor-pointer"
+              className="flex-1 accent-[#5683da] h-1.5 bg-[#090a0c] border border-[#4a4b50] rounded-full cursor-pointer"
             />
           </div>
         </div>
 
-        {/* 2. Gutter / Sash Width Selector */}
+        {/* 2. Gutter */}
         <div>
-          <span className="text-xs font-sans font-semibold text-white/60 uppercase tracking-wider block mb-2 font-mono">
-            Gutter / Sash Width
+          <span className="text-xs font-semibold text-[#a9a9aa] uppercase tracking-wider block mb-2 font-mono">
+            Gutter
           </span>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { w: 0, label: '0px (Borderless)' },
-              { w: 2, label: '2px (Hairline)' },
-              { w: 4, label: '4px (Standard)' },
-              { w: 8, label: '8px (Spacious)' },
+              { w: 0, label: '0px' },
+              { w: 2, label: '2px' },
+              { w: 4, label: '4px' },
+              { w: 8, label: '8px' },
             ].map((g) => (
               <button
                 key={g.w}
+                type="button"
                 onClick={() => setGutterWidth(g.w as GutterPreset)}
-                className={`px-3 py-1.5 rounded-md text-xs font-mono border transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full text-xs font-mono font-medium border transition-colors cursor-pointer text-center ${
                   gutterWidth === g.w
-                    ? 'bg-white/10 text-white border-white/30'
-                    : 'bg-white/[0.02] text-white/40 hover:bg-white/[0.04] hover:text-white border-white/10 hover:border-white/20'
+                    ? 'bg-[#5683da] text-white border-[#5683da]'
+                    : 'bg-[#090a0c] text-[#a9a9aa] hover:text-white border-[#4a4b50] hover:border-[#5683da]'
                 }`}
               >
                 {g.label}
@@ -182,21 +198,22 @@ export const CustomGridBuilder: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. Corner Radius & Terminal Inner Padding */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* 3. Radius & Padding */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <span className="text-xs font-sans font-semibold text-white/60 uppercase tracking-wider block mb-2 font-mono">
-              Corner Radius
+            <span className="text-xs font-semibold text-[#a9a9aa] uppercase tracking-wider block mb-2 font-mono">
+              Radius
             </span>
             <div className="flex items-center gap-1.5">
               {[0, 4, 8, 12, 16].map((r) => (
                 <button
                   key={r}
+                  type="button"
                   onClick={() => setCornerRadius(r as RadiusPreset)}
-                  className={`flex-1 py-1 text-xs font-mono rounded-md border transition-colors cursor-pointer ${
+                  className={`flex-1 py-1 text-xs font-mono font-medium rounded-full border transition-colors cursor-pointer text-center ${
                     cornerRadius === r
-                      ? 'bg-white/10 text-white border-white/30'
-                      : 'bg-white/[0.02] text-white/40 hover:bg-white/[0.04] hover:text-white border-white/10 hover:border-white/20'
+                      ? 'bg-[#5683da] text-white border-[#5683da]'
+                      : 'bg-[#090a0c] text-[#a9a9aa] hover:text-white border-[#4a4b50] hover:border-[#5683da]'
                   }`}
                 >
                   {r}px
@@ -206,18 +223,19 @@ export const CustomGridBuilder: React.FC = () => {
           </div>
 
           <div>
-            <span className="text-xs font-sans font-semibold text-white/60 uppercase tracking-wider block mb-2 font-mono">
-              Inner Padding
+            <span className="text-xs font-semibold text-[#a9a9aa] uppercase tracking-wider block mb-2 font-mono">
+              Padding
             </span>
             <div className="flex items-center gap-1.5">
               {[0, 4, 8, 12, 16].map((p) => (
                 <button
                   key={p}
+                  type="button"
                   onClick={() => setTerminalPadding(p)}
-                  className={`flex-1 py-1 text-xs font-mono rounded-md border transition-colors cursor-pointer ${
+                  className={`flex-1 py-1 text-xs font-mono font-medium rounded-full border transition-colors cursor-pointer text-center ${
                     terminalPadding === p
-                      ? 'bg-white/10 text-white border-white/30'
-                      : 'bg-white/[0.02] text-white/40 hover:bg-white/[0.04] hover:text-white border-white/10 hover:border-white/20'
+                      ? 'bg-[#5683da] text-white border-[#5683da]'
+                      : 'bg-[#090a0c] text-[#a9a9aa] hover:text-white border-[#4a4b50] hover:border-[#5683da]'
                   }`}
                 >
                   {p}px

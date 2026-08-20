@@ -18,7 +18,7 @@ export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node, dep
 
   if (maximizedPaneId) {
     return (
-      <div className="h-full w-full p-1 bg-black">
+      <div className="h-full w-full p-1 bg-[#090a0c]">
         <TerminalContainer id={maximizedPaneId} title="Maximized Pane" />
       </div>
     );
@@ -26,7 +26,7 @@ export const GridRenderer: React.FC<GridRendererProps> = React.memo(({ node, dep
 
   if (node.type === 'terminal') {
     return (
-      <div className="h-full w-full p-1 min-h-0 min-w-0 overflow-hidden bg-black">
+      <div className="h-full w-full p-1 min-h-0 min-w-0 overflow-hidden bg-[#090a0c]">
         <TerminalContainer id={node.id} title={node.title} />
       </div>
     );
@@ -134,7 +134,7 @@ const SplitView: React.FC<{ node: SplitNode; depth: number }> = React.memo(({ no
   return (
 
     <div
-      className="relative h-full w-full bg-black overflow-hidden min-h-0 min-w-0"
+      className="relative h-full w-full bg-[#090a0c] overflow-hidden min-h-0 min-w-0"
       onDoubleClick={handleDoubleClick}
     >
       <div ref={containerRef} className="h-full w-full min-h-0 min-w-0">

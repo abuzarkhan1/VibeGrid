@@ -23,7 +23,7 @@ import { PaneNode } from '@/types/layout';
 export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   {
     id: 'solo',
-    name: '1-Pane Solo',
+    name: 'Solo',
     category: 'solo',
     shortcutKey: '1',
     description: 'Single full-bleed distraction-free terminal',
@@ -34,7 +34,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '2-horizontal',
-    name: '2-Pane Horizontal (2H)',
+    name: 'Horizontal Split',
     category: 'duo',
     shortcutKey: '2',
     description: 'Classic side-by-side split for coding & tests',
@@ -45,7 +45,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '2-vertical',
-    name: '2-Pane Vertical (2V)',
+    name: 'Vertical Split',
     category: 'duo',
     shortcutKey: 'Alt+2',
     description: 'Top/bottom horizontal split for long log streams',
@@ -56,7 +56,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '3-t-top',
-    name: '3-Pane T-Split Top',
+    name: 'T-Split Top',
     category: 'trio',
     shortcutKey: '3',
     description: 'Wide master pane above two worker sidecars',
@@ -67,7 +67,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '3-t-bottom',
-    name: '3-Pane T-Split Bottom',
+    name: 'T-Split Bottom',
     category: 'trio',
     shortcutKey: 'Alt+3',
     description: 'Dual work panes on top + full-width telemetry below',
@@ -78,7 +78,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '3-columns',
-    name: '3-Columns',
+    name: '3 Columns',
     category: 'trio',
     shortcutKey: 'Ctrl+3',
     description: 'Three parallel vertical columns for tri-stream auditing',
@@ -89,7 +89,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '3-rows',
-    name: '3-Rows',
+    name: '3 Rows',
     category: 'trio',
     shortcutKey: 'Alt+R',
     description: 'Three stacked horizontal rows for synchronized log tails',
@@ -100,7 +100,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '4-quad',
-    name: '4-Quad 2×2',
+    name: 'Quad 2×2',
     category: 'quad',
     shortcutKey: '4',
     description: 'Balanced four-quadrant workstation matrix',
@@ -111,7 +111,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '4-master-detail',
-    name: '4-Master Detail 1+3',
+    name: 'Master-Detail',
     category: 'quad',
     shortcutKey: 'Alt+4',
     description: 'Primary orchestrator flanked by a 3-agent vertical stack',
@@ -122,7 +122,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '4-columns',
-    name: '4-Columns',
+    name: '4 Columns',
     category: 'quad',
     shortcutKey: 'Ctrl+4',
     description: 'Four vertical strip columns for parallel service streams',
@@ -133,7 +133,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '6-matrix',
-    name: '6-Matrix 2×3',
+    name: 'Matrix 2×3',
     category: 'hexa',
     shortcutKey: '6',
     description: '6 equal panes arranged in 2 rows of 3 columns',
@@ -144,7 +144,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '6-command',
-    name: '6-Command 1+5',
+    name: 'Command 1+5',
     category: 'hexa',
     shortcutKey: 'Alt+6',
     description: '1 Large Lead Orchestrator + 5 Satellite Agent cockpits',
@@ -155,7 +155,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '8-fleet',
-    name: '8-Fleet 2×4',
+    name: 'Fleet 2×4',
     category: 'octa',
     shortcutKey: '8',
     description: '8-terminal high-density fleet matrix for microservices',
@@ -166,7 +166,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '8-satellite',
-    name: '8-Satellite 2+6',
+    name: 'Satellite 2+6',
     category: 'octa',
     shortcutKey: 'Alt+8',
     description: '2 Lead Master panes + 6 Satellite worker sub-agents',
@@ -177,7 +177,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '9-hivemind',
-    name: '9-Hivemind 3×3',
+    name: 'Hivemind 3×3',
     category: 'matrix',
     shortcutKey: '9',
     description: '9-pane symmetric command grid for massive agent pods',
@@ -188,7 +188,7 @@ export const PRESET_GALLERY: LayoutPresetDefinition[] = [
   },
   {
     id: '16-godmode',
-    name: '16-GodMode 4×4',
+    name: 'GodMode 4×4',
     category: 'matrix',
     shortcutKey: '0',
     description: '16 GPU-accelerated terminals for maximum agent concurrency',
@@ -278,6 +278,12 @@ export const useLayoutStudioStore = create<LayoutStudioStore>((set, get) => ({
       customRatioValue,
     } = get();
     if (activeTab === 'custom') {
+      if (customRows === 1 && customCols === 2) {
+        return generate2Pane('horizontal', customRatioValue);
+      }
+      if (customRows === 2 && customCols === 1) {
+        return generate2Pane('vertical', customRatioValue);
+      }
       return generateCustomMatrix(customRows, customCols);
     }
     const preset =
