@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { WorkspaceSidebar } from '@/components/common/WorkspaceSidebar';
-import { GridRenderer } from '@/components/layout/GridRenderer';
+import { LayoutView } from '@/components/layout/LayoutView';
 import { CommandPalette } from '@/components/ui/CommandPalette';
 import { SettingsModal } from '@/components/ui/SettingsModal';
 import { AboutModal } from '@/components/ui/AboutModal';
@@ -14,7 +14,6 @@ import { OnboardingWizard } from '@/components/onboarding/OnboardingWizard';
 import { LayoutStudioModal } from '@/components/studio/LayoutStudioModal';
 import { AgentLauncherModal } from '@/components/agent/AgentLauncherModal';
 import { WorkspaceCustomizerModal } from '@/components/customizer/WorkspaceCustomizerModal';
-import { RetroCrtOverlay } from '@/components/terminal/RetroCrtOverlay';
 import { ContentAwareDiffViewer } from '@/components/terminal/ContentAwareDiffViewer';
 import { AgentConversationPanel } from '@/components/chat/AgentConversationPanel';
 import { CentralPromptCard } from '@/components/home/CentralPromptCard';
@@ -27,23 +26,13 @@ import { useAgentStore } from '@/store/useAgentStore';
 import { useCustomizationStore } from '@/store/useCustomizationStore';
 import { useLayoutStudioStore } from '@/store/useLayoutStudioStore';
 import { useKeybindingsStore, matchesAccel } from '@/store/useKeybindingsStore';
+import { FirstRunHint } from '@/components/common/FirstRunHint';
+import { useOnboardingStore } from '@/store/useOnboardingStore';
 
 import { useVoiceToTerminal } from '@/hooks/useVoiceToTerminal';
 import { runMacro } from '@/lib/macros';
 import { useShallow } from 'zustand/react/shallow';
 import { listenStartupWarning, voiceSetSilenceTimeout, voiceSetInputDevice, setBatchInterval, setGlobalSummon, voiceSetLanguage, voiceSetModelSize, autostartSetEnabled, isTauri } from '@/lib/tauri';
-
-const LayoutView: React.FC = () => {
-  const root = usePaneStore((s) => s.root);
-
-  const gridVersion = usePaneStore((s) => s.gridVersion);
-  return (
-    <div className="flex-1 h-full overflow-hidden relative">
-      <GridRenderer key={gridVersion} node={root} />
-      <RetroCrtOverlay />
-    </div>
-  );
-};
 
 let quitApproved = false;
 
@@ -121,6 +110,15 @@ export const App: React.FC = () => {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [splashDismissed, setSplashDismissed] = useState(false);
+
+  useEffect(() => {
+    const unsub = useOnboardingStore.subscribe((state, prev) => {
+      if (prev.isOpen && !state.isOpen) {
+        setSplashDismissed(true);
+      }
+    });
+    return unsub;
+  }, []);
 
   const showSplash = useSettingsStore((s) => s.showSplash);
 
@@ -560,21 +558,52 @@ export const App: React.FC = () => {
     pendingQuit ? getTerminalNodes(s.root).filter((t) => t.paneId).length : 0
   );
 
+  const hubBg = {
+    background: '#090a0c',
+  };
+
   const activeViewMode = useUIStore((s) => s.activeViewMode);
+  const [installedView, setInstalledView] = useState<'hub' | 'grid'>(activeViewMode);
+  const [exitingView, setExitingView] = useState<'hub' | 'grid' | null>(null);
+
+  useEffect(() => {
+    if (activeViewMode === installedView) {
+      setExitingView(null);
+      return;
+    }
+    if (document.documentElement.classList.contains('vibegrid-no-anim')) {
+      setInstalledView(activeViewMode);
+      setExitingView(null);
+      return;
+    }
+    setExitingView(installedView);
+    setInstalledView(activeViewMode);
+    const t = setTimeout(() => setExitingView(null), 200);
+    return () => clearTimeout(t);
+  }, [activeViewMode, installedView]);
   const isSettingsOpen = useUIStore((s) => s.isSettingsOpen);
   const isWorkspaceLoading = useWorkspaceStore((s) => s.isLoading);
 
   return (
     <div
-      className="h-screen w-screen flex flex-col text-ink-primary overflow-hidden select-none font-sans bg-[#1A1B26]"
+      className="h-screen w-screen flex flex-col text-white overflow-hidden select-none font-sans bg-[#090a0c]"
       style={{ zoom: uiZoom / 100 }}
     >
+      <style>{`
+        @keyframes vg-view-fade-out {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        .vg-exit-fade {
+          animation: vg-view-fade-out 0.15s ease-out both;
+        }
+      `}</style>
 
       <main className="flex-1 w-full overflow-hidden relative flex">
         {isWorkspaceLoading && (
-          <div className="absolute inset-0 bg-black/75 backdrop-blur-sm flex flex-col items-center justify-center gap-3 z-30 animate-fade-in pointer-events-none">
-            <div className="w-6 h-6 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-            <span className="text-xs font-mono text-white/50">Restoring workspace layout…</span>
+          <div className="absolute inset-0 bg-[#090a0c]/80 flex flex-col items-center justify-center gap-3 z-30 animate-fade-in pointer-events-none">
+            <div className="w-6 h-6 border-2 border-[#4a4b50] border-t-[#5683da] rounded-full animate-spin" />
+            <span className="text-xs font-mono text-[#a9a9aa]">Restoring workspace layout…</span>
           </div>
         )}
 
@@ -584,42 +613,48 @@ export const App: React.FC = () => {
           <SettingsModal />
         ) : (
           <>
-            {}
-            {activeViewMode === 'hub' && (
-              <div
-                className="flex-1 h-full flex items-center justify-center animate-fade-in overflow-hidden"
-                style={{
-                  background: '#000000',
-                  backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 20% 80%, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 40%)',
-                }}
-              >
-                <CentralPromptCard />
-              </div>
-            )}
-
-            {}
-            {activeViewMode === 'grid' && (
-              <div className="flex-1 h-full flex gap-0 animate-fade-in overflow-hidden">
-                {}
-                <div className="flex-1 h-full overflow-hidden relative flex">
-                  <LayoutView />
-                </div>
-
-                {}
-                {isDiffViewerOpen && (
-                  <div className="w-[440px] max-w-[50vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
-                    <ContentAwareDiffViewer onClose={() => setDiffViewerOpen(false)} />
+            <div className="relative flex-1 h-full min-w-0 bg-[#090a0c]">
+              {(installedView === 'hub' || exitingView === 'hub') && (
+                exitingView === 'hub' ? (
+                  <div className="absolute inset-0 z-10 vg-exit-fade pointer-events-none overflow-y-auto" style={hubBg}>
+                    <CentralPromptCard />
                   </div>
-                )}
-
-                {}
-                {isChatOpen && (
-                  <div className="w-[400px] max-w-[45vw] h-full shrink-0 animate-fade-in border-l border-white/[0.06] overflow-hidden z-20">
-                    <AgentConversationPanel onClose={() => setChatOpen(false)} />
+                ) : (
+                  <div className="flex-1 h-full relative flex items-center justify-center animate-fade-in overflow-y-auto" style={hubBg}>
+                    <CentralPromptCard />
+                    <FirstRunHint />
                   </div>
-                )}
-              </div>
-            )}
+                )
+              )}
+
+              {(installedView === 'grid' || exitingView === 'grid') && (
+                exitingView === 'grid' ? (
+                  <div className="absolute inset-0 z-10 vg-exit-fade pointer-events-none overflow-hidden">
+                    <div className="flex-1 h-full overflow-hidden relative flex">
+                      <LayoutView />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 h-full flex gap-0 animate-fade-in overflow-hidden">
+                    <div className="flex-1 h-full overflow-hidden relative flex">
+                      <LayoutView />
+                    </div>
+
+                    {isDiffViewerOpen && (
+                      <div className="w-[440px] max-w-[50vw] h-full shrink-0 animate-fade-in border-l border-[#4a4b50] bg-[#111111] overflow-hidden z-20">
+                        <ContentAwareDiffViewer onClose={() => setDiffViewerOpen(false)} />
+                      </div>
+                    )}
+
+                    {isChatOpen && (
+                      <div className="w-[400px] max-w-[45vw] h-full shrink-0 animate-fade-in border-l border-[#4a4b50] bg-[#111111] overflow-hidden z-20">
+                        <AgentConversationPanel onClose={() => setChatOpen(false)} />
+                      </div>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
           </>
         )}
       </main>

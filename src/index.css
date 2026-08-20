@@ -48,44 +48,46 @@
 
 @layer base {
   :root {
-    --color-bg: #1a1b26;
-    --color-bg-rgb: 26 27 38;
-    --color-surface: #1a1b26;
-    --color-surface-rgb: 26 27 38;
-    --color-surface-hover: #1c202e;
-    --color-surface-hover-rgb: 28 32 46;
-    --color-border: rgba(255, 255, 255, 0.08);
-    --color-border-rgb: 255 255 255;
-    --color-border-subtle: color-mix(in srgb, var(--color-border) 50%, transparent);
-    --color-fg: #f3f4f6;
-    --color-fg-rgb: 243 244 246;
-    --color-muted: #8b93a1;
-    --color-muted-rgb: 139 147 161;
-    --color-selection: rgba(255, 255, 255, 0.2);
+    --color-void: #090a0c;
+    --color-obsidian: #303236;
+    --color-charcoal: #111111;
+    --color-slate-edge: #4a4b50;
+    --color-iron-veil: #6b6c6d;
+    --color-smoke: #95979e;
+    --color-ash: #a9a9aa;
+    --color-frost: #d1d1d1;
+    --color-linen: #e5e5e7;
+    --color-snow: #ffffff;
+    --color-electric-iris: #5683da;
+    --color-ember-pulse: #ff8964;
+    --color-status-green: #27c93f;
+
+    --color-bg: #090a0c;
+    --color-bg-rgb: 9 10 12;
+    --color-surface: #111111;
+    --color-surface-rgb: 17 17 17;
+    --color-surface-hover: #303236;
+    --color-surface-hover-rgb: 48 50 54;
+    --color-border: #4a4b50;
+    --color-border-rgb: 74 75 80;
+    --color-border-subtle: rgba(74, 75, 80, 0.4);
+    --color-fg: #ffffff;
+    --color-fg-rgb: 255 255 255;
+    --color-muted: #a9a9aa;
+    --color-muted-rgb: 169 169 170;
+    --color-selection: rgba(86, 131, 218, 0.35);
     --font-ui: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
     color-scheme: dark;
 
-    --glass-density-1: rgba(255, 255, 255, 0.03);
-    --glass-density-2: rgba(255, 255, 255, 0.06);
-    --glass-density-3: rgba(255, 255, 255, 0.1);
-    --glass-density-4: rgba(255, 255, 255, 0.15);
-    --glass-density-5: rgba(255, 255, 255, 0.25);
+    --ink-primary: #ffffff;
+    --ink-secondary: #a9a9aa;
+    --ink-muted: #6b6c6d;
 
-    --glass-border-light: rgba(255, 255, 255, 0.15);
-    --glass-border-dark: rgba(0, 0, 0, 0.3);
-    --glass-edge-effect:
-      inset 1px 1px 0px 0px var(--glass-border-light),
-      inset -1px -1px 0px 0px var(--glass-border-dark);
-
-    --ink-primary: #f3f4f6;
-    --ink-secondary: #9ca3af;
-    --ink-muted: #8b93a1;
-
-    --color-accent: #ffffff;
-    --color-accent-secondary: #ffffff;
-    --color-accent-rgb: 255 255 255;
-    --color-accent-rgba: 255, 255, 255;
+    --color-accent: #5683da;
+    --color-accent-secondary: #ff8964;
+    --color-accent-rgb: 86 131 218;
+    --color-accent-rgba: 86, 131, 218;
   }
 
   html {
@@ -93,8 +95,8 @@
   }
 
   body {
-    background-color: var(--color-bg, #1a1b26);
-    color: var(--ink-primary, #f3f4f6);
+    background-color: var(--color-bg, #090a0c);
+    color: var(--ink-primary, #ffffff);
     font-family: var(--font-ui);
     font-weight: 450;
     user-select: none;
@@ -129,14 +131,14 @@
   }
 
   ::selection {
-    background: var(--color-selection, rgba(255, 255, 255, 0.25));
-    color: var(--color-bg);
+    background: var(--color-selection, rgba(86, 131, 218, 0.35));
+    color: #ffffff;
   }
 
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 1px;
-    border-radius: 6px;
+    border-radius: 9999px;
   }
 }
 
@@ -256,17 +258,17 @@
 
 @layer components {
   .vg-pane-frame {
-    border-radius: var(--pane-radius, 10px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: #000000;
+    border-radius: var(--pane-radius, 12px);
+    border: 1px solid #4a4b50;
+    background: #090a0c;
     transition:
       border-color 0.15s ease,
       box-shadow 0.15s ease;
   }
 
   .vg-pane-frame.vg-pane-focused {
-    border-color: rgba(255, 255, 255, 0.8) !important;
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.12) !important;
+    border-color: #5683da !important;
+    box-shadow: 0 0 0 1px #5683da !important;
   }
 }
 
@@ -345,4 +347,12 @@ html.vibegrid-light .vibegrid-allotment [class*='sash-active']:before {
 :where(html.vibegrid-light) code {
   background: rgba(0, 0, 0, 0.05);
   color: var(--color-fg);
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

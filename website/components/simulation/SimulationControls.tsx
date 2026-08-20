@@ -144,10 +144,10 @@ export function SimulationControls({
           <button
             onClick={onTriggerSymphony}
             disabled={symphonyActive}
-            className={`relative group overflow-hidden flex items-center gap-2 px-4 py-1.5 rounded-[6px] font-mono text-xs font-bold transition-all cursor-pointer shadow-md select-none ${
+            className={`relative group overflow-hidden flex items-center gap-2 px-4 py-1.5 rounded-full font-mono text-xs font-bold transition-all cursor-pointer shadow-md select-none ${
               symphonyActive
                 ? 'bg-[#5683da]/40 text-white border border-[#5683da] cursor-not-allowed'
-                : 'bg-gradient-to-r from-[#5683da] via-[#7b61ff] to-[#ff8964] text-white hover:brightness-110 active:scale-[0.98]'
+                : 'bg-[#5683da] hover:bg-[#5683da]/90 text-white active:scale-[0.98]'
             }`}
           >
             <Sparkles size={14} className={symphonyActive ? 'animate-spin' : 'group-hover:scale-110 transition-transform'} />
@@ -161,7 +161,7 @@ export function SimulationControls({
 
       {/* Symphony Active Animated Progress Bar HUD */}
       {symphonyActive && (
-        <div className="rounded-[8px] bg-[#090a0c] border border-[#5683da] p-3 text-xs font-mono animate-in fade-in slide-in-from-top duration-300">
+        <div className="rounded-xl bg-[#090a0c] border border-[#5683da] p-3 text-xs font-mono animate-in fade-in slide-in-from-top duration-300">
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-2 text-white font-bold">
               <span className="h-2 w-2 rounded-full bg-[#5683da] animate-ping" />
@@ -173,7 +173,7 @@ export function SimulationControls({
 
           <div className="w-full bg-[#111111] h-1.5 rounded-full overflow-hidden border border-[#4a4b50]/60">
             <div
-              className="h-full bg-gradient-to-r from-[#5683da] via-[#27c93f] to-[#ff8964] transition-all duration-150"
+              className="h-full bg-[#5683da] transition-all duration-150"
               style={{ width: `${symphonyProgress}%` }}
             />
           </div>
