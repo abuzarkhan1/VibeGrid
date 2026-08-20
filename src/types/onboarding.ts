@@ -1,4 +1,4 @@
-export type OnboardingStep = 'splash' | 'layout' | 'agents' | 'customizer' | 'launch';
+export type OnboardingStep = 'splash' | 'layout' | 'agents' | 'customizer';
 
 export interface PaneSpawnSpec {
   nodeId: string;

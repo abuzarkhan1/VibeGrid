@@ -124,7 +124,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
     },
 
     nextStep: () => {
-      const stepOrder: OnboardingStep[] = ['splash', 'layout', 'agents', 'customizer', 'launch'];
+      const stepOrder: OnboardingStep[] = ['splash', 'layout', 'agents', 'customizer'];
       const curIdx = stepOrder.indexOf(get().currentStep);
       if (curIdx >= 0 && curIdx < stepOrder.length - 1) {
         set({ currentStep: stepOrder[curIdx + 1] });
@@ -132,7 +132,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => {
     },
 
     prevStep: () => {
-      const stepOrder: OnboardingStep[] = ['splash', 'layout', 'agents', 'customizer', 'launch'];
+      const stepOrder: OnboardingStep[] = ['splash', 'layout', 'agents', 'customizer'];
       const curIdx = stepOrder.indexOf(get().currentStep);
       if (curIdx > 1) {
         set({ currentStep: stepOrder[curIdx - 1] });

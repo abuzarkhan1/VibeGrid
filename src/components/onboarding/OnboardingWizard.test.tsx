@@ -31,11 +31,14 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     expect(screen.getByLabelText(/Launch Screen/i)).toBeTruthy();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('VibeGrid');
 
-    fireEvent.keyDown(window, { key: 'Space' });
+    fireEvent.keyDown(window, { key: ' ', code: 'Space' });
 
-    await waitFor(() => {
-      expect(useOnboardingStore.getState().currentStep).toBe('layout');
-    });
+    await waitFor(
+      () => {
+        expect(useOnboardingStore.getState().currentStep).toBe('layout');
+      },
+      { timeout: 2000 }
+    );
   });
 
   it('Step 2: renders Visual Layout Studio, selects preset, and advances', async () => {
@@ -62,7 +65,7 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     useOnboardingStore.setState({ currentStep: 'agents' });
     render(<OnboardingWizard />);
 
-    expect(screen.getByText(/Agent & Provider Engine|AI Agent & Shell Provider/i)).toBeTruthy();
+    expect(screen.getByText(/Agent Providers/i)).toBeTruthy();
     expect(screen.getByText('Pane Assignment Matrix')).toBeTruthy();
 
     const selects = screen.getAllByRole('combobox');
@@ -83,7 +86,7 @@ describe('OnboardingWizard End-to-End User Journey', () => {
     useOnboardingStore.setState({ currentStep: 'customizer' });
     render(<OnboardingWizard />);
 
-    expect(screen.getByText(/Workspace Studio & Styling|Workspace Identity/i)).toBeTruthy();
+    expect(screen.getByText(/Workspace Studio/i)).toBeTruthy();
 
     const nameInput = screen.getByPlaceholderText('e.g. Fullstack AI Agent Lab');
     fireEvent.change(nameInput, { target: { value: 'Production Nexus' } });

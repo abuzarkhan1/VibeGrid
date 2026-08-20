@@ -33,52 +33,51 @@ export const OnboardingProgressBar: React.FC<OnboardingProgressBarProps> = ({
   const stepIdx = STEPS.findIndex((s) => s.id === currentStep);
 
   return (
-    <div className="flex items-center justify-between w-full max-w-2xl mx-auto py-3 px-4 border-b border-white/10 bg-black/20 font-sans select-none">
-      {STEPS.map((s, idx) => {
-        const Icon = s.icon;
-        const isActive = s.id === currentStep;
-        const isPast = idx < stepIdx;
+    <div className="w-full border-b border-[#4a4b50] bg-[#111111] py-3.5 px-4 sm:px-6 select-none font-sans">
+      <div className="flex items-center justify-between w-full max-w-2xl mx-auto">
+        {STEPS.map((s, idx) => {
+          const Icon = s.icon;
+          const isActive = s.id === currentStep;
+          const isPast = idx < stepIdx;
 
-        return (
-          <React.Fragment key={s.id}>
-            {}
-            <button
-              type="button"
-              disabled={(!isPast && !isActive) || s.id === 'splash'}
-              onClick={() => onStepClick && onStepClick(s.id)}
-              className={`flex items-center gap-2 group transition-all ${
-                isActive
-                  ? 'text-white/90'
-                  : isPast && s.id !== 'splash'
-                  ? 'text-violet-400 hover:text-white cursor-pointer'
-                  : 'text-white/40 cursor-default'
-              }`}
-            >
-              <div
-                className={`flex items-center justify-center w-7 h-7 rounded-xl border transition-all ${
+          return (
+            <React.Fragment key={s.id}>
+              <button
+                type="button"
+                disabled={(!isPast && !isActive) || s.id === 'splash'}
+                onClick={() => onStepClick && onStepClick(s.id)}
+                className={`flex items-center gap-2 group transition-all ${
                   isActive
-                    ? 'bg-violet-500 text-white border-violet-400/80 font-bold shadow-none'
-                    : isPast
-                    ? 'bg-violet-500/20 text-violet-400 border-violet-400/40'
-                    : 'bg-white/[0.03] text-white/40 border border-white/[0.06]'
+                    ? 'text-white font-semibold'
+                    : isPast && s.id !== 'splash'
+                    ? 'text-[#5683da] hover:text-white cursor-pointer active:scale-95'
+                    : 'text-[#a9a9aa] cursor-default'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
-              </div>
-              <span className="text-xs font-medium hidden sm:inline">{s.label}</span>
-            </button>
+                <div
+                  className={`flex items-center justify-center w-7 h-7 rounded-full border transition-all ${
+                    isActive || isPast
+                      ? 'bg-[#5683da] text-white border-[#5683da] font-bold shadow-sm'
+                      : 'bg-[#303236] text-[#a9a9aa] border-[#4a4b50]'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-xs hidden sm:inline">{s.label}</span>
+              </button>
 
-            {/* Connector Line */}
-            {idx < STEPS.length - 1 && (
-              <div
-                className={`flex-1 h-[2px] mx-3 rounded transition-all ${
-                  idx < stepIdx ? 'bg-violet-500' : 'bg-white/10'
-                }`}
-              />
-            )}
-          </React.Fragment>
-        );
-      })}
+              {/* Connector Line */}
+              {idx < STEPS.length - 1 && (
+                <div
+                  className={`flex-1 h-[2px] mx-3 rounded-full transition-all ${
+                    idx < stepIdx ? 'bg-[#5683da]' : 'bg-[#303236]'
+                  }`}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
     </div>
   );
 };

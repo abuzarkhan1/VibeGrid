@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { useOnboardingStore } from '@/store/useOnboardingStore';
 import { OnboardingProgressBar } from './OnboardingProgressBar';
 import { OnboardingFooter } from './OnboardingFooter';
@@ -14,6 +15,7 @@ export const OnboardingWizard: React.FC = () => {
   const setStep = useOnboardingStore((s) => s.setStep);
   const skipToDefault = useOnboardingStore((s) => s.skipToDefault);
   const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+  const panelRef = useFocusTrap<HTMLDivElement>(isOpen && currentStep !== 'splash');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -54,25 +56,22 @@ export const OnboardingWizard: React.FC = () => {
       className={
         currentStep === 'splash'
           ? 'fixed inset-0 z-50 overflow-hidden'
-          :
-            'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-xl animate-fade-in font-sans select-none overflow-hidden'
+          : 'fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-[#090a0c]/90 animate-fade-in font-sans select-none overflow-hidden text-white'
       }
     >
       {currentStep === 'splash' ? (
         renderStepContent()
       ) : (
-
-        <div className="relative flex flex-col w-full max-w-5xl h-[92vh] max-h-[850px] bg-black/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.8)] overflow-hidden">
-          {}
+        <div
+          ref={panelRef}
+          className="relative flex flex-col w-full max-w-5xl h-[92vh] max-h-[850px] bg-[#111111] border border-[#4a4b50] rounded-2xl shadow-2xl overflow-hidden"
+        >
           <OnboardingProgressBar />
 
-          {}
-          {}
-          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6 custom-scrollbar bg-[#111111]">
             {renderStepContent()}
           </div>
 
-          {}
           <OnboardingFooter />
         </div>
       )}
