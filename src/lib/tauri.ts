@@ -343,3 +343,58 @@ export async function pickFolder(title = 'Choose Project Directory'): Promise<st
   }
 }
 
+export interface GitFileEntry {
+  path: string;
+  status: string; // "modified", "added", "deleted", "untracked"
+  staged: boolean;
+}
+
+export interface GitDiffLine {
+  line_type: 'context' | 'add' | 'remove';
+  line_old?: number | null;
+  line_new?: number | null;
+  text: string;
+}
+
+export interface GitDiffStats {
+  additions: number;
+  deletions: number;
+}
+
+export interface GitDiffResponse {
+  is_git_repo: boolean;
+  branch: string;
+  files: GitFileEntry[];
+  active_file: string;
+  diff_lines: GitDiffLine[];
+  stats: GitDiffStats;
+  error?: string | null;
+}
+
+export async function getGitDiff(
+  cwd?: string,
+  filePath?: string
+): Promise<GitDiffResponse> {
+  if (!isTauri()) {
+    return {
+      is_git_repo: true,
+      branch: 'main',
+      files: [
+        { path: 'src/components/agent/AgentCatalogCard.tsx', status: 'modified', staged: false },
+        { path: 'src/components/terminal/ContentAwareDiffViewer.tsx', status: 'modified', staged: false },
+        { path: 'src/lib/agentRegistry.ts', status: 'modified', staged: false },
+      ],
+      active_file: filePath || 'src/components/agent/AgentCatalogCard.tsx',
+      diff_lines: [
+        { line_type: 'context', line_old: 1, line_new: 1, text: 'import React from "react";' },
+        { line_type: 'remove', line_old: 2, line_new: null, text: '- // Legacy card styling' },
+        { line_type: 'add', line_old: null, line_new: 2, text: '+ // Clean authentic SVG provider logos' },
+        { line_type: 'context', line_old: 3, line_new: 3, text: 'export const AgentCatalogCard = () => {' },
+      ],
+      stats: { additions: 1, deletions: 1 },
+    };
+  }
+  return await invoke<GitDiffResponse>('get_git_diff', { cwd, filePath });
+}
+
+

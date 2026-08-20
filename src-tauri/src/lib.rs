@@ -163,6 +163,7 @@ pub fn run() {
             commands::save_workspace,
             commands::list_workspaces,
             commands::delete_workspace,
+            commands::get_git_diff,
             commands::voice_model_status,
             commands::voice_ensure_model,
             commands::voice_start_recording,
