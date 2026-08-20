@@ -2,7 +2,7 @@
 name = "vibegrid"
 version = "0.1.0"
 description = "VibeGrid - Free, open-source GPU-accelerated terminal workspace"
-authors = ["VibeGrid Open Source Community"]
+authors = ["Abuzar Khan <abuzarkhan1242@gmail.com>"]
 edition = "2021"
 
 [build-dependencies]

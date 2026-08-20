@@ -2,6 +2,7 @@
   "name": "vibegrid",
   "private": true,
   "version": "0.1.0",
+  "author": "Abuzar Khan <abuzarkhan1242@gmail.com>",
   "type": "module",
   "scripts": {
     "dev": "vite",
