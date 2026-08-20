@@ -81,8 +81,8 @@ export function SiteFooter({ active }: SiteFooterProps) {
           {/* Brand Mark & Tagline (2 cols on large) */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#111111] border border-[#4a4b50] flex items-center justify-center text-[#5683da]">
-                <Terminal size={18} />
+              <div className="w-8 h-8 rounded-lg bg-[#111111] border border-[#4a4b50] flex items-center justify-center overflow-hidden p-0.5 shadow-sm">
+                <img src="/logo.png" alt="VibeGrid Logo" className="w-full h-full object-cover rounded-md" />
               </div>
               <span className="font-display font-black text-xl tracking-tight text-[#ffffff]">
                 VIBEGRID

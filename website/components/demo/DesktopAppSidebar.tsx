@@ -342,9 +342,9 @@ export function DesktopAppSidebar({
         <div
           onClick={handleToggleSidebar}
           title="Expand VibeGrid Sidebar"
-          className="h-8 w-8 rounded-lg bg-[#090a0c] border border-[#4a4b50] flex items-center justify-center text-[#5683da] font-mono text-xs font-bold hover:border-[#5683da] transition-colors cursor-pointer"
+          className="h-8 w-8 rounded-lg bg-[#090a0c] border border-[#4a4b50] flex items-center justify-center overflow-hidden p-0.5 hover:border-[#5683da] transition-colors cursor-pointer shadow-sm"
         >
-          VG
+          <img src="/logo.png" alt="VibeGrid" className="w-full h-full object-cover rounded-md" />
         </div>
 
         {/* Expand Toggle Button */}
@@ -579,8 +579,8 @@ export function DesktopAppSidebar({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               {/* App Icon */}
-              <div className="h-7 w-7 rounded-lg bg-[#111111] border border-[#4a4b50] flex items-center justify-center text-[#5683da] font-mono text-xs font-bold shadow-sm">
-                VG
+              <div className="h-7 w-7 rounded-lg bg-[#111111] border border-[#4a4b50] flex items-center justify-center overflow-hidden p-0.5 shadow-sm">
+                <img src="/logo.png" alt="VibeGrid" className="w-full h-full object-cover rounded-md" />
               </div>
               <div>
                 <span className="text-xs font-bold tracking-tight text-white">

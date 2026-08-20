@@ -24,8 +24,8 @@ export function HeroNavbar() {
       <div className="max-w-[1200px] mx-auto px-6 flex items-center justify-between">
         {/* Brand Logo */}
         <a href="/" className="flex items-center gap-3 group select-none">
-          <div className="h-8 w-8 rounded-full border border-[#4a4b50] bg-[#111111] flex items-center justify-center group-hover:border-[#5683da] transition-colors">
-            <span className="font-mono text-xs font-bold text-[#5683da] tracking-tighter">VG</span>
+          <div className="h-8 w-8 rounded-full border border-[#4a4b50] bg-[#111111] flex items-center justify-center overflow-hidden group-hover:border-[#5683da] transition-colors p-0.5 shadow-sm">
+            <img src="/logo.png" alt="VibeGrid Logo" className="w-full h-full object-cover rounded-full" />
           </div>
           <span className="text-lg font-bold tracking-tight text-white transition-colors">
             Vibe<span className="text-[#5683da]">Grid</span>
